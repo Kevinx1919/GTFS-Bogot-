@@ -45,9 +45,11 @@ plan de ingesta determinista
 controles de calidad y alerta
 ```
 
-El descubrimiento consulta el grupo oficial de GTFS y registra la fecha publicada
-(`feed_version`), URL candidata, identificador del ítem ArcGIS, fechas de portal
-y una huella de metadata. No descarga archivos ni selecciona una URL no resuelta.
+El descubrimiento consulta el grupo oficial de GTFS alojado en ArcGIS Online y
+registra la fecha publicada (`feed_version`), URL candidata, identificador del
+ítem ArcGIS, fechas de portal y una huella de metadata. No descarga archivos ni
+selecciona una URL no resuelta. El portal GIS operativo de TransMilenio expone
+otros recursos y no contiene este grupo; usar el host incorrecto devuelve 400.
 
 El Job admitirá tres modos de selección:
 
