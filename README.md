@@ -116,4 +116,4 @@ Las líneas base requieren historial suficiente; durante los primeros días el p
 
 ## Estado actual
 
-La primera versión GTFS estática (`2025-10-28`) fue validada y preservada en Raw con manifiesto. También existe la primera tabla Delta Bronze, `bronze_gtfs_routes`, con 676 rutas. El código de los notebooks se sincronizará al repositorio desde Databricks antes del siguiente commit funcional.
+La primera versión GTFS estática (`2025-10-28`) fue validada y preservada en Raw con manifiesto. También existe la primera tabla Delta Bronze, `bronze_gtfs_routes`, con 676 rutas. Los notebooks de Raw y Bronze están versionados en `databricks/notebooks`; las entidades restantes de Bronze están listas para ejecutarse desde el Git folder de Databricks.
