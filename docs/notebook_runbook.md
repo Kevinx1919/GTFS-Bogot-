@@ -49,8 +49,8 @@ Resultado: para la versión `2025-10-28`, se validaron 909.878 filas en
 
 | Bloque | Propósito | Entrada | Efecto / salida | Validación |
 | --- | --- | --- | --- | --- |
-| Configuración | Declara el portal oficial, grupo GTFS y tablas de control. | URLs e identificador público del grupo. | Variables de sesión y `catalog_run_id`. | Endpoint y corrida visibles. |
+| Configuración | Declara el portal oficial, grupo GTFS, tablas y modo de selección. | Identificador público, modo y fechas opcionales. | Variables de sesión y `catalog_run_id`. | Endpoint, corrida y modo visibles. |
 | Consulta | Recorre las páginas del catálogo ArcGIS público. | Respuesta JSON del grupo oficial. | Ítems del catálogo en memoria. | HTTP exitoso, sin error ArcGIS y al menos un ítem. |
 | Contrato | Conserva solo ítems con versión GTFS fechada y normaliza metadata. | Ítems descubiertos. | DataFrame con esquema explícito. | Patrón de fecha, ítem único y URL directa identificada. |
 | Control y auditoría | Mantiene el estado actual y el historial de observaciones. | Catálogo normalizado. | Tablas Delta de control y auditoría. | `MERGE` por ítem y auditoría append-only. |
-| Plan | Muestra versiones descargables que aún no tienen rutas Bronze. | Control del catálogo y `bronze_gtfs_routes`. | Plan para `latest_uningested`. | Solo versiones con ZIP directo y sin carga Bronze. |
+| Plan | Selecciona una, varias o la última versión descargable sin Bronze. | Control, `bronze_gtfs_routes` y parámetros. | Plan para `latest_uningested`, `explicit_version` o `backfill_range`. | Solo ZIP directo, sin carga Bronze y con fechas válidas. |

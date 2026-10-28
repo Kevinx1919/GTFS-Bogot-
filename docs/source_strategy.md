@@ -64,6 +64,20 @@ de descubrimiento y de ingesta se guarda aparte en UTC. Antes de descargar, el
 Workflow persiste el plan de ejecución; así un reintento procesa las mismas
 versiones y no una versión "más reciente" aparecida durante la corrida.
 
+### Contrato de parámetros entre notebooks
+
+| Notebook | Parámetros de entrada | Salida que habilita |
+| --- | --- | --- |
+| `06_discover_static_gtfs_catalog` | `selection_mode`, `explicit_version`, `start_date`, `end_date` | Plan de versiones pendientes. |
+| `02_raw_static_gtfs_ingestion` | `feed_version` | Resuelve URL desde control, conserva Raw y publica `snapshot_sha256`. |
+| `03_bronze_static_gtfs` | `feed_version`, `snapshot_sha256` | ZIP expandido en Staging y rutas Bronze. |
+| `04_bronze_static_gtfs_reference_entities` | `feed_version`, `snapshot_sha256` | Entidades de referencia Bronze. |
+| `05_bronze_static_gtfs_operational_entities` | `feed_version`, `snapshot_sha256` | Geometrías y horarios Bronze. |
+
+`02` no acepta una URL suministrada por el operador: la resuelve desde la tabla
+de control. Esta restricción evita descargar un origen no descubierto ni perder
+la relación entre la versión publicada, el ítem ArcGIS y el ZIP conservado.
+
 Para el análisis de cambios se usarán tres referencias: versión actual (última
 validada), versión anterior válida y versión histórica seleccionada por período.
 No se interpretan estas comparaciones como demanda ni operación observada.
