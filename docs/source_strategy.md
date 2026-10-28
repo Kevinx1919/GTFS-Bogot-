@@ -25,6 +25,47 @@ Antes de promover una fuente a Bronze, el notebook de exploración debe registra
 - Reglas de calidad: campos requeridos, valores nulos, duplicados y rangos.
 - Método de idempotencia y criterio para detectar una nueva versión.
 
+## Workflow de GTFS estático: descubrimiento, selección e ingesta
+
+La automatización se implementará con **Databricks Workflows**. n8n no ejecutará
+PySpark ni escribirá en el lakehouse; podrá notificar el resultado de una
+ejecución ya finalizada.
+
+```text
+Catálogo ArcGIS oficial
+        ↓
+06_discover_static_gtfs_catalog
+        ↓
+control_gtfs_static_catalog + auditoría append-only
+        ↓
+plan de ingesta determinista
+        ↓
+02 Raw → 03 Staging → 04/05 Bronze
+        ↓
+controles de calidad y alerta
+```
+
+El descubrimiento consulta el grupo oficial de GTFS y registra la fecha publicada
+(`feed_version`), URL candidata, identificador del ítem ArcGIS, fechas de portal
+y una huella de metadata. No descarga archivos ni selecciona una URL no resuelta.
+
+El Job admitirá tres modos de selección:
+
+| Modo | Propósito | Criterio |
+| --- | --- | --- |
+| `latest_uningested` | Operación incremental. | Versión directa más reciente que aún no tiene registros Bronze. |
+| `backfill_range` | Carga histórica inicial. | Versiones publicadas dentro de un rango de fechas explícito. |
+| `explicit_version` | Reproceso o análisis reproducible. | Una fecha de versión exacta indicada por el operador. |
+
+La fecha de versión pertenece al proveedor y se extrae del catálogo. El momento
+de descubrimiento y de ingesta se guarda aparte en UTC. Antes de descargar, el
+Workflow persiste el plan de ejecución; así un reintento procesa las mismas
+versiones y no una versión "más reciente" aparecida durante la corrida.
+
+Para el análisis de cambios se usarán tres referencias: versión actual (última
+validada), versión anterior válida y versión histórica seleccionada por período.
+No se interpretan estas comparaciones como demanda ni operación observada.
+
 ## Relación entre oferta y demanda
 
 El análisis solo avanzará cuando se pueda demostrar una correspondencia válida entre las fuentes:

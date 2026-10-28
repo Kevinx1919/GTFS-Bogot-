@@ -41,3 +41,16 @@ Resultado: la versión `2025-10-28` se almacenó con HTTP 200 y hash `07ba2ba9bb
 | Configuración y contrato | Identifica el snapshot y las columnas mínimas de las entidades grandes. | `shapes.txt` y `stop_times.txt`. | Variables y contratos en memoria. | Archivos y encabezados válidos. |
 | Carga de geometrías | Persiste la geometría planificada de recorridos. | `shapes.txt` en Staging. | `bronze_gtfs_shapes`. | Conteo e indicador de idempotencia. |
 | Carga de horarios | Persiste la secuencia de paradas por viaje. | `stop_times.txt` en Staging. | `bronze_gtfs_stop_times`. | Conteo, muestra ordenada y `describe detail`. |
+
+Resultado: para la versión `2025-10-28`, se validaron 909.878 filas en
+`bronze_gtfs_shapes` y 5.698.892 filas en `bronze_gtfs_stop_times`.
+
+## Notebook 06 — `06_discover_static_gtfs_catalog`
+
+| Bloque | Propósito | Entrada | Efecto / salida | Validación |
+| --- | --- | --- | --- | --- |
+| Configuración | Declara el portal oficial, grupo GTFS y tablas de control. | URLs e identificador público del grupo. | Variables de sesión y `catalog_run_id`. | Endpoint y corrida visibles. |
+| Consulta | Recorre las páginas del catálogo ArcGIS público. | Respuesta JSON del grupo oficial. | Ítems del catálogo en memoria. | HTTP exitoso, sin error ArcGIS y al menos un ítem. |
+| Contrato | Conserva solo ítems con versión GTFS fechada y normaliza metadata. | Ítems descubiertos. | DataFrame con esquema explícito. | Patrón de fecha, ítem único y URL directa identificada. |
+| Control y auditoría | Mantiene el estado actual y el historial de observaciones. | Catálogo normalizado. | Tablas Delta de control y auditoría. | `MERGE` por ítem y auditoría append-only. |
+| Plan | Muestra versiones descargables que aún no tienen rutas Bronze. | Control del catálogo y `bronze_gtfs_routes`. | Plan para `latest_uningested`. | Solo versiones con ZIP directo y sin carga Bronze. |

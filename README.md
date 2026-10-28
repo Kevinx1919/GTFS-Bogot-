@@ -21,7 +21,7 @@ El producto responderá preguntas como:
 GTFS estático + validaciones/salidas oficiales + GTFS-Realtime
                 |
                 v
-Databricks Jobs por frecuencia de fuente (America/Bogota)
+Databricks Workflows: descubrimiento, plan de ingesta y Jobs por fuente (America/Bogota)
                 |
                 v
 Unity Catalog Volume: archivos raw inmutables + manifiesto
@@ -104,16 +104,17 @@ Las líneas base requieren historial suficiente; durante los primeros días el p
 ## Roadmap
 
 1. Validar fuentes oficiales, contratos y conectividad desde Databricks.
-2. Implementar captura raw idempotente del GTFS estático versionado.
-3. Inspeccionar e incorporar validaciones mensuales como primera fuente de demanda.
-4. Incorporar salidas y, después, validaciones diarias según su esquema y volumen.
-5. Construir Bronze/Silver, modelo dimensional y controles de calidad.
-6. Comparar oferta planificada y demanda observada sin inferir ocupación o puntualidad.
-7. Reintentar la incorporación de GTFS-Realtime con auditoría y reglas de frescura.
-8. Construir métricas Gold, Power BI y detección determinista de anomalías.
-9. Conectar n8n/Ollama únicamente a una vista de anomalías aprobadas.
+2. Descubrir automáticamente las versiones GTFS y persistir un plan de ingesta reproducible.
+3. Implementar captura Raw idempotente del GTFS estático versionado y backfill histórico.
+4. Inspeccionar e incorporar validaciones mensuales como primera fuente de demanda.
+5. Incorporar salidas y, después, validaciones diarias según su esquema y volumen.
+6. Construir Bronze/Silver, modelo dimensional y controles de calidad.
+7. Comparar oferta planificada y demanda observada sin inferir ocupación o puntualidad.
+8. Reintentar la incorporación de GTFS-Realtime con auditoría y reglas de frescura.
+9. Construir métricas Gold, Power BI y detección determinista de anomalías.
+10. Conectar n8n/Ollama únicamente a una vista de anomalías aprobadas.
 10. Automatizar, observar costos y documentar operación/recuperación.
 
 ## Estado actual
 
-La primera versión GTFS estática (`2025-10-28`) fue validada y preservada en Raw con manifiesto. También existe la primera tabla Delta Bronze, `bronze_gtfs_routes`, con 676 rutas. Los notebooks de Raw y Bronze están versionados en `databricks/notebooks`; las entidades restantes de Bronze están listas para ejecutarse desde el Git folder de Databricks.
+La primera versión GTFS estática (`2025-10-28`) fue validada y preservada en Raw con manifiesto. La versión cuenta con 11 tablas Bronze, incluidas rutas, paradas, viajes, calendarios, geometrías y horarios por parada. El siguiente componente es el descubrimiento automatizado de versiones publicadas para habilitar el backfill histórico reproducible.
