@@ -55,3 +55,19 @@ Resultado: para la versión `2025-10-28`, se validaron 909.878 filas en
 | Contrato | Conserva solo ítems con versión GTFS fechada y normaliza metadata. | Ítems descubiertos. | DataFrame con esquema explícito. | Patrón de fecha, ítem único y URL directa identificada. |
 | Control y auditoría | Mantiene el estado actual y el historial de observaciones. | Catálogo normalizado. | Tablas Delta de control y auditoría. | `MERGE` por ítem y auditoría append-only. |
 | Plan | Selecciona una, varias o la última versión descargable sin Bronze. | Control, `bronze_gtfs_routes` y parámetros. | Plan para `latest_uningested`, `explicit_version` o `backfill_range`. | Solo ZIP directo, sin carga Bronze y con fechas válidas. |
+
+## Notebook 07 — `07_validate_bronze_gtfs_snapshot`
+
+| Bloque | Propósito | Entrada | Efecto / salida | Validación |
+| --- | --- | --- | --- | --- |
+| Parámetros | Identifica un único snapshot ya cargado. | Versión GTFS y SHA-256. | Variables de sesión y `quality_run_id`. | Formato de versión y hash; ruta de Staging definida. |
+| Contrato | Declara entidades requeridas, opcionales e identificadores críticos. | Contrato GTFS del proyecto. | Reglas en memoria. | No inventa datos si falta un archivo opcional. |
+| Utilidades | Define esquemas explícitos y funciones de auditoría. | Metadatos de la corrida. | Filas de calidad acumuladas en memoria. | Esquemas de auditoría sin inferencia. |
+| Presencia y procedencia | Comprueba Staging, filas Bronze y versión fuente por entidad. | Snapshot de Staging y tablas Bronze. | Evidencia de completitud y linaje. | Los archivos requeridos y sus tablas deben tener filas. |
+| Identificadores y relaciones | Revisa IDs críticos y relaciones GTFS básicas. | `routes`, `stops`, `trips`, `stop_times`, calendarios. | Fallos por IDs vacíos; advertencias por huérfanos fuente. | IDs no nulos; huérfanos registrados, no eliminados. |
+| Evolución de esquema | Guarda una observación por archivo y hash; compara contra la versión previa. | Encabezados de Staging e historial de observaciones. | `audit_gtfs_source_schema_observations`. | Campos nuevos o retirados aparecen como advertencia revisable. |
+| Resultado | Persiste los checks y decide el estado de la corrida. | Todas las filas de auditoría. | `audit_gtfs_bronze_snapshot_quality` y task values para el Job. | `FAIL` con severidad `ERROR` detiene el Workflow después de registrar evidencia. |
+
+Resultado esperado: `PASSED` si las reglas bloqueantes se cumplen, `WARNING` si hay
+cambios de esquema o relaciones huérfanas que requieren revisión, y `FAILED` si
+falta evidencia obligatoria o un identificador crítico no es válido.
