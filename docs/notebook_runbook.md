@@ -66,7 +66,7 @@ Resultado: para la versión `2025-10-28`, se validaron 909.878 filas en
 | Presencia y procedencia | Comprueba Staging, filas Bronze y versión fuente por entidad. | Snapshot de Staging y tablas Bronze. | Evidencia de completitud y linaje. | Los archivos requeridos y sus tablas deben tener filas. |
 | Identificadores y relaciones | Revisa IDs críticos y relaciones GTFS básicas. | `routes`, `stops`, `trips`, `stop_times`, calendarios. | Fallos por IDs vacíos; advertencias por huérfanos fuente. | IDs no nulos; huérfanos registrados, no eliminados. |
 | Evolución de esquema | Guarda una observación por archivo y hash; compara contra la versión previa. | Encabezados de Staging e historial de observaciones. | `audit_gtfs_source_schema_observations`. | Campos nuevos o retirados aparecen como advertencia revisable. |
-| Resultado | Persiste los checks y decide el estado de la corrida. | Todas las filas de auditoría. | `audit_gtfs_bronze_snapshot_quality` y task values para el Job. | `FAIL` con severidad `ERROR` detiene el Workflow después de registrar evidencia. |
+| Resultado | Persiste los checks y decide el estado de la corrida. | Todas las filas de auditoría. | `audit_gtfs_bronze_snapshot_quality` y task values para el Job. | `FAIL` con severidad `BLOCKING` detiene el Workflow después de registrar evidencia. |
 
 Resultado esperado: `PASSED` si las reglas bloqueantes se cumplen, `WARNING` si hay
 cambios de esquema o relaciones huérfanas que requieren revisión, y `FAILED` si
