@@ -32,7 +32,7 @@ Resultado: la versión `2025-10-28` se almacenó con HTTP 200 y hash `07ba2ba9bb
 | --- | --- | --- | --- | --- |
 | Configuración | Selecciona el mismo snapshot validado en Staging. | Versión y SHA-256. | Variables de sesión. | Directorio de Staging visible. |
 | Contrato | Declara columnas mínimas y diferencia archivos requeridos de opcionales. | Definiciones del feed. | Contratos en memoria. | Columnas requeridas y ausencia explícita de opcionales. |
-| Carga Bronze | Lee y escribe entidades disponibles, incluida metadata de feed si existe. | Archivos `.txt` de Staging. | Tablas `bronze_gtfs_*`. | Conteo, idempotencia y lista de opcionales omitidos. |
+| Carga Bronze | Lee y escribe entidades disponibles, incluida metadata de feed si existe. | Archivos `.txt` de Staging. | Tablas `bronze_gtfs_*`. | Conteo, idempotencia, opcionales omitidos y evolución de esquema auditada. |
 | Verificación | Inspecciona las paradas persistidas. | `bronze_gtfs_stops`. | No escribe. | Muestra de filas y `describe detail`. |
 
 ## Notebook 05 — `05_bronze_static_gtfs_operational_entities`

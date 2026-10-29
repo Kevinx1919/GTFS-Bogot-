@@ -91,6 +91,11 @@ apareció y `fare_rules.txt` dejó de estar publicado. Ambos cambios se tratan
 como evolución de contrato: el primero crea `bronze_gtfs_feed_info` y el
 segundo queda registrado como archivo opcional ausente.
 
+La versión 2026 también agregó `agency_fare_url` en agencias,
+`wheelchair_boarding` en paradas y `trip_headsign` en viajes. Bronze permite
+estas nuevas columnas mediante `mergeSchema` solamente en la escritura
+auditada de cada tabla; no se habilita evolución automática global de Delta.
+
 Para el análisis de cambios se usarán tres referencias: versión actual (última
 validada), versión anterior válida y versión histórica seleccionada por período.
 No se interpretan estas comparaciones como demanda ni operación observada.
