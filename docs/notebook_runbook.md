@@ -9,9 +9,9 @@ Los notebooks se comentan por bloque, no línea por línea. Cada bloque document
 | Bloque | Propósito | Entrada | Efecto / salida | Validación |
 | --- | --- | --- | --- | --- |
 | Configuración | Define catálogo, schema, Volume y versiones fuente. | Valores de entorno y URLs oficiales. | Variables de sesión. | Se muestran las versiones configuradas. |
-| Descarga | Obtiene el ZIP y registra metadata de la corrida. | URL de la versión seleccionada. | ZIP y metadata en memoria. | HTTP 200, tamaño y SHA-256. |
+| Descarga | Obtiene el ZIP de la versión solicitada y registra metadata de la corrida. | URL resuelta desde la tabla de control. | ZIP y metadata en memoria. | HTTP 200, tamaño y SHA-256. |
 | Validación | Comprueba estructura GTFS mínima. | Bytes del ZIP. | Resultado en memoria. | ZIP, archivos esenciales y calendario válidos. |
-| Raw | Conserva evidencia original e idempotente. | ZIP validado, hash y metadata. | ZIP y manifiesto JSON en `raw_gtfs`. | Ruta por versión/hash y manifest legible. |
+| Raw | Conserva evidencia original e idempotente. | ZIP validado, hash y metadata. | ZIP y manifiesto JSON en `raw_gtfs`. | Reintento del mismo `run_id`, ruta por versión/hash y manifest legible. |
 | Verificación | Comprueba persistencia. | Rutas Raw creadas. | No escribe. | `path`, `name`, `size`, `modificationTime`. |
 
 Resultado: la versión `2025-10-28` se almacenó con HTTP 200 y hash `07ba2ba9bb3b5bc1e38357355956757ce84fc68e6d05b74577bf017e189ab952`.
