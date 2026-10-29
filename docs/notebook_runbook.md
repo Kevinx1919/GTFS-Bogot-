@@ -24,14 +24,15 @@ Resultado: la versión `2025-10-28` se almacenó con HTTP 200 y hash `07ba2ba9bb
 | Extracción a staging | Extrae de forma idempotente los `.txt` del ZIP para lectura distribuida. | ZIP Raw. | Archivos y manifiesto de extracción en `staging_gtfs`. | Lista de archivos, tamaño descomprimido y estado de existencia. |
 | Lectura de rutas | Lee `routes.txt` conservando sus columnas fuente como texto. | `routes.txt` en Staging. | DataFrame con procedencia técnica. | Esquema visible y 676 rutas en el snapshot actual. |
 | Escritura Bronze | Persiste las rutas como tabla Delta administrada. | DataFrame de rutas con hash fuente. | `workspace.gtfs_bogota.bronze_gtfs_routes`. | Conteo del snapshot, `describe detail` e historial Delta. |
+| Deriva de esquema | Compara columnas del archivo actual contra la tabla histórica. | `routes.txt` y `bronze_gtfs_routes`. | Reporte de columnas omitidas o nuevas. | Conteo de `route_desc` no nulo por versión. |
 
 ## Notebook 04 — `04_bronze_static_gtfs_reference_entities`
 
 | Bloque | Propósito | Entrada | Efecto / salida | Validación |
 | --- | --- | --- | --- | --- |
 | Configuración | Selecciona el mismo snapshot validado en Staging. | Versión y SHA-256. | Variables de sesión. | Directorio de Staging visible. |
-| Contrato | Declara las columnas GTFS mínimas por entidad. | Definiciones del feed. | Contratos en memoria. | Cada archivo debe contener sus columnas requeridas. |
-| Carga Bronze | Lee y escribe `agency`, `stops`, `trips`, calendarios, frecuencias y tarifas. | Archivos `.txt` de Staging. | Tablas `bronze_gtfs_*`. | Conteo por archivo e indicador de idempotencia. |
+| Contrato | Declara columnas mínimas y diferencia archivos requeridos de opcionales. | Definiciones del feed. | Contratos en memoria. | Columnas requeridas y ausencia explícita de opcionales. |
+| Carga Bronze | Lee y escribe entidades disponibles, incluida metadata de feed si existe. | Archivos `.txt` de Staging. | Tablas `bronze_gtfs_*`. | Conteo, idempotencia y lista de opcionales omitidos. |
 | Verificación | Inspecciona las paradas persistidas. | `bronze_gtfs_stops`. | No escribe. | Muestra de filas y `describe detail`. |
 
 ## Notebook 05 — `05_bronze_static_gtfs_operational_entities`
