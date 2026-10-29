@@ -78,6 +78,19 @@ versiones y no una versión "más reciente" aparecida durante la corrida.
 de control. Esta restricción evita descargar un origen no descubierto ni perder
 la relación entre la versión publicada, el ítem ArcGIS y el ZIP conservado.
 
+### Evolución del contrato GTFS
+
+Las versiones GTFS pueden añadir u omitir archivos opcionales. La capa Raw y
+Staging preservan todos los `.txt` publicados; Bronze carga los disponibles y
+registra cuáles opcionales faltan. Un archivo requerido ausente detiene la
+ingesta, mientras que la ausencia de uno opcional no se convierte en filas
+ficticias.
+
+En la comparación inicial entre 2025-10-28 y 2026-09-29, `feed_info.txt`
+apareció y `fare_rules.txt` dejó de estar publicado. Ambos cambios se tratan
+como evolución de contrato: el primero crea `bronze_gtfs_feed_info` y el
+segundo queda registrado como archivo opcional ausente.
+
 Para el análisis de cambios se usarán tres referencias: versión actual (última
 validada), versión anterior válida y versión histórica seleccionada por período.
 No se interpretan estas comparaciones como demanda ni operación observada.
