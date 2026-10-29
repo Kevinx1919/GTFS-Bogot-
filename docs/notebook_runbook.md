@@ -40,8 +40,8 @@ Resultado: la versión `2025-10-28` se almacenó con HTTP 200 y hash `07ba2ba9bb
 | Bloque | Propósito | Entrada | Efecto / salida | Validación |
 | --- | --- | --- | --- | --- |
 | Configuración y contrato | Identifica el snapshot y las columnas mínimas de las entidades grandes. | `shapes.txt` y `stop_times.txt`. | Variables y contratos en memoria. | Archivos y encabezados válidos. |
-| Carga de geometrías | Persiste la geometría planificada de recorridos. | `shapes.txt` en Staging. | `bronze_gtfs_shapes`. | Conteo e indicador de idempotencia. |
-| Carga de horarios | Persiste la secuencia de paradas por viaje. | `stop_times.txt` en Staging. | `bronze_gtfs_stop_times`. | Conteo, muestra ordenada y `describe detail`. |
+| Carga de geometrías | Persiste la geometría planificada de recorridos. | `shapes.txt` en Staging. | `bronze_gtfs_shapes`. | Conteo, idempotencia y evolución explícita de esquema. |
+| Carga de horarios | Persiste la secuencia de paradas por viaje. | `stop_times.txt` en Staging. | `bronze_gtfs_stop_times`. | Conteo, muestra ordenada, `describe detail` y evolución explícita de esquema. |
 
 Resultado: para la versión `2025-10-28`, se validaron 909.878 filas en
 `bronze_gtfs_shapes` y 5.698.892 filas en `bronze_gtfs_stop_times`.
