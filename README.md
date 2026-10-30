@@ -117,4 +117,6 @@ Las líneas base requieren historial suficiente; durante los primeros días el p
 
 ## Estado actual
 
-La primera versión GTFS estática (`2025-10-28`) fue validada y preservada en Raw con manifiesto. La versión cuenta con 11 tablas Bronze, incluidas rutas, paradas, viajes, calendarios, geometrías y horarios por parada. El siguiente componente es el descubrimiento automatizado de versiones publicadas para habilitar el backfill histórico reproducible.
+Los snapshots GTFS estáticos `2025-10-28` y `2026-09-29` están preservados en Raw y cargados en tablas Delta Bronze. El Job manual `gtfs_bogota_bronze_manual` ejecutó con éxito Raw, Staging, cargas Bronze y validación de calidad. La comparación de esquemas identificó cinco cambios entre versiones sin fallos bloqueantes; una reejecución conservó el conteo esperado de 9.408.893 filas de `stop_times` para 2026.
+
+El notebook de descubrimiento de versiones funciona, pero aún no está conectado al Job. Quedan pendientes el manejo de «sin novedades», pruebas de recuperación, observabilidad y configuración versionada antes de programarlo automáticamente. Silver todavía no está implementada. El detalle y las limitaciones de este primer hito están en [Build in Public](BUILD_IN_PUBLIC.md#hito-08--primer-flujo-raw-a-bronze-ejecutado-con-éxito).
