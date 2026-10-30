@@ -176,6 +176,26 @@ Intento 3 → HTTP 500 → ejecución finalizada sin escritura raw
 
 **Antes de programar automáticamente:** conectar el descubrimiento al Job, tratar la ausencia de versiones nuevas como una salida normal, probar cargas parciales y reintentos, y hacer visibles las advertencias. El Job actual es manual y su configuración está en la interfaz de Databricks; todavía debe versionarse como configuración reproducible. El siguiente paso analítico es diseñar Silver según las preguntas de negocio y la granularidad de cada entidad.
 
+### Hito 09 — Revisar el contrato de Bronze antes de diseñar Silver
+
+**Fecha de inicio:** 29 de octubre de 2026. **Estado inicial:** observaciones de código verificadas; correcciones y prueba en Databricks pendientes. El PR #1 ya está fusionado y el trabajo continúa en `feature/silver-referencias`, creada desde `main` en `1bde977`.
+
+**Qué encontramos:** el notebook 02 calcula `validation_passed`, pero no detiene la persistencia cuando falta un archivo esencial o la definición de calendario. Los notebooks 04 y 07 exigen simultáneamente `calendar.txt` y `calendar_dates.txt`; GTFS permite el patrón semanal, fechas explícitas o ambos. Además, el check de servicios del notebook 07 solo se ejecuta si están disponibles ambas tablas. La comprobación de versión de Bronze no cuenta los nulos como discrepancia y tampoco bloquea filas atribuidas a un archivo ausente en Staging. El notebook 00 todavía apunta al schema del proyecto anterior.
+
+**Cómo lo vamos a corregir:** bloquear Raw antes de escribir cuando la estructura no sea válida; admitir al menos un archivo de calendario en la carga y en la auditoría; validar `trips.service_id` con las fuentes de calendario realmente disponibles; tratar una versión nula o distinta y filas sin archivo fuente como fallos de procedencia; exigir los encabezados semanales cuando se publique `calendar.txt`; y corregir el destino de la prueba de entorno. Se actualizará el runbook y se añadirán pruebas locales con ZIP pequeños y dobles de prueba, sin consultar fuentes reales.
+
+**Límite de este cambio:** Bronze seguirá conservando los campos fuente como texto y sin borrar registros. Los tipos analíticos, la deduplicación y la cuarentena de negocio se implementarán en Silver. Concurrencia, recuperación integral, persistencia del plan de descubrimiento y configuración versionada del Job siguen pendientes para la etapa de automatización; no se presentan como resueltos.
+
+**Verificación prevista:** pruebas locales de aceptación y rechazo, sintaxis de los notebooks y revisión del diff. Después se ejecutará la auditoría 07 en Databricks para los dos snapshots existentes. Una prueba local no demuestra escrituras Delta, rendimiento ni concurrencia. No se borrarán ni recargarán las tablas históricas como parte de esta corrección.
+
+**Resultado local:** se aplicaron las correcciones a los notebooks 00, 02, 04 y 07, manteniendo sus rutas y los esquemas de las tablas Bronze. La suite `py -B -m unittest discover -s tests -v` pasó 16 pruebas, con subcasos para las tres combinaciones de calendario. Se comprobó rechazo antes de escribir, reintento Raw sin sobrescribir el ZIP ni el manifiesto de la misma corrida, calendarios, encabezados semanales, servicios huérfanos y procedencia. Los ZIP son sintéticos; se ejecuta el código real de los bloques con dobles de Spark, no el motor Spark/Delta.
+
+**Error durante las pruebas:** el primer pase tuvo dos fallos por la captura de constantes del doble local de expresiones. Se corrigió el soporte de pruebas y se añadió un caso de snapshot completo válido para comprobar que no se generen fallos de presencia incorrectos. El siguiente pase terminó sin fallos. Esto no se presenta como un incidente de Databricks.
+
+**Pendiente de verificación remota:** ejecutar 04 y después 07 para cada snapshot, revisar los nuevos `quality_run_id`, las advertencias y los conteos históricos. El procedimiento y las consultas están en `docs/notebook_runbook.md`. No se han consultado ni modificado tablas en Databricks durante esta corrección. No se requiere volver a descargar los ZIP ni ejecutar 03/05; avanzar a Silver depende de revisar la evidencia real de esta revalidación.
+
+**Fuente del contrato:** [Referencia oficial GTFS: archivos y calendarios](https://gtfs.org/documentation/schedule/reference/#dataset-files). La presencia de un archivo no demuestra que sus filas cumplan todas las reglas del estándar; esa validación se ampliará por etapas.
+
 ## Qué no publicar
 
 - Access tokens, secretos, archivos `.env`, cookies, hostnames privados o identificadores de cuenta.

@@ -120,3 +120,9 @@ Las líneas base requieren historial suficiente; durante los primeros días el p
 Los snapshots GTFS estáticos `2025-10-28` y `2026-09-29` están preservados en Raw y cargados en tablas Delta Bronze. El Job manual `gtfs_bogota_bronze_manual` ejecutó con éxito Raw, Staging, cargas Bronze y validación de calidad. La comparación de esquemas identificó cinco cambios entre versiones sin fallos bloqueantes; una reejecución conservó el conteo esperado de 9.408.893 filas de `stop_times` para 2026.
 
 El notebook de descubrimiento de versiones funciona, pero aún no está conectado al Job. Quedan pendientes el manejo de «sin novedades», pruebas de recuperación, observabilidad y configuración versionada antes de programarlo automáticamente. Silver todavía no está implementada. El detalle y las limitaciones de este primer hito están en [Build in Public](BUILD_IN_PUBLIC.md#hito-08--primer-flujo-raw-a-bronze-ejecutado-con-éxito).
+
+### Revisión del contrato antes de Silver
+
+Las correcciones locales de Raw/Bronze admiten las combinaciones válidas de calendarios, detienen Raw ante estructura incompleta y amplían la auditoría de procedencia. Las 16 pruebas locales pasan; la revalidación de los snapshots en Databricks sigue pendiente. Consulta el [Hito 09](BUILD_IN_PUBLIC.md#hito-09--revisar-el-contrato-de-bronze-antes-de-diseñar-silver) y el [procedimiento de revalidación](docs/notebook_runbook.md#revalidación-en-databricks-de-los-snapshots-existentes).
+
+Pruebas locales sin red ni Spark instalado: `py -B -m unittest discover -s tests -v`.
