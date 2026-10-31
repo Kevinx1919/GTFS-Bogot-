@@ -2,9 +2,11 @@
 
 ## Objetivo
 
-Construir un lakehouse reproducible que relacione la **oferta planificada** de TransMilenio con la **demanda observada** publicada por la entidad. El objetivo no es afirmar métricas que las fuentes no soportan.
+Quiero construir un lakehouse reproducible que relacione la **oferta planificada** de TransMilenio con la **demanda observada** publicada por la entidad. Antes de calcular una métrica, necesito entender qué representa cada fuente y hasta dónde me permite llegar.
 
 ## Fuentes priorizadas
+
+Priorizo las fuentes que me permiten avanzar sin depender de que GTFS-Realtime esté disponible. El orden también me ayuda a aprender una integración a la vez.
 
 | Prioridad | Fuente | Formato esperado | Pregunta que habilita | Frecuencia de ingesta |
 | --- | --- | --- | --- | --- |
@@ -16,7 +18,7 @@ Construir un lakehouse reproducible que relacione la **oferta planificada** de T
 
 ## Contrato de cada fuente
 
-Antes de promover una fuente a Bronze, el notebook de exploración debe registrar:
+Antes de llevar una fuente a Bronze, reviso y dejo registrado lo siguiente:
 
 - URL o identificador oficial, responsable y condiciones de uso.
 - Formato, tamaño aproximado, hash SHA-256 y fecha/hora UTC de captura.
@@ -27,7 +29,7 @@ Antes de promover una fuente a Bronze, el notebook de exploración debe registra
 
 ## Workflow de GTFS estático: descubrimiento, selección e ingesta
 
-La automatización se implementará con **Databricks Workflows**. n8n no ejecutará
+Para automatizar el flujo usaré **Databricks Workflows**. n8n no ejecutará
 PySpark ni escribirá en el lakehouse; podrá notificar el resultado de una
 ejecución ya finalizada.
 
@@ -51,7 +53,7 @@ registra la fecha publicada (`feed_version`), URL candidata, identificador del
 selecciona una URL no resuelta. El portal GIS operativo de TransMilenio expone
 otros recursos y no contiene este grupo; usar el host incorrecto devuelve 400.
 
-El Job admitirá tres modos de selección:
+Estoy diseñando el Job para estos tres modos de selección:
 
 | Modo | Propósito | Criterio |
 | --- | --- | --- |
@@ -60,9 +62,10 @@ El Job admitirá tres modos de selección:
 | `explicit_version` | Reproceso o análisis reproducible. | Una fecha de versión exacta indicada por el operador. |
 
 La fecha de versión pertenece al proveedor y se extrae del catálogo. El momento
-de descubrimiento y de ingesta se guarda aparte en UTC. Antes de descargar, el
-Workflow persiste el plan de ejecución; así un reintento procesa las mismas
-versiones y no una versión "más reciente" aparecida durante la corrida.
+de descubrimiento y de ingesta se guarda aparte en UTC. Antes de descargar quiero que el
+Workflow guarde el plan de ejecución; así podré reintentar las mismas versiones
+aunque aparezca una publicación más reciente. La persistencia de ese plan sigue
+pendiente de implementar.
 
 ### Contrato de parámetros entre notebooks
 
@@ -96,25 +99,27 @@ La versión 2026 también agregó `agency_fare_url` en agencias,
 estas nuevas columnas mediante `mergeSchema` solamente en la escritura
 auditada de cada tabla; no se habilita evolución automática global de Delta.
 
-Para el análisis de cambios se usarán tres referencias: versión actual (última
+Para analizar cambios usaré tres referencias: versión actual (última
 validada), versión anterior válida y versión histórica seleccionada por período.
 No se interpretan estas comparaciones como demanda ni operación observada.
 
 ## Relación entre oferta y demanda
 
-El análisis solo avanzará cuando se pueda demostrar una correspondencia válida entre las fuentes:
+Lo pienso como tener un horario de buses y un conteo de entradas a una estación: el primero me habla de lo planificado y el segundo de accesos registrados. Para relacionarlos necesito comprobar que fecha, lugar y franja realmente coincidan.
+
+Solo avanzaré con el cruce cuando pueda demostrar una correspondencia válida entre las fuentes:
 
 ```text
 fecha + franja + estación/parada o zona + componente
 ```
 
-Si las identificaciones no coinciden, se crea una tabla de mapeo explícita, con fuente y fecha de vigencia. No se usarán coincidencias de texto no verificadas en métricas Gold.
+Si las identificaciones no coinciden, necesitaré una tabla de mapeo explícita, con fuente y fecha de vigencia. No usaré nombres parecidos como prueba suficiente para unir datos en Gold.
 
 La métrica resultante se llamará **proxy de presión demanda-oferta planificada**. No representa ocupación por vehículo, puntualidad, tiempos de espera ni origen-destino.
 
 ## Autenticación
 
-Los portales ArcGIS pueden exponer un servicio de tokens y, a la vez, publicar recursos anónimos. La necesidad de token se evalúa por recurso:
+Los portales ArcGIS pueden exponer un servicio de tokens y, a la vez, publicar recursos anónimos. Por eso evalúo la necesidad de token para cada recurso:
 
 - HTTP 200 anónimo: usar el recurso público sin token.
 - HTTP 401/403 o metadato privado: detener integración y evaluar autorización.

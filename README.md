@@ -1,6 +1,6 @@
 # Bogotá GTFS Mobility Lakehouse
 
-Lakehouse de movilidad urbana para Bogotá. El proyecto integra la oferta planificada de GTFS estático con demanda observada en validaciones y salidas del sistema. GTFS-Realtime se incorpora cuando el proveedor esté disponible para enriquecer el análisis con operación de flota. Está diseñado como un proyecto de portafolio de ingeniería de datos, con Databricks, PySpark, Delta Lake, Power BI y n8n/Ollama.
+Estoy construyendo un lakehouse de movilidad para Bogotá mientras aprendo Databricks y PySpark. Empecé con el GTFS estático para entender la oferta planificada de TransMilenio; más adelante quiero relacionarlo con validaciones y salidas oficiales. Incorporaré GTFS-Realtime cuando la fuente esté disponible. Mi objetivo es tener un proyecto de portafolio que pueda explicar desde la ingesta hasta el análisis en Power BI.
 
 > La velocidad operacional se deriva de posiciones consecutivas de vehículos. No representa ni pretende medir la congestión total de la ciudad.
 
@@ -8,7 +8,7 @@ Lakehouse de movilidad urbana para Bogotá. El proyecto integra la oferta planif
 
 Los equipos de operación necesitan detectar degradaciones del servicio y entender qué rutas, franjas horarias o eventos las explican. La información en tiempo real es efímera y los archivos GTFS estáticos describen la operación planificada, por lo que se requiere conservar ambos y convertirlos en métricas confiables.
 
-El producto responderá preguntas como:
+Con las fuentes y validaciones necesarias, quiero llegar a responder preguntas como:
 
 - ¿Qué rutas tienen menor cobertura de vehículos frente a su patrón histórico?
 - ¿Cómo evoluciona la velocidad operacional por ruta, dirección y franja de cinco minutos?
@@ -42,6 +42,8 @@ Power BI / Databricks SQL        n8n + Ollama (solo lectura)
 
 ### Principios de diseño
 
+Para mí, Raw es como guardar el archivo original de una encuesta antes de corregir sus columnas: si una cifra no cuadra, puedo volver a lo que recibí. Esa idea guía las siguientes decisiones.
+
 - **Raw primero.** Cada respuesta se conserva con URL, fecha UTC, `run_id`, hash, tamaño y estado HTTP.
 - **Transformaciones deterministas.** La limpieza, las reglas de calidad y los cálculos se implementan en PySpark/SQL, no mediante un LLM.
 - **Medallion architecture.** Bronze conserva evidencia; Silver estandariza; Gold expone métricas listas para consumo.
@@ -62,7 +64,7 @@ Power BI / Databricks SQL        n8n + Ollama (solo lectura)
 | GTFS-Realtime Trip Updates | Cambios y tiempos de viaje cuando estén disponibles | Cada 5 minutos; actualmente monitorizado |
 | GTFS-Realtime Service Alerts | Alertas operativas | Cada 5 minutos; actualmente monitorizado |
 
-Las fuentes, contratos y límites analíticos se documentan en [docs/source_strategy.md](docs/source_strategy.md).
+Dejo las fuentes, contratos y límites analíticos en [docs/source_strategy.md](docs/source_strategy.md).
 
 ## Capas de datos
 
@@ -82,7 +84,7 @@ Las fuentes, contratos y límites analíticos se documentan en [docs/source_stra
 - Feed sin actualización, fallos consecutivos y frescura del último snapshot exitoso.
 - Cobertura de vehículos y velocidad operacional solo cuando GTFS-Realtime vuelva a estar disponible.
 
-Las líneas base requieren historial suficiente; durante los primeros días el pipeline recolecta evidencia y reporta calidad, sin presentar una conclusión de anomalía estadística como definitiva.
+Antes de llamar anomalía a un resultado, necesito una línea base suficiente. Durante la etapa inicial quiero reunir evidencia y revisar calidad, sin convertir una variación aislada en una conclusión definitiva.
 
 ## Stack
 
@@ -117,12 +119,22 @@ Las líneas base requieren historial suficiente; durante los primeros días el p
 
 ## Estado actual
 
-Los snapshots GTFS estáticos `2025-10-28` y `2026-09-29` están preservados en Raw y cargados en tablas Delta Bronze. El Job manual `gtfs_bogota_bronze_manual` ejecutó con éxito Raw, Staging, cargas Bronze y validación de calidad. La comparación de esquemas identificó cinco cambios entre versiones sin fallos bloqueantes; una reejecución conservó el conteo esperado de 9.408.893 filas de `stop_times` para 2026.
+Ya conservé los snapshots GTFS estáticos `2025-10-28` y `2026-09-29` en Raw y los cargué en tablas Delta Bronze. El Job manual `gtfs_bogota_bronze_manual` ejecutó con éxito Raw, Staging, cargas Bronze y validación de calidad. La comparación de esquemas identificó cinco cambios entre versiones sin fallos bloqueantes; una reejecución conservó el conteo esperado de 9.408.893 filas de `stop_times` para 2026.
 
-El notebook de descubrimiento de versiones funciona, pero aún no está conectado al Job. Quedan pendientes el manejo de «sin novedades», pruebas de recuperación, observabilidad y configuración versionada antes de programarlo automáticamente. Silver todavía no está implementada. El detalle y las limitaciones de este primer hito están en [Build in Public](BUILD_IN_PUBLIC.md#hito-08--primer-flujo-raw-a-bronze-ejecutado-con-éxito).
+El notebook de descubrimiento de versiones funciona, pero todavía tengo que conectarlo al Job. También me falta manejar «sin novedades», probar recuperación y dejar la observabilidad y configuración versionada listas antes de programarlo automáticamente. Silver todavía no está implementada. El detalle y las limitaciones de este primer hito están en [Build in Public](BUILD_IN_PUBLIC.md#hito-08--primer-flujo-raw-a-bronze-ejecutado-con-éxito).
 
 ### Revisión del contrato antes de Silver
 
-Las correcciones locales de Raw/Bronze admiten las combinaciones válidas de calendarios, detienen Raw ante estructura incompleta y amplían la auditoría de procedencia. Las 16 pruebas locales pasan; la revalidación de los snapshots en Databricks sigue pendiente. Consulta el [Hito 09](BUILD_IN_PUBLIC.md#hito-09--revisar-el-contrato-de-bronze-antes-de-diseñar-silver) y el [procedimiento de revalidación](docs/notebook_runbook.md#revalidación-en-databricks-de-los-snapshots-existentes).
+Las correcciones locales de Raw/Bronze admiten las combinaciones válidas de calendarios, detienen Raw ante estructura incompleta y amplían la auditoría de procedencia. Las 16 pruebas locales pasan. Al repetir la validación de ambos snapshots obtuve estos resultados: 2025 terminó en `PASSED`, sin fallos ni advertencias; 2026 en `WARNING`, sin fallos bloqueantes y con cinco advertencias de evolución de esquema conocida. En 04, las ocho entidades de referencia de cada versión omitieron nuevas inserciones al reconocer el hash existente. Mi siguiente paso es perfilar agencias y rutas para definir su contrato Silver. El detalle está en el [Hito 09](BUILD_IN_PUBLIC.md#hito-09--revisar-el-contrato-de-bronze-antes-de-diseñar-silver) y el [procedimiento de revalidación](docs/notebook_runbook.md#revalidación-en-databricks-de-los-snapshots-existentes).
 
 Pruebas locales sin red ni Spark instalado: `py -B -m unittest discover -s tests -v`.
+
+### Plan de Silver
+
+**Mi punto de entrada es el [notebook SQL guiado de agency](databricks/notebooks/silver/08_agency_sql_guiado.ipynb): una pregunta pequeña por bloque.** El [README de Silver](databricks/notebooks/silver/README.md) explica el recorrido y para qué sirve cada archivo. Las consultas largas ya ejecutadas con Genie están en apéndices opcionales; puedo dejarlas para después de entender las preguntas pequeñas.
+
+El [informe de agency 2025](docs/agency_profile_2025.md) registra siete IDs distintos, sin duplicados ni ausencias en los seis campos publicados; agency_fare_url no fue publicada en ese snapshot. La [bitácora](BUILD_IN_PUBLIC.md#hito-12--primera-consulta-directa-a-databricks-mediante-genie) explica la conexión MCP Codex–Genie y sus ventajas. El [plan detallado](docs/silver_design.md) mantiene el orden completo de entidades.
+
+Sigo revisando agency: quiero entender bien el resultado de 2025, perfilar 2026 y definir el contrato antes de transformar. No hay tablas Silver creadas. El perfilador PySpark queda como alternativa de automatización; todavía no he ejecutado en Databricks la guía nueva ni ese notebook.
+
+Verificación local del perfilador: 22 pruebas aprobadas y 3 omitidas que requieren Spark real. Las consultas SQL históricas fueron verificadas por separado en Databricks.
