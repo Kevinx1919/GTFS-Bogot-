@@ -55,7 +55,7 @@ Do not commit raw GTFS snapshots, large binary protobuf files, databases, genera
 - Make time zones explicit in code and SQL.
 - Configuration must be environment-driven; never hardcode workspace URLs, catalog names, volume paths, endpoint URLs or secrets in reusable code.
 
-## Learning documentation
+
 
 - Every notebook block added to the project must be documented in `docs/notebook_runbook.md` before or alongside its implementation.
 - Document at block level: purpose, inputs, outputs, persistent side effects, validation and material operational decisions.
