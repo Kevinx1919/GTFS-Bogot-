@@ -270,6 +270,40 @@ Por ahora mantengo la propuesta string para los campos conocidos. No encontré u
 
 **Lo que sigue:** revisar con calma el informe de 2025, perfilar agency de 2026 y definir el contrato Silver. No he modificado Bronze, creado Silver ni avanzado a routes. Tampoco interpreto los IDs como una identidad empresarial validada o una garantía de continuidad entre versiones.
 
+### Hito 14 — Decisión de preservar agency por snapshot
+
+**Fecha:** 6 de noviembre de 2026. Revisé las salidas del perfilador PySpark de agency para 2025 y 2026. En ambos snapshots encontré siete filas y siete IDs distintos con contenido, sin duplicados ni colisiones potenciales al quitar espacios. Los campos publicados tenían contenido; `agency_fare_url` estaba ausente en 2025 y publicado con siete valores no vacíos en 2026. Estas comprobaciones no sustituyen la validación de formatos pendiente.
+
+**El hallazgo:** algunos números de `agency_id` aparecen asociados a nombres distintos entre versiones. No encontré una causa confirmada del cambio y no interpreto la URL compartida como identificador.
+
+**Qué contrasté:** con consultas de lectura mediante Genie revisé las rutas dentro de cada snapshot. Recuperé 676 IDs de ruta distintos en 2025 y 1.045 en 2026; solo uno coincidía literalmente entre versiones. También encontré coincidencias de etiquetas de ruta entre categorías distintas. Esto no demuestra desapariciones, altas reales ni continuidad de servicios, y no respalda una equivalencia automática de agencias.
+
+**Mi decisión:** conservaré la clave `(source_feed_version, source_sha256, agency_id)` y los atributos originales de cada versión. Las relaciones con rutas usarán esos tres campos. No sobrescribiré el histórico ni construiré ahora una homologación entre años. Dejé las reglas en el [plan Silver](docs/silver_design.md).
+
+**Alcance:** quedó documentada la decisión. Todavía no he creado tablas o transformaciones Silver. Antes de publicar comprobaré que una reejecución no duplique el snapshot ni altere otras versiones.
+
+### Hito 15 — Contrato v1 de agency antes de publicar Silver
+
+**Fecha:** 6 de noviembre de 2026. Después de entender el perfilado de ambos snapshots, definí el [contrato v1 de agency](docs/contracts/agency.md). Todos sus campos de negocio conservarán string. Exigiré ID con contenido para estas versiones con varias agencias y mantendré la clave por versión, hash e ID.
+
+**Las reglas:** separé campos requeridos, ausencias opcionales y valores presentes que no cumplen su formato. No rellenaré desde otro año ni convertiré un error en null sin explicarlo. En la primera implementación, un error bloqueante impedirá publicar un snapshot parcial; la evidencia de rechazo quedará en cuarentena y auditoría cuando las implemente.
+
+**Mi límite:** completitud y unicidad ya fueron revisadas. Aún no he ejecutado los validadores de formato de URL, zona e idioma, ni creado Silver. Documenté el alcance acotado de teléfonos y correo y las pruebas necesarias para no presentar controles básicos como una validación integral.
+
+**Cómo continuaré:** prepararé los validadores y la transformación determinista con su runbook y sus pruebas. Comprobaré que una reejecución mantenga las claves y valores de negocio y no altere el otro snapshot. Este hito modifica documentación; no datos ni notebooks.
+
+### Hito 16 — Validadores de agency y primer contraste del contrato
+
+**Fecha:** 6 de noviembre de 2026. Implementé las reglas en módulos Python pequeños y preparé el notebook 09 para ejecutarlas con PySpark. El notebook lee Bronze y el encabezado Staging, limita agency a 1.000 filas y muestra candidatos, rechazos con motivos y advertencias. No escribe tablas ni modifica el Job.
+
+**Qué probé:** la suite completa terminó con 51 pruebas: 45 aprobadas y 6 omitidas porque falta PySpark local. Java sí está disponible. Los casos del núcleo incluyen ausencias, URLs inválidas, idiomas y zonas, controles, conflictos, copias y separación de snapshots. Las seis omitidas requieren Spark; no las cuento como aprobadas.
+
+**El contraste real:** recuperé mediante Genie las 14 filas completas y los encabezados auditados, sin truncamiento. Ejecuté localmente el mismo núcleo Python que usa el notebook: cada snapshot produjo siete candidatos, cero rechazos, cero copias consolidadas y cero advertencias, con reconciliación correcta. Fijé langcodes 3.5.1 y tzdata 2026.6. Guardé el [SQL y el informe agregado](docs/agency_validation_2025_2026.md), no las filas fuente en Git.
+
+**La diferencia que mantengo clara:** el núcleo ya fue ejecutado con datos reales; eso no demuestra la ejecución del notebook 09, la importación de módulos en Workspace ni el lector Spark. Tampoco he persistido Silver o cuarentena ni probado transacciones Delta.
+
+**Mi siguiente comprobación:** ejecutar 09 por bloques en Databricks, con el repositorio completo y cada snapshot, antes de preparar la escritura limitada al snapshot y sus pruebas de reintento.
+
 ## Qué no publicar
 
 - Access tokens, secretos, archivos `.env`, cookies, hostnames privados o identificadores de cuenta.

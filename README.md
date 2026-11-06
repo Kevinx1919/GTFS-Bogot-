@@ -127,7 +127,7 @@ El notebook de descubrimiento de versiones funciona, pero todavía tengo que con
 
 Las correcciones locales de Raw/Bronze admiten las combinaciones válidas de calendarios, detienen Raw ante estructura incompleta y amplían la auditoría de procedencia. Las 16 pruebas locales pasan. Al repetir la validación de ambos snapshots obtuve estos resultados: 2025 terminó en `PASSED`, sin fallos ni advertencias; 2026 en `WARNING`, sin fallos bloqueantes y con cinco advertencias de evolución de esquema conocida. En 04, las ocho entidades de referencia de cada versión omitieron nuevas inserciones al reconocer el hash existente. Mi siguiente paso es perfilar agencias y rutas para definir su contrato Silver. El detalle está en el [Hito 09](BUILD_IN_PUBLIC.md#hito-09--revisar-el-contrato-de-bronze-antes-de-diseñar-silver) y el [procedimiento de revalidación](docs/notebook_runbook.md#revalidación-en-databricks-de-los-snapshots-existentes).
 
-Pruebas locales sin red ni Spark instalado: `py -B -m unittest discover -s tests -v`.
+Para las pruebas de agency, instalo antes `databricks/requirements-silver.txt` en un entorno virtual. La suite no realiza llamadas de red: `python -B -m unittest discover -s tests -v`. Las pruebas nativas Spark requieren además PySpark y Java.
 
 ### Plan de Silver
 
@@ -135,6 +135,6 @@ Pruebas locales sin red ni Spark instalado: `py -B -m unittest discover -s tests
 
 El [informe de agency 2025](docs/agency_profile_2025.md) registra siete IDs distintos, sin duplicados ni ausencias en los seis campos publicados; agency_fare_url no fue publicada en ese snapshot. La [bitácora](BUILD_IN_PUBLIC.md#hito-12--primera-consulta-directa-a-databricks-mediante-genie) explica la conexión MCP Codex–Genie y sus ventajas. El [plan detallado](docs/silver_design.md) mantiene el orden completo de entidades.
 
-Sigo revisando agency: quiero entender bien el resultado de 2025, perfilar 2026 y definir el contrato antes de transformar. No hay tablas Silver creadas. El perfilador PySpark queda como alternativa de automatización; todavía no he ejecutado en Databricks la guía nueva ni ese notebook.
+Ya revisé las salidas del perfilador PySpark de agency para 2025 y 2026. El [contrato v1 de agency](docs/contracts/agency.md) define tipos, obligatoriedad y errores, conservando la identidad por versión, hash e ID. Implementé los validadores y el [notebook 09 de lectura](databricks/notebooks/silver/09_validate_gtfs_agency.ipynb). El [informe de ambos snapshots](docs/agency_validation_2025_2026.md) registra siete candidatos y cero rechazos por versión al ejecutar el núcleo Python; la ejecución completa del notebook en Databricks sigue pendiente. No hay tablas Silver creadas; todavía no tengo una ejecución completa documentada de la guía SQL con widgets.
 
-Verificación local del perfilador: 22 pruebas aprobadas y 3 omitidas que requieren Spark real. Las consultas SQL históricas fueron verificadas por separado en Databricks.
+Verificación local actual: 45 pruebas aprobadas y 6 omitidas por falta de PySpark local. Las consultas SQL y el contraste del núcleo Python con las filas recuperadas son comprobaciones distintas de la ejecución pendiente del notebook 09.

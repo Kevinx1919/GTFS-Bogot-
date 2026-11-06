@@ -2,7 +2,7 @@
 
 ## 1. Estado y propósito
 
-**Estado de este documento:** este es mi plan para construir Silver por etapas. La carpeta Silver contiene una guía SQL de agency como punto de entrada y un perfilador PySpark como alternativa. La guía nueva y el perfilador siguen pendientes de ejecución real; el perfilado SQL histórico de 2025 sí fue comprobado. Aún no hay transformaciones ni tablas Silver. Los tipos y reglas indicados son propuestas que se confirmarán con el perfilado de cada entidad.
+**Estado de este documento:** este es mi plan para construir Silver por etapas. La carpeta Silver contiene una guía SQL de agency como punto de entrada y un perfilador PySpark como alternativa. Revisé las salidas del perfilador PySpark de agency para 2025 y 2026 y las contrasté con consultas SQL mediante Genie. La guía SQL con widgets no tiene una comprobación de ejecución completa documentada. El [contrato v1 de agency](contracts/agency.md) define el primer incremento. Su núcleo Python de validación ya fue implementado y contrastado; el notebook 09 de lectura está preparado. No hay tablas Silver, escritura Delta ni cuarentena persistida. Para las demás entidades, los tipos y reglas continúan como propuestas.
 
 **Punto de partida:** al reejecutar 04 comprobé que reconoció los hashes ya cargados de las ocho entidades de referencia de cada versión. La auditoría 07 de 2025 terminó en PASSED, sin fallos ni advertencias; la de 2026 en WARNING, sin fallos bloqueantes y con cinco advertencias de esquema conocidas. Esto no significa que ya estén probados los tipos, la unicidad o todas las reglas GTFS que necesitará Silver.
 
@@ -78,15 +78,31 @@ Los nombres silver_gtfs_* son propuestos y aún no existen como resultado de est
 | 8 | stop_times | Una visita planificada a una parada; trip_id + stop_sequence | IDs y horas fuente: string; secuencia y códigos: int; segundos: long; distancia: double | Visitas repetidas, conversiones y coherencia temporal; secuencia y horarios planificados por viaje. |
 | Después, según pregunta | feed_info y tarifas | feed_info: una fila por snapshot; fare_attributes: fare_id; fare_rules: combinación completa de campos de regla publicados | Metadata y IDs: string; fechas: date; importes: decimal con precisión/escala acordadas; códigos: int | Metadata y reglas tarifarias; no se fabrican filas cuando falta un opcional. No forman parte del primer incremento. |
 
-Ya comprobé siete filas de agency en ambos snapshots: perfilaré sus IDs; no asumiré que siete filas implican siete agencias distintas. Si aparece un caso válido de agencia única sin ID, definiré una clave técnica explícita conservando el ID fuente nulo. No se resolverán agencias múltiples mediante nombres parecidos.
+Revisé siete filas y siete IDs distintos con contenido de agency en ambos snapshots. Ese resultado no implica siete empresas jurídicas ni continuidad de identidad entre años. Si llega un caso válido de agencia única sin ID, ampliaré el contrato antes de procesarlo; la v1 actual requiere ID fuente y no lo fabricará. No se resolverán agencias múltiples mediante nombres parecidos.
 
 La referencia de servicios usa los IDs declarados por los calendarios disponibles. service_dates deriva los días activos; no se exigirá que un servicio tenga días dentro de un horizonte de consulta arbitrario para afirmar que su ID existe.
+
+### Decisión acordada: conservar la identidad de cada snapshot
+
+**Fecha: 6 de noviembre de 2026. Decisión de diseño, pendiente de implementar en la transformación Silver.** Elijo preservar el histórico con la clave `(source_feed_version, source_sha256, agency_id)`. Mantendré los nombres, IDs y URLs publicados en cada versión. La URL será un atributo, no una clave.
+
+Encontré el ID `2` asociado a `TRANSMILENIO-DUAL` en 2025 y a `Transmilenio-Alimentadores` en 2026. No tengo evidencia del motivo de ese cambio. Una regeneración de códigos o una reorganización son posibilidades, no causas confirmadas. Es como guardar dos listas de un curso: el mismo número de lista en años distintos no garantiza que represente a la misma persona.
+
+Aplicaré estas reglas en el primer incremento:
+
+- Relacionaré `routes` y `agency` por versión, hash y `agency_id` juntos. No cruzaré snapshots por el ID aislado.
+- No reemplazaré nombres o códigos de 2025 con valores de 2026. Tampoco deduplicaré agencias entre snapshots.
+- Al reejecutar una transformación, su escritura se limitará al snapshot seleccionado; verificaré que las demás versiones sigan intactas.
+- No crearé por ahora una identidad común ni una categoría homologada entre años. Una eventual correspondencia será independiente, explícita y respaldada por evidencia.
+- Un cambio de atributos entre snapshots se registrará como hallazgo histórico. Un ID repetido con atributos contradictorios dentro del mismo snapshot seguirá siendo un conflicto de calidad.
+
+Esta decisión protege el histórico; no demuestra continuidad de agencias, rutas ni operación entre versiones. Todavía no he escrito tablas Silver ni aplicado estas reglas a una carga.
 
 ### Primer incremento: agencias y rutas
 
 1. Perfilar agency de 2025; revisar su ficha; repetir para 2026.
-2. Comparar completitud y encabezados: agency_fare_url apareció en 2026, pero aún no se ha medido si tiene contenido útil.
-3. Acordar la clave y las reglas de agency. Probar y verificar su transformación antes de pasar a routes.
+2. Comparar completitud y encabezados: agency_fare_url no se publicó en 2025 y tiene siete valores con contenido en 2026. Su formato y disponibilidad web son comprobaciones distintas; la disponibilidad queda fuera de v1.
+3. Aplicar el [contrato v1 de agency](contracts/agency.md), conservando la identidad por snapshot. Preparar y comprobar sus validadores antes de publicar su transformación; después continuar con el perfilado completo de routes.
 4. Perfilar routes por separado en cada snapshot; revisar IDs, nombres, tipo, colores y relación con agency.
 5. Documentar la ausencia de route_desc en el archivo de 2026; conservar la diferencia entre campo ausente y celda vacía.
 6. Acordar y probar routes; verificar ambas versiones y la reejecución antes de continuar con stops.
@@ -139,7 +155,7 @@ Antes del primer notebook de transformaciones confirmaré el runtime y el cómpu
 
 Carpeta creada: databricks/notebooks/silver/. Mantendré los notebooks anteriores en sus rutas para no afectar el Job Bronze. La carpeta organiza código, no almacena las tablas Delta ni necesita un Volume nuevo.
 
-**Estado de notebooks:** empezar por [08_agency_sql_guiado.ipynb](../databricks/notebooks/silver/08_agency_sql_guiado.ipynb), que explica una pregunta por bloque y conserva el SQL completo en apéndices opcionales. 08_profile_gtfs_reference_entities.ipynb es la alternativa PySpark para automatizar después esas preguntas. No son dos pasos obligatorios. Routes se revisará después de agency; 09_silver_gtfs_reference_entities.ipynb sigue siendo una propuesta para la transformación posterior. La separación permite revisar resultados antes de introducir escrituras. Los bloques se documentarán en el runbook antes o al implementarlos.
+**Estado de notebooks:** empezar por [08_agency_sql_guiado.ipynb](../databricks/notebooks/silver/08_agency_sql_guiado.ipynb), que explica una pregunta por bloque y conserva el SQL completo en apéndices opcionales. 08_profile_gtfs_reference_entities.ipynb es la alternativa PySpark para automatizar después esas preguntas. No son dos pasos obligatorios. Routes se revisará después de agency; [09_validate_gtfs_agency.ipynb](../databricks/notebooks/silver/09_validate_gtfs_agency.ipynb) aplica ahora las reglas de lectura, sin escritura. La publicación Delta será un paso posterior. La separación permite revisar resultados antes de introducir escrituras. Los bloques se documentarán en el runbook antes o al implementarlos.
 
 Seguiré usando Python/PySpark dentro de notebooks para ejecutar y observar resultados. Las reglas se escribirán como funciones pequeñas; cuando necesite compartirlas y probarlas fuera del notebook, se extraerán a módulos versionados bajo databricks/. Las pruebas y fixtures pequeños se mantendrán en tests/. No se introduce ahora una nueva dependencia ni un framework de ejecución.
 
@@ -155,7 +171,7 @@ No expandiré todo stop_times por todas las fechas al comenzar. Elegiré partici
 
 Una entidad estará terminada cuando su grano y contrato estén documentados; las métricas expliquen la entrada; las filas publicadas cumplan claves, tipos y relaciones; los rechazos preserven evidencia; las pruebas pasen; la reejecución mantenga resultados de negocio; otras versiones sigan intactas; y yo pueda explicar qué obtuve y por qué lo considero válido. Solo entonces pasaré a la siguiente.
 
-**Estado actual del primer paso:** agency 2025 ya fue perfilada mediante SQL y sus resultados están en el [informe](agency_profile_2025.md). Quiero revisar con calma lo encontrado antes de continuar con 2026. El notebook 08 está creado y puede usarse para contrastar los mismos controles en PySpark; todavía no lo he ejecutado en Databricks.
+**Estado actual del primer paso:** revisé las salidas del perfilador PySpark de agency de ambos snapshots y los resultados SQL. Definí el [contrato v1](contracts/agency.md): tipos string, identidad por snapshot y política de ausencias y errores. El [núcleo de validación](agency_validation_2025_2026.md) ya pasó las pruebas locales y el contraste con ambos snapshots. Falta ejecutar el notebook 09 completo en Databricks e implementar cuarentena, auditoría y escritura con pruebas Delta de reejecución.
 
 ## 9. Cómo empieza la revisión de agency
 
@@ -178,6 +194,6 @@ Otros campos publicados quedarían con tipo propuesto pendiente; no se convierte
 
 El bloque 4 separa grupos de filas de negocio idénticas de IDs repetidos con atributos diferentes. Excluye columnas técnicas de la comparación y muestra potenciales colisiones de IDs al quitar espacios, sin aplicar esa limpieza. Las muestras se limitan a 20 filas; las métricas se calculan sobre todo el snapshot seleccionado. Solo se trae al driver una fila agregada por conjunto de métricas.
 
-**Validación local:** pasaron seis pruebas nuevas de parámetros y encabezados y las 16 existentes de Raw/Bronze. Tres pruebas adicionales con fixtures de Spark quedaron omitidas porque no están instalados PySpark y Java como entorno de pruebas local completo. Las métricas del notebook y su compatibilidad con el cómputo real siguen pendientes de ejecutar en Databricks. El perfilado SQL de agency 2025 sí está comprobado; la revisión de nulos y duplicados de 2026 sigue pendiente.
+**Validación local:** pasaron seis pruebas nuevas de parámetros y encabezados y las 16 existentes de Raw/Bronze. Tres pruebas adicionales con fixtures de Spark quedaron omitidas porque no están instalados PySpark y Java como entorno de pruebas local completo. Después revisé las salidas de ejecución manual del notebook en Databricks para ambos snapshots: siete filas e IDs distintos, sin ausencias en los campos publicados ni duplicados. Eso no ejecuta las tres pruebas de fixtures omitidas ni demuestra todavía validación de formatos o escrituras Silver.
 
-El primer [informe real de agency 2025](agency_profile_2025.md) documenta resultados agregados y decisiones propuestas; no se ha aprobado ni escrito aún la transformación Silver.
+El primer [informe real de agency 2025](agency_profile_2025.md) conserva la evidencia de esa revisión. El [contrato v1 de agency](contracts/agency.md) documenta las reglas del siguiente paso; todavía no he implementado la escritura Silver.

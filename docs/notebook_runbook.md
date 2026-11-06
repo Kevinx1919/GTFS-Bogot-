@@ -145,7 +145,7 @@ Los números y nombres son propuestos. Esta tabla describe intención, no result
 
 **Mi alternativa PySpark para automatizar.** Comienzo por 08_agency_sql_guiado para entender las preguntas. No necesito ejecutar ambas opciones como dos pasos obligatorios.
 
-**Estado:** preparé el perfilador local de agency, pero todavía no lo he ejecutado en Databricks ni lo he añadido al Job Bronze. Me faltan routes y las transformaciones.
+**Estado al 6 de noviembre de 2026:** revisé las salidas de los bloques 2, 3 y 4 ejecutados manualmente en Databricks para agency de 2025 y 2026. Ambos snapshots tienen siete filas e IDs distintos con contenido, sin duplicados. El notebook no está incorporado al Job Bronze. La investigación acotada de rutas para comparar códigos no sustituye su perfilado completo. Las transformaciones siguen pendientes.
 
 | Bloque | Propósito | Entradas | Salidas | Efectos persistentes | Verificación |
 | --- | --- | --- | --- | --- | --- |
@@ -158,13 +158,19 @@ Los números y nombres son propuestos. Esta tabla describe intención, no result
 
 **Tipos:** la propuesta de los campos conocidos de agency es string, incluido ID y teléfono. No se fuerza una conversión numérica ni se rellena ningún faltante. Campos desconocidos quedan pendientes. El perfil no valida todavía formatos URL, zona horaria, idioma ni todas las reglas de obligatoriedad, y no incorpora relaciones con routes.
 
-**Pruebas locales:** `py -B -m unittest discover -s tests -v` terminó con 22 pruebas aprobadas y 3 omitidas por requerir un entorno Spark local. Las tres pruebas Spark usan fixtures sintéticos para categorías de ausencia, duplicados conflictivos y campos desconocidos; su ejecución sigue pendiente en un entorno con PySpark/Java. La ejecución real del notebook en Databricks será una comprobación adicional, no un resultado ya obtenido.
+**Pruebas locales:** `py -B -m unittest discover -s tests -v` terminó con 22 pruebas aprobadas y 3 omitidas por requerir un entorno Spark local. Las tres pruebas Spark usan fixtures sintéticos para categorías de ausencia, duplicados conflictivos y campos desconocidos; su ejecución sigue pendiente en un entorno con PySpark/Java. La ejecución manual posterior del notebook en Databricks aportó evidencia real de ambos snapshots; no sustituye la ejecución de esos tres tests sintéticos ni prueba escrituras Delta.
+
+## Contrato de agency y siguiente ejecución
+
+El [contrato v1](contracts/agency.md) define los tipos, campos obligatorios, opcionales, errores y protección por snapshot. El notebook 09 documentado al final aplica validaciones y prepara candidatos en memoria. La cuarentena persistida, auditoría y escritura siguen pendientes; sus bloques y pruebas se documentarán antes de implementarlos.
+
+Si reinicio la sesión Python del perfilador, ejecutaré 1 → 2 → 3 → 4. Los widgets pueden seguir visibles aunque las variables e imports se hayan perdido; ejecutar solo el bloque 2 no recrea agency_table ni DataFrame. Esta situación se resolvió reejecutando los bloques previos, sin modificar código.
 
 ## Acceso de consulta mediante Genie — Hito 12
 
 Comprobé la conexión de Databricks Genie en Free Edition con dos consultas de lectura: DESCRIBE de bronze_gtfs_agency y conteo por versión/hash de los snapshots conocidos, ambos con resultado estructurado SUCCEEDED. Recuperé 11 columnas reales y 7 registros por snapshot. Esta vez obtuve los resultados mediante el conector, en lugar de depender de las salidas que había revisado desde la interfaz.
 
-Esta conexión permite continuar el perfilado con SQL revisado y resultados estructurados; no implica que se haya ejecutado el notebook 08 o que el conector pueda ejecutar sus bloques PySpark. En ese punto había comprobado esquema y conteos; la muestra, los nulos y los duplicados llegaron después, en el Hito 13. La lectura directa del encabezado Staging con el notebook sigue pendiente. El notebook permanece como implementación versionada para ejecutar y aprender en Databricks.
+Esta conexión permite continuar el perfilado con SQL revisado y resultados estructurados; no implica que se haya ejecutado el notebook 08 o que el conector pueda ejecutar sus bloques PySpark. En ese punto había comprobado esquema y conteos; la muestra, los nulos y los duplicados llegaron después, en el Hito 13. En esa comprobación inicial aún no había leído el encabezado Staging con el notebook; las salidas de la ejecución manual posterior sí muestran los encabezados. El notebook permanece como implementación versionada para ejecutar y aprender en Databricks.
 
 Usé acciones de lectura, pero eso no demuestra que mi cuenta tenga únicamente esos permisos. Mantendré las transformaciones deterministas y versionadas. No crearé dashboards para lanzar consultas ni escribiré datos durante el perfilado. Si más adelante necesito ejecutar notebooks o Jobs de forma remota, evaluaré CLI/API con su autenticación; por ahora puedo consultar con Genie.
 
@@ -174,7 +180,7 @@ Con Genie revisé agency sin ejecutar el notebook 08. El [informe de 2025](agenc
 
 Resultados: siete filas, siete IDs distintos y cero duplicados/conflictos; ningún nulo o vacío en los seis campos publicados. agency_fare_url no está en el encabezado histórico y tiene siete null en la tabla Delta. Recuperé los resultados SQL completos y los contrasté con un cálculo independiente de las siete filas: coincidieron.
 
-Leí la observación de encabezados de audit_gtfs_source_schema_observations; no abrí directamente el archivo Staging desde el conector. El notebook 08 sigue pendiente de ejecución PySpark. Para el aprendizaje puede ejecutarse de forma opcional para contrastar esas métricas; no es necesario copiar salidas para volver a demostrar el acceso SQL. Primero terminaré de entender el informe y después repetiré el perfilado de agency para 2026. Las transformaciones, pruebas Spark y contrato definitivo siguen pendientes.
+Leí la observación de encabezados de audit_gtfs_source_schema_observations; no abrí directamente el archivo Staging desde el conector. En esta revisión inicial todavía tenía pendiente ejecutar el perfilador PySpark y revisar 2026. Después contrasté las salidas de ambos snapshots y definí el [contrato v1](contracts/agency.md). Las transformaciones y las tres pruebas de fixtures con Spark siguen pendientes.
 
 ## Punto de entrada — silver/08_agency_sql_guiado
 
@@ -196,3 +202,25 @@ Leí la observación de encabezados de audit_gtfs_source_schema_observations; no
 El código original de las dos consultas sigue en databricks/sql/silver/agency_profile_2025.sql como evidencia; el notebook guiado es mi entrada principal. Dejé la explicación de la conexión Codex–Genie y sus ventajas en el Hito 12, con la precisión de que esta prueba usó herramientas MCP desde Codex desktop y no Databricks CLI.
 
 Referencias de la sintaxis de la guía: [widgets](https://docs.databricks.com/aws/en/notebooks/widgets) y [IDENTIFIER](https://docs.databricks.com/aws/en/sql/language-manual/sql-ref-names-identifier-clause).
+
+## Notebook 09 — silver/09_validate_gtfs_agency
+
+**Estado:** preparado para validación de lectura; todavía no he comprobado su ejecución completa en Databricks. El [núcleo Python fue contrastado](agency_validation_2025_2026.md) sobre las 14 filas recuperadas con Genie: siete candidatos y cero rechazos por snapshot. Aplica el [contrato v1](contracts/agency.md) con módulos de `databricks/gtfs_silver/`. No crea tablas ni añade una tarea al Job.
+
+| Bloque | Propósito | Entradas | Salidas | Efectos y comprobación |
+| --- | --- | --- | --- | --- |
+| 0 / librerías | Fijar referencias de idioma y zona. | langcodes 3.5.1 y tzdata 2026.6, iguales a requirements-silver.txt. | Dependencias de sesión instaladas. | Modifica librerías de sesión; si se requiere reinicio, hacerlo antes de 1. No cambia datos. |
+| 1 / configuración | Seleccionar snapshot y código. | repo_root opcional absoluto, catálogo/schema/Volume, versión y hash; defaults explicados para 2025. | SnapshotSpec, tabla, ruta y referencias; sesión Spark UTC. | No escribe datos. Requiere el repositorio completo; si serverless no encuentra el código, configurar repo_root. |
+| 2 / encabezado | Verificar el contrato fuente. | agency.txt de Staging y tabla Bronze. | Columnas publicadas y DataFrame Bronze. | Falla ante requeridas ausentes, columnas nuevas, duplicadas o tabla inexistente. |
+| 3 / validación | Aplicar reglas y reconciliar. | Filas del hash elegido, encabezado y SnapshotSpec. | Resumen, candidatos, rechazos y advertencias en memoria. | Lee máximo 1.001 filas para comprobar límite de 1.000. Un exceso o selección vacía falla. Verifica procedencia, formatos y conflictos. |
+| 4 / interpretación | Revisar el resultado antes de publicar. | Tres DataFrames con esquema explícito. | Hasta 20 candidatos, rechazos con original y motivos, y advertencias. | Ninguna persistencia. Tablas de incidencias vacías son resultados válidos. |
+
+El límite se aplica solo a agency, una referencia pequeña. Spark filtra hash y columnas antes de leer; después uso Python para los controles de URL, idiomas y zonas, sin UDF. No trasladaré este patrón a trips o stop_times. Las referencias exactas se registran en el resultado; no se usa la base de zonas horarias del sistema operativo.
+
+`ready_for_publication` significa que estas reglas no encontraron rechazos; no demuestra que Silver haya sido escrita. Si un ID tiene atributos contradictorios, se rechazan todas sus filas. Copias idénticas válidas se consolidan en memoria conservando el menor timestamp Bronze. La reconciliación exige entrada = candidatos + rechazados + copias consolidadas.
+
+No persisto cuarentena, auditoría ni resultados de ejecución con este notebook. Todavía faltan la escritura limitada al snapshot, la identificación de corrida Silver y sus pruebas Delta. Reiniciar Python exige repetir 1 → 2 → 3 → 4.
+
+Las pruebas sin Spark requieren instalar `databricks/requirements-silver.txt` en un entorno local y ejecutar la suite. La suite terminó con 45 pruebas aprobadas y 6 omitidas por falta de PySpark local: tres del perfilador y tres del adaptador. Java está disponible. No presento las omitidas como aprobadas. El notebook usa los mismos módulos que las pruebas.
+
+Referencias técnicas: [módulos en Workspace](https://docs.databricks.com/aws/en/files/workspace-modules), [langcodes](https://pypi.org/project/langcodes/) y [tzdata](https://pypi.org/project/tzdata/).

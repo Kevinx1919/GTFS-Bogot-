@@ -20,8 +20,11 @@ El bloque 0 crea widgets; las consultas siguientes son de lectura. Las consultas
 | [08_profile_gtfs_reference_entities.ipynb](08_profile_gtfs_reference_entities.ipynb) | Perfilador PySpark más general; alternativa posterior para automatizar las mismas preguntas. |
 | [agency_profile_2025.sql](../../sql/silver/agency_profile_2025.sql) | Archivo original de las dos consultas largas ya verificadas; evidencia histórica, conservada sin cambios. |
 | [Informe de agency 2025](../../../docs/agency_profile_2025.md) | Resultados comprobados y decisiones propuestas; no contiene las filas raw. |
+| [09_validate_gtfs_agency.ipynb](09_validate_gtfs_agency.ipynb) | Aplica el contrato y muestra candidatos, rechazos y advertencias en memoria. Requiere los módulos gtfs_silver del repositorio. |
+| [Validación de ambos snapshots](../../../docs/agency_validation_2025_2026.md) | Resultados reales del núcleo Python, pruebas y ejecución Spark pendiente. |
+| [Contrato v1 de agency](../../../docs/contracts/agency.md) | Tipos, obligatoriedad, errores y protección del histórico antes de transformar. |
 | [Plan Silver](../../../docs/silver_design.md) | Orden completo de entidades y criterios para avanzar. |
 
-Todavía no he creado tablas ni transformaciones Silver. Uso esta carpeta para el código de revisión; las tablas futuras vivirán en Unity Catalog. Prepararé la transformación después de entender y perfilar ambos snapshots.
+Ya revisé las salidas del perfilador PySpark de agency para ambos snapshots. Preparé los validadores del contrato v1 y el notebook 09 de lectura. Su núcleo Python ya fue contrastado con ambos snapshots; falta la ejecución completa del notebook en Databricks. No he creado tablas Silver ni implementado su escritura.
 
-Guardé los archivos nuevos y la reorganización localmente; me falta hacer commit/push. Genie no copia ni publica automáticamente mi código en GitHub.
+El perfilador y la guía ya quedaron versionados en GitHub. Los validadores, el notebook 09, las pruebas y la documentación de esta revisión están pendientes de commit/push. Genie no publica automáticamente mi código.

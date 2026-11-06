@@ -1,0 +1,3 @@
+# Referencias fijadas para agency_v1; revisar el contrato antes de actualizarlas.
+langcodes==3.5.1
+tzdata==2026.6
