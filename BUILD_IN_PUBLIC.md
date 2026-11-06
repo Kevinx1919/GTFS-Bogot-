@@ -304,6 +304,18 @@ Por ahora mantengo la propuesta string para los campos conocidos. No encontré u
 
 **Mi siguiente comprobación:** ejecutar 09 por bloques en Databricks, con el repositorio completo y cada snapshot, antes de preparar la escritura limitada al snapshot y sus pruebas de reintento.
 
+### Hito 17 — Publicación por snapshot y base del Job Silver
+
+**Fecha:** 6 de noviembre de 2026. Terminé de revisar las salidas del notebook 09 ejecutado en Databricks para 2025 y 2026: siete candidatos, cero rechazos, cero copias y cero advertencias por snapshot, con reconciliación correcta. Así cerré la comprobación del lector y el validador antes de preparar escrituras.
+
+**Qué preparé:** implementé publicación Delta por versión y hash, cuarentena y auditoría por intento. El notebook 10 ejecuta lectura, validación y publicación con una llamada, sin repetir manualmente 08 y 09. El [registro de entidades](databricks/config/silver_entities.json) habilita solo agency; otras entidades necesitarán su contrato y procesador.
+
+**La comprobación:** ejecuté la suite completa en Linux con Spark 4.0.1 y Delta 4.0.0: 64 pruebas aprobadas, sin omisiones. Comprobé las catorce filas de dos snapshots sintéticos, reejecución sin duplicación, conservación de nombres históricos, dos hashes con la misma fecha, rechazo sin alterar Silver, cuarentena y un fallo posterior a un commit. No confundí estas pruebas locales con una publicación en el workspace.
+
+**La automatización:** dejé versionada una [plantilla de Job manual](databricks/jobs/gtfs_bogota_silver_manual.template.json) y su generador, con For each para los dos snapshots y concurrencia 1. Las reglas rutinarias se ejecutarán juntas; revisaré manualmente incidencias y decisiones de negocio. No tiene horario automático y todavía no fue creado en Databricks.
+
+**Lo que falta:** sincronizar el notebook 10, crear el Job y ejecutar la primera publicación en el workspace. Ya identifiqué la raíz del repositorio y generé su configuración real fuera de Git. Al comprobar la carpeta, la consola indicó que no admite control automatizado; detuve la interacción sin crear recursos. Genie permite consultas, pero sus herramientas disponibles no crean Jobs y no tengo un perfil CLI local autenticado. La [guía de ejecución](docs/silver_execution.md) deja el procedimiento y la evolución hacia más tablas.
+
 ## Qué no publicar
 
 - Access tokens, secretos, archivos `.env`, cookies, hostnames privados o identificadores de cuenta.

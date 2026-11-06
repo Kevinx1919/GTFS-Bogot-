@@ -34,3 +34,9 @@ La suite completa terminó con 51 pruebas: 45 aprobadas y 6 omitidas por falta d
 El código está en `databricks/gtfs_silver/` y la ejecución guiada en [09_validate_gtfs_agency.ipynb](../databricks/notebooks/silver/09_validate_gtfs_agency.ipynb). Necesito el repositorio completo en Workspace, con sus módulos y dependencias, para ejecutar el notebook.
 
 Mi siguiente comprobación será ejecutar sus bloques con 2025 y 2026. Después prepararé la escritura restringida al snapshot, cuarentena, auditoría y pruebas de reejecución. Ninguna web fue consultada para comprobar disponibilidad de las URLs de las agencias; el teléfono y el correo no tienen validación integral de formato o existencia.
+
+## Comprobación posterior del notebook 09 en Databricks
+
+Después ejecuté y revisé el notebook 09 para 2025 y 2026 con las mismas referencias. En ambos obtuvo input_rows=7, candidate_rows=7, rejected_rows=0, identical_copies_consolidated=0, warning_rows=0, reconciled=True y ready_for_publication=True. No escribió Silver.
+
+La suite posterior de publicación pasó 64 pruebas sin omisiones en Linux con Spark y Delta reales. El [flujo de publicación y Job](silver_execution.md) ya está preparado; todavía no se creó ni ejecutó el Job ni se comprobó una publicación en el workspace. Esta actualización no cambia el alcance histórico de la primera comprobación local descrita arriba.

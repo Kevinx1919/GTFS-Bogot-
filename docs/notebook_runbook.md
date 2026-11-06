@@ -137,7 +137,7 @@ El [plan consolidado](silver_design.md) describe el contrato y la secuencia de t
 | --- | --- | --- | --- | --- |
 | 08 / selección del snapshot y perfilado de agency | Entender identidad, campos y calidad antes de transformar. | Bronze agency de una versión/hash y sus encabezados fuente. | Resúmenes de lectura; sin escritura Silver ni cambios Bronze. | Revisar clave, conteos, nulos, vacíos, espacios, duplicados y completitud por versión. |
 | 08 / perfilado posterior de routes | Acordar el contrato de rutas después de revisar agency. | Bronze routes y agencias del mismo snapshot. | Resúmenes de lectura y relaciones; sin escritura Silver. | Revisar nombres, tipos de ruta, colores, duplicados, agencia y ausencia de route_desc. |
-| 09 / transformación de referencias | Aplicar los contratos acordados, primero agency y luego routes. | Bronze y reglas explícitas; dependencias validadas. | Tablas Silver, cuarentena y auditoría; pendientes de diseño por bloque antes de implementar. | Pruebas, reconciliación, calidad, trazabilidad y reejecución sin duplicación. |
+| 10 / publicación por snapshot | Ejecutar lectura, contrato y publicación de agency con un notebook reutilizable. | Bronze, encabezado y registro de entidades. | Silver, cuarentena y auditoría en mode=publish; código preparado y probado localmente. | Primera publicación en el workspace y creación del Job pendientes; detalles al final de este runbook. |
 
 Los números y nombres son propuestos. Esta tabla describe intención, no resultados ejecutados. Antes de añadir el primer bloque se detallarán sus parámetros y su comprobación concreta; no avanzaré a una transformación mientras tenga su perfilado sin revisar.
 
@@ -205,7 +205,7 @@ Referencias de la sintaxis de la guía: [widgets](https://docs.databricks.com/aw
 
 ## Notebook 09 — silver/09_validate_gtfs_agency
 
-**Estado:** preparado para validación de lectura; todavía no he comprobado su ejecución completa en Databricks. El [núcleo Python fue contrastado](agency_validation_2025_2026.md) sobre las 14 filas recuperadas con Genie: siete candidatos y cero rechazos por snapshot. Aplica el [contrato v1](contracts/agency.md) con módulos de `databricks/gtfs_silver/`. No crea tablas ni añade una tarea al Job.
+**Estado:** notebook 09 ejecutado y revisado en Databricks para ambos snapshots: siete candidatos, cero rechazos, cero copias y cero advertencias por versión. El [núcleo Python fue contrastado](agency_validation_2025_2026.md) sobre las 14 filas recuperadas con Genie: siete candidatos y cero rechazos por snapshot. Aplica el [contrato v1](contracts/agency.md) con módulos de `databricks/gtfs_silver/`. No crea tablas ni añade una tarea al Job.
 
 | Bloque | Propósito | Entradas | Salidas | Efectos y comprobación |
 | --- | --- | --- | --- | --- |
@@ -221,6 +221,26 @@ El límite se aplica solo a agency, una referencia pequeña. Spark filtra hash y
 
 No persisto cuarentena, auditoría ni resultados de ejecución con este notebook. Todavía faltan la escritura limitada al snapshot, la identificación de corrida Silver y sus pruebas Delta. Reiniciar Python exige repetir 1 → 2 → 3 → 4.
 
-Las pruebas sin Spark requieren instalar `databricks/requirements-silver.txt` en un entorno local y ejecutar la suite. La suite terminó con 45 pruebas aprobadas y 6 omitidas por falta de PySpark local: tres del perfilador y tres del adaptador. Java está disponible. No presento las omitidas como aprobadas. El notebook usa los mismos módulos que las pruebas.
+Las pruebas sin Spark requieren instalar `databricks/requirements-silver.txt` en un entorno local y ejecutar la suite. Después ejecuté la suite ampliada en Linux con Spark y Delta: 64 pruebas aprobadas, sin omisiones. Los seis casos nativos anteriores quedaron comprobados, junto a las nuevas pruebas de publicación. El notebook usa los mismos módulos que las pruebas.
 
 Referencias técnicas: [módulos en Workspace](https://docs.databricks.com/aws/en/files/workspace-modules), [langcodes](https://pypi.org/project/langcodes/) y [tzdata](https://pypi.org/project/tzdata/).
+
+## Notebook 10 — silver/10_publish_gtfs_entity y Job manual
+
+**Estado:** código preparado para publicación; todavía no he ejecutado escrituras Silver en el workspace. Las salidas del notebook 09 ya confirmaron siete candidatos y cero rechazos para cada snapshot de 2025 y 2026, con las referencias fijadas.
+
+| Bloque | Propósito | Entrada | Salida | Efectos y comprobación |
+| --- | --- | --- | --- | --- |
+| 1 / parámetros | Seleccionar entidad, snapshot y modo. | Repo completo, widgets catalog/schema/Volume, entity, versión/hash, mode y verify_history. | Configuración validada; agency es la única entidad habilitada. | No escribe. mode=publish autoriza persistencia; mode=validate mantiene la lectura. El entorno debe tener requirements-silver.txt. |
+| 2 / ejecución | Leer, validar y publicar con las reglas compartidas. | Bronze y encabezado Staging del snapshot; registro silver_entities.json. | Resultado JSON con estado, métricas e ID de intento. | En publish escribe auditoría RUNNING, cuarentena y, si es válido, Silver; comprueba lectura posterior y otras versiones y cierra auditoría. Si hay rechazos no modifica Silver y falla la tarea. |
+| 3 / conteo | Revisar las versiones conservadas. | Tabla Silver publicada. | Conteo por versión y hash. | Solo lectura. Espero siete por snapshot y catorce históricas después de publicar ambos, según la evidencia actual. |
+
+Las tablas propuestas son silver_gtfs_agency, quarantine_gtfs_agency y audit_gtfs_silver_runs, dentro del catálogo y schema parametrizados. Una nueva tabla se crea con errorifexists; una existente se modifica con replaceWhere y un predicado explícito de versión y hash. No se admite salida Silver vacía, filas fuera del ámbito ni evolución automática de esquema. El catálogo y schema deben existir.
+
+La cuarentena tiene grano intento + entidad + snapshot + huella de rechazo; input_copies conserva la multiplicidad de copias. Su reemplazo se limita al intento. La auditoría tiene una fila por intento, entidad y snapshot, actualizada de RUNNING a SUCCEEDED, REJECTED o FAILED. Cada reintento del Job genera un nuevo intento auditable, sin duplicar agencias. Las incidencias anteriores a construir el resultado de validación quedan en el registro de fallo del Job.
+
+No hay una transacción de las tres tablas. Si Silver se escribió y una etapa posterior falla, silver_committed=true permite reconocerlo. No hago rollback automático. La reejecución reconstruye solo el snapshot; revisaré un intento interrumpido antes de lanzarla. No ejecutaré escritores manuales en paralelo con el Job.
+
+El Job usa el notebook 10 una vez por entrada, sin ejecutar 08 y 09 como pasos adicionales. La primera configuración limita a una ejecución y una iteración simultáneas. Es manual, sin schedule. Su definición se genera con gtfs_silver.job_config y queda versionada en databricks/jobs/. Las instrucciones de creación y la evolución hacia más entidades están en [ejecución Silver](silver_execution.md).
+
+verify_history=true compara las otras versiones contra una lectura Delta fijada antes de la escritura. Es una comprobación explícita adecuada para agency; para entidades grandes mediré su costo y mantendré las pruebas de preservación sin exigir un escaneo histórico completo en cada corrida.

@@ -1,0 +1,9 @@
+{
+  "agency": {
+    "enabled": true,
+    "validator": "agency_v1",
+    "bronze_table": "bronze_gtfs_agency",
+    "max_driver_rows": 1000,
+    "depends_on": []
+  }
+}

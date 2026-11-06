@@ -1,7 +1,7 @@
 # Mi contrato Silver de agency — versión 1
 
 **Fecha:** 6 de noviembre de 2026.
-**Estado:** núcleo de validación implementado y contrastado con ambos snapshots; notebook 09 de lectura preparado. Su ejecución completa en Databricks y la escritura Delta siguen pendientes. No hay tablas Silver creadas.
+**Estado:** notebook 09 ejecutado y revisado para ambos snapshots en Databricks. Publicación, cuarentena, auditoría y Job manual preparados y comprobados localmente con Delta real; falta ejecutarlos en el workspace. No hay una publicación Silver allí comprobada.
 
 ## Qué representa una fila
 
@@ -89,12 +89,12 @@ Al repetir la misma entrada y reglas, las claves y valores de negocio deben coin
 | Encabezados, tipos Bronze, completitud e IDs de 2025 y 2026 | Revisados mediante salidas de ejecución y consultas SQL. |
 | Duplicados y colisiones de ID de ambos snapshots | Revisados; no se encontraron casos en estos controles. |
 | Identidad por snapshot y preservación de nombres | Decisión acordada. |
-| Estructura de URL, zona IANA y etiqueta de idioma | Núcleo Python ejecutado sobre las 14 filas completas de ambos snapshots: sin rechazos. Falta ejecutar el notebook y adaptador Spark en Databricks. |
+| Estructura de URL, zona IANA y etiqueta de idioma | Núcleo Python ejecutado sobre las 14 filas completas de ambos snapshots: sin rechazos. El notebook 09 y su adaptador Spark también se ejecutaron y revisaron para ambos snapshots en Databricks. |
 | Formato integral de teléfonos, disponibilidad de webs y buzones | Fuera del control de esta v1; no afirmaré que están verificados. |
-| Cuarentena, auditoría, escritura Delta y reejecución | Pendientes de implementación y comprobación real. |
+| Cuarentena, auditoría, escritura Delta y reejecución | Implementadas y probadas con fixtures Delta en Linux; publicación y Job en el workspace pendientes. |
 
 Añadí pruebas con datos sintéticos para: ID con ceros, campos requeridos sin contenido, opcionales ausentes o vacíos, URL relativa, HTTP permitido, zona desconocida o inconsistente, idioma inválido o no verificable, espacios en IDs, copias idénticas y conflicto de clave. Las pruebas del núcleo comprueban también que ID 2 de 2025 y de 2026 conserven sus nombres distintos; todavía falta verificar la coexistencia en tablas Delta.
 
-En Databricks verificaré selección y formatos antes de escribir, bloqueo sin modificar la tabla ante errores, publicación de un snapshot válido y segunda ejecución sin duplicación ni cambios en la otra versión. Las pruebas locales previas no demuestran estos comportamientos Delta.
+En Databricks verificaré selección y formatos antes de escribir, bloqueo sin modificar la tabla ante errores, publicación de un snapshot válido y segunda ejecución sin duplicación ni cambios en la otra versión. Las pruebas locales actuales sí incluyen estos comportamientos en Delta real; no demuestran todavía la ejecución ni los permisos en Unity Catalog del workspace.
 
-El [informe de validación](../agency_validation_2025_2026.md) distingue pruebas locales, datos reales consultados y ejecución Spark pendiente. El notebook 09 usa los mismos módulos del núcleo; sus bloques ya están documentados en el runbook. Solo lee y muestra candidatos y rechazos en memoria. No necesito repetir Raw o Bronze para esta comprobación.
+El [informe de validación](../agency_validation_2025_2026.md) distingue pruebas locales, datos reales consultados y ejecución Spark pendiente. El notebook 09 usa los mismos módulos del núcleo y ya fue ejecutado para ambos snapshots. Solo lee y muestra candidatos y rechazos en memoria. El [notebook 10 y el Job](../silver_execution.md) reutilizan las reglas e incorporan la publicación por snapshot; todavía no fueron ejecutados en el workspace. No necesito repetir Raw o Bronze para esta comprobación.
