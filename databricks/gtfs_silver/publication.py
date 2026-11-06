@@ -77,7 +77,7 @@ def _overwrite_scope(frame, table: str, predicate: str, *, allow_empty: bool = F
          .option("replaceWhere", predicate).saveAsTable(quoted))
     else:
         # Si otro escritor crea la tabla, falla en lugar de reemplazarla.
-        frame.write.format("delta").mode("errorifexists").saveAsTable(quoted)
+        frame.writeTo(quoted).using("delta").create()
 
 
 def _versioned_table(spark, table: str):

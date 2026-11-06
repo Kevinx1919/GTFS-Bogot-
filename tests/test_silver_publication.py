@@ -164,6 +164,19 @@ class SilverPublicationDeltaTests(unittest.TestCase):
         self.assertEqual(names, {"2025-10-28": "2025-10-28 Marca 2", "2026-09-29": "2026-09-29 Marca 2"})
         self.assertEqual(self.spark.table(self.tables.name("audit")).count(), 3)
 
+    def test_creation_race_fails_without_replacing_an_existing_table(self):
+        from pyspark.errors import AnalysisException
+        selected = spec()
+        self.publish(selected)
+        table = self.tables.name("silver")
+        existing = self.spark.table(table)
+        before = existing.collect()
+        # Simulo que otro escritor crea la tabla justo tras comprobar su ausencia.
+        with patch.object(type(self.spark.catalog), "tableExists", return_value=False):
+            with self.assertRaises(AnalysisException):
+                _overwrite_scope(existing.limit(1), table, snapshot_predicate(selected))
+        self.assertEqual(self.spark.table(table).collect(), before)
+
     def test_hash_is_part_of_scope_even_when_publication_date_is_same(self):
         first, corrected = spec(), spec(content_hash="b" * 64)
         self.publish(first, data(first, 1))

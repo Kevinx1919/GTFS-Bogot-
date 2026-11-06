@@ -27,9 +27,15 @@ No sustituiré toda la historia: el escritor usa [replaceWhere](https://docs.dat
 
 Las tablas se escriben por separado. Si Silver se confirma y falla la etapa posterior, el intento termina FAILED con silver_committed=true. No haré rollback automático ni presentaré ese caso como una publicación completa. Antes de reintentar revisaré el motivo; la reconstrucción posterior sigue limitada al mismo snapshot.
 
+## Corrección de la primera creación
+
+Al ejecutar el bloque 2 del notebook 10 encontré `UNSUPPORTED_OPERATION: errorifexists is not supported`. La primera creación usaba una opción incompatible con mi entorno de Databricks. La cambié por `writeTo(...).using("delta").create()`, una operación de creación documentada por [Databricks](https://docs.databricks.com/aws/en/pyspark/reference/classes/dataframewriterv2). Si la tabla aparece por otra ejecución, la creación falla y conserva su contenido; las actualizaciones siguen usando `replaceWhere`.
+
+Después de sincronizar el módulo corregido, reinicio Python y ejecuto los bloques 1 → 2 → 3. No borro tablas ni repito Bronze. Verifiqué la corrección con 14 pruebas de configuración y publicación en Linux con Spark 4.0.1 y Delta 4.0.0, incluida una creación concurrente simulada que conserva la tabla existente. Todavía debo comprobar el resultado en el workspace.
+
 ## Mi primera publicación
 
-1. Sincronizo el repositorio completo, incluidos gtfs_silver, config y el notebook 10. Uso las dependencias de requirements-silver.txt ya verificadas en el notebook 09.
+1. Sincronizo el repositorio completo, incluidos gtfs_silver, config y el notebook 10. Instalo databricks/requirements-silver.txt también en el entorno del notebook 10 y reinicio Python antes del bloque 1; la instalación del notebook 09 no se comparte automáticamente.
 2. Ejecuto 10 con entity=agency, el snapshot 2025 y mode=publish. El catálogo y schema deben existir.
 3. Ejecuto 10 con el snapshot 2026, cambiando versión y hash juntos.
 4. Compruebo siete filas por snapshot y catorce históricas.
