@@ -1,6 +1,6 @@
 # Mi ejecución Silver por entidad y snapshot
 
-**Estado al 6 de noviembre de 2026:** ejecuté y revisé el notebook 09 para agency de 2025 y 2026 en Databricks: siete candidatos y cero rechazos en cada uno. Preparé la publicación, cuarentena, auditoría y configuración del Job. La suite local con Spark y Delta reales pasó 64 pruebas. Todavía no he creado el Job ni ejecutado escrituras Silver en el workspace.
+**Estado al 6 de noviembre de 2026:** publiqué agency en Silver para ambos snapshots y ejecuté su Job manual con éxito. Confirmé con Genie siete filas e IDs únicos por snapshot. Preparé routes_v1 con reglas Spark y el mismo escritor, notebook y auditoría. Su publicación y la ampliación del Job en el workspace siguen pendientes.
 
 ## Mi recorrido habitual
 
@@ -31,15 +31,15 @@ Las tablas se escriben por separado. Si Silver se confirma y falla la etapa post
 
 Al ejecutar el bloque 2 del notebook 10 encontré `UNSUPPORTED_OPERATION: errorifexists is not supported`. La primera creación usaba una opción incompatible con mi entorno de Databricks. La cambié por `writeTo(...).using("delta").create()`, una operación de creación documentada por [Databricks](https://docs.databricks.com/aws/en/pyspark/reference/classes/dataframewriterv2). Si la tabla aparece por otra ejecución, la creación falla y conserva su contenido; las actualizaciones siguen usando `replaceWhere`.
 
-Después de sincronizar el módulo corregido, reinicio Python y ejecuto los bloques 1 → 2 → 3. No borro tablas ni repito Bronze. Verifiqué la corrección con 14 pruebas de configuración y publicación en Linux con Spark 4.0.1 y Delta 4.0.0, incluida una creación concurrente simulada que conserva la tabla existente. Todavía debo comprobar el resultado en el workspace.
+Después de sincronizar módulos, reinicio Python si la sesión ya los importó y ejecuto desde el bloque 1. La versión actual del notebook tiene dos bloques. No borro tablas ni repito Bronze. Verifiqué la corrección con 14 pruebas de configuración y publicación en Linux con Spark 4.0.1 y Delta 4.0.0, incluida una creación concurrente simulada que conserva la tabla existente. Comprobé la corrección al publicar agency y ejecutar su Job en el workspace.
 
-## Mi primera publicación
+## Mi publicación por entidad
 
-1. Sincronizo el repositorio completo, incluidos gtfs_silver, config y el notebook 10. Instalo databricks/requirements-silver.txt también en el entorno del notebook 10 y reinicio Python antes del bloque 1; la instalación del notebook 09 no se comparte automáticamente.
-2. Ejecuto 10 con entity=agency, el snapshot 2025 y mode=publish. El catálogo y schema deben existir.
-3. Ejecuto 10 con el snapshot 2026, cambiando versión y hash juntos.
-4. Compruebo siete filas por snapshot y catorce históricas.
-5. Repito una versión: mantengo las catorce filas y los mismos valores de negocio. El ID y timestamp del intento pueden cambiar.
+1. Sincronizo el repositorio completo y configuro las dependencias de requirements-silver.txt en el entorno del notebook o del Job. No dependo de instalaciones manuales hechas en otro notebook.
+2. Elijo entity, feed_version y snapshot_sha256. El notebook 10 tiene dos bloques: parámetros/imports y ejecución completa.
+3. Para routes necesito agency_v1 del mismo snapshot ya publicado. Puedo ejecutar mode=validate sin escribir o mode=publish para validar y publicar en una sola corrida.
+4. Reviso el resumen: reconciled=true, rejected_rows=0, persisted=true y status=SUCCEEDED. El escritor ya verifica los datos después de publicarlos.
+5. Solo en una revisión inicial o ante una incidencia consulto el histórico completo. Espero 7 + 7 en agency y, si routes pasa, 676 + 1.045 = 1.721 rutas. Una reejecución conserva los datos de negocio sin duplicarlos.
 
 Puedo usar mode=validate para revisar sin escribir. No ejecuto el Job al mismo tiempo que una publicación manual. verify_history=true compara las otras versiones con una lectura Delta fijada antes de la escritura; lo mantengo para agency por su tamaño pequeño.
 
@@ -47,7 +47,7 @@ Puedo usar mode=validate para revisar sin escribir. No ejecuto el Job al mismo t
 
 La [plantilla JSON](../databricks/jobs/gtfs_bogota_silver_manual.template.json) define gtfs_bogota_silver_manual. La ruta /Workspace/REPO_ROOT es un marcador, no una ubicación real. El [generador](../databricks/gtfs_silver/job_config.py) la sustituye por la ruta que configure, sin guardar rutas personales o credenciales en Git.
 
-El Job tiene una tarea [For each](https://docs.databricks.com/aws/en/jobs/tasks/for-each) que recibe work_items y llama al notebook 10 una vez por entrada. Empieza con agency de 2025 y 2026, concurrencia 1 y una sola ejecución del Job a la vez. Instala las dependencias una vez por entorno compatible; no encadena 08 → 09 → 10. No tiene horario ni trigger automático.
+El Job preparado tiene una etapa [For each](https://docs.databricks.com/aws/en/jobs/tasks/for-each) que recibe work_items y llama al notebook 10 una vez por entrada. Procesa agency de 2025 y 2026 y después otra etapa For each procesa routes. La segunda depende del éxito de la primera; ambas tienen concurrencia 1 y el Job admite una sola ejecución simultánea. Instala las dependencias una vez por entorno compatible; no encadena 08 → 09 → 10. No tiene horario ni trigger automático.
 
 Puedo generarlo en PowerShell, con una ruta de Workspace real en lugar del marcador:
 
@@ -71,11 +71,48 @@ Si dispongo de Databricks CLI autenticada, puedo usar la misma definición:
 databricks jobs create --json "@$env:TEMP\gtfs_silver_job.json"
 ```
 
-Ese comando crea un Job nuevo: no lo repetiré como si fuera una actualización. La creación, los permisos y una ejecución de prueba en Free Edition siguen pendientes. La integración Genie conectada permite consultas, pero no expone creación de Jobs. No tengo un perfil CLI local autenticado; no interpreto la conexión Genie como esa autenticación. Comprobé la carpeta del proyecto desde el navegador conectado, pero la consola mostró un aviso de que no admite control automatizado y pide continuar manualmente o con Genie One MCP. Detuve la interacción sin crear Jobs ni publicar datos. La raíz de Workspace ya quedó identificada y generé el JSON con la ruta real fuera de Git; todavía falta sincronizar el notebook 10 y crear el Job por una vía admitida.
+Ese comando crea un Job nuevo: para mi Job existente necesito actualizar su configuración, no crear otro duplicado. La integración Genie permite consultas, pero no expone creación o edición de Jobs. No tengo CLI autenticada y la consola no admite control automatizado. Creé y ejecuté el Job de agency manualmente; la plantilla ampliada todavía requiere actualización en Workspace.
+
+## Cómo incorporo routes al Job que ya funciona
+
+Conservo la etapa actual de agency. Añado otra tarea For each llamada publish_routes y la hago depender de la primera con condición de éxito. Si antes de routes falla agency, la segunda etapa queda bloqueada.
+
+En Inputs puedo usar directamente esta lista, igual que en el Job manual que ya configuré. Así evito confundir parámetros de tarea con parámetros generales:
+
+```json
+[
+  {"entity":"routes","feed_version":"2025-10-28","snapshot_sha256":"07ba2ba9bb3b5bc1e38357355956757ce84fc68e6d05b74577bf017e189ab952"},
+  {"entity":"routes","feed_version":"2026-09-29","snapshot_sha256":"08d14e0b3a5b9caa5451b722659871fd554e3273b94bdd770fdf81a26bf02097"}
+]
+```
+
+La tarea interna process_routes_snapshot selecciona el mismo notebook 10 y el entorno con las mismas dependencias. Reutilizo repo_root, catalog, schema, staging_volume, mode y verify_history de agency; los tres parámetros variables son entity={{input.entity}}, feed_version={{input.feed_version}} y snapshot_sha256={{input.snapshot_sha256}}. Las rutas personales se configuran solo en Workspace. No añado otra tarea Notebook suelta antes del ciclo.
+
+En la definición generada uso el parámetro general routes_work_items como fuente de esa lista; es equivalente a pegarla directamente en Inputs. Mantengo concurrencia 1 en cada ciclo y máximo una ejecución del Job. El notebook no instala paquetes ni reinicia Python por iteración: las dependencias pertenecen al entorno. Conservé su entorno 6 ya usado en Workspace y reemplacé la referencia personal a requirements-silver.txt por los dos paquetes fijados en sus metadatos. El Job generado también declara esos paquetes; puede usar otra versión de entorno disponible mediante --environment-version.
+
+## Qué simplifiqué respecto a agency
+
+- Reutilizo un notebook y un escritor: cada entidad aporta su contrato, no una copia del pipeline.
+- El perfil inicial queda como SQL e informe; no creo notebooks 08 y 09 adicionales para routes ni los exijo en cada corrida.
+- Routes valida, tipa, cruza y deduplica en Spark, sin UDFs ni descargar filas al driver. Solo recupero agregados pequeños.
+- Uno los controles de vacío y ámbito del escritor en una agregación y los de clave/conteo en otra. La comparación bidireccional se ejecuta con una sola acción Spark.
+- Retiro tres celdas de preparación (instalación y dos reinicios) y el antiguo bloque 3, que contaba otra vez toda la historia en cada iteración. El resumen de publicación ya confirma la lectura posterior.
+- Fijo las versiones Delta de entrada para no releer estados distintos al recalcular un plan.
+
+No afirmo una reducción de segundos sin medir el Job ampliado. Evito cache/persist obligatorio: el entorno 4 preparado no cumple los requisitos actuales del [caché serverless](https://docs.databricks.com/aws/en/compute/serverless/dataframe-cache), que requiere versión 5 o superior y preview habilitada. Las acciones pueden recalcular expresiones, pero leen entradas fijadas. Mediré el plan y el costo antes de introducir caché o materializaciones adicionales.
+
+Para una revisión puntual puedo consultar:
+
+```sql
+select source_feed_version, source_sha256, count(*) as rows
+from workspace.gtfs_bogota.silver_gtfs_routes
+ group by source_feed_version, source_sha256
+ order by source_feed_version, source_sha256;
+```
 
 ## Cómo reduciré el trabajo para las demás tablas
 
-El [registro de entidades](../databricks/config/silver_entities.json) habilita por ahora solo agency. Reutilizaré parámetros, ejecución por snapshot, escritura por ámbito y auditoría. Añadiré cada entidad con su contrato y procesador específico antes de habilitarla; cambiar un nombre de tabla no crea automáticamente sus reglas.
+El [registro de entidades](../databricks/config/silver_entities.json) habilita agency y routes. Routes depende de agency; el Job aplica esa dependencia y el pipeline comprueba su snapshot incluso si ejecuto routes manualmente. Reutilizaré parámetros, ejecución por snapshot, escritura por ámbito y auditoría. Añadiré cada entidad con su contrato y procesador específico antes de habilitarla; cambiar un nombre de tabla no crea automáticamente sus reglas.
 
 Con nueve o cien tablas, separaré el trabajo que se hace una vez de lo que corre siempre:
 
@@ -85,7 +122,7 @@ Con nueve o cien tablas, separaré el trabajo que se hace una vez de lo que corr
 
 Respetaré un grafo de dependencias: agency antes de routes; rutas, servicios y geometrías antes de trips; trips y stops antes de stop_times. Las ramas independientes podrán ejecutarse en paralelo cuando mida el cómputo. Un fallo de una entidad bloqueará a sus dependientes.
 
-Para cien entidades usaré un archivo o tabla de control y entradas compactas. For each admite referencias a parámetros y task values, pero no es una solución a dependencias arbitrarias ni a listas ilimitadas. No crearé cien notebooks copiados ni meteré cien tablas grandes al driver: el límite de 1.000 filas y la validación Python actual son exclusivos de agency.
+Para cien entidades usaré un archivo o tabla de control y entradas compactas. For each admite referencias a parámetros y task values, pero no es una solución a dependencias arbitrarias ni a listas ilimitadas. No crearé cien notebooks copiados ni meteré cien tablas grandes al driver: el límite de 1.000 filas y la validación Python son exclusivos de agency. Routes usa Spark sin collect de sus registros.
 
 ## Qué comprobé
 
@@ -95,4 +132,11 @@ Probé coexistencia de 2025 y 2026, reejecución sin duplicación, dos hashes co
 
 La preparación de librerías ocurre fuera de la suite. Para repetir todas las pruebas en Linux necesito las dependencias de requirements-silver.txt, PySpark 4.0.1 y los JARs locales delta-spark_2.13 4.0.0 y delta-storage 4.0.0. Configuro GTFS_DELTA_TEST_JARS con ambos archivos separados por coma y PYSPARK_SUBMIT_ARGS con --jars y esa misma lista, y ejecuto python -B -m unittest discover -s tests -v. Los tests no descargan JARs ni llaman a servicios externos. Sin ese entorno, los casos nativos quedan omitidos y no deben contarse como aprobados.
 
-La primera prueba nativa en Windows no pudo iniciar Spark por faltar componentes Hadoop. La comprobación válida se realizó después en Linux. Esto no demuestra aún la ejecución del Job, las autorizaciones de Unity Catalog ni la publicación en el workspace.
+La primera prueba nativa en Windows no pudo iniciar Spark por faltar componentes Hadoop. La comprobación válida se realizó después en Linux. Estas pruebas históricas se complementaron después con la publicación y el Job de agency en Workspace. Las pruebas de routes se documentan aparte; su ejecución real sigue pendiente.
+
+
+## Verificación de routes_v1
+
+Ejecuté la suite completa en Linux con Spark 4.0.1 y Delta 4.0.0: **75 pruebas aprobadas, sin omisiones**. Después añadí y ejecuté tres pruebas sin IO del despacho del pipeline: también pasaron. Son 78 comprobaciones aprobadas en total; las tres últimas no requieren Spark.
+
+Las pruebas cubren los controles anteriores de Bronze y agency, tipos de routes, 1.045 registros sintéticos sin límite de driver, nombres opcionales, formatos inválidos, procedencia, duplicados y conflictos, dependencias ausentes o de otro snapshot, publicación de ambas versiones, reintentos, cuarentena y conservación de Silver ante rechazos. No son mediciones de rendimiento del Job real ni una ejecución remota de routes.

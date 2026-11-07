@@ -8,7 +8,10 @@ from typing import Any
 
 from .agency_validation import SnapshotSpec, read_source_header
 from .agency_spark import read_and_validate
-from .publication import PublicationTables, publish_agency, quoted_table, simple_identifier
+from .publication import (
+    PublicationTables, _versioned_table, publish_agency, publish_snapshot, quoted_table, simple_identifier,
+)
+from . import routes_spark
 
 REGISTRY_PATH = Path(__file__).resolve().parents[1] / "config" / "silver_entities.json"
 
@@ -29,26 +32,39 @@ def run_entity(spark, *, catalog: str, schema: str, staging_volume: str,
     configuration = load_registry().get(entity)
     if not configuration or not configuration["enabled"]:
         raise ValueError(f"No hay un contrato habilitado para {entity}.")
-    if entity != "agency" or configuration["validator"] != "agency_v1":
+    validators = {"agency": "agency_v1", "routes": "routes_v1"}
+    if entity not in validators or configuration["validator"] != validators[entity]:
         raise ValueError("La entidad todavía no tiene procesador implementado.")
     if configuration["bronze_table"] != f"bronze_gtfs_{entity}":
         raise ValueError("El registro no corresponde a la tabla Bronze de la entidad.")
     if mode not in {"validate", "publish"}:
         raise ValueError("mode debe ser validate o publish.")
-    maximum = configuration["max_driver_rows"]
-    if not isinstance(maximum, int) or not 1 <= maximum <= 1000:
+    maximum = configuration.get("max_driver_rows")
+    if entity == "agency" and (type(maximum) is not int or not 1 <= maximum <= 1000):
         raise ValueError("El límite del procesador pequeño de agency debe estar entre 1 y 1.000.")
     spark.conf.set("spark.sql.session.timeZone", "UTC")
     source_path = (
         f"/Volumes/{catalog}/{schema}/{staging_volume}/gtfs_static/"
-        f"feed_version={feed_version}/sha256={snapshot_sha256}/agency.txt"
+        f"feed_version={feed_version}/sha256={snapshot_sha256}/{entity}.txt"
     )
-    spec = SnapshotSpec(feed_version, snapshot_sha256, source_path)
-    columns = read_source_header(source_path)
+    spec = SnapshotSpec(feed_version, snapshot_sha256, source_path, entity)
+    header_reader = read_source_header if entity == "agency" else routes_spark.read_source_header
+    columns = header_reader(source_path)
     bronze = quoted_table(f"{catalog}.{schema}.{configuration['bronze_table']}")
     if not spark.catalog.tableExists(bronze):
         raise ValueError("No existe Bronze para la entidad seleccionada.")
-    result = read_and_validate(spark.table(bronze), columns, spec, maximum)
+    # Fijar versiones Delta evita que acciones posteriores lean otro estado de entrada.
+    source = _versioned_table(spark, bronze)
+    if entity == "routes":
+        dependency = quoted_table(f"{catalog}.{schema}.silver_gtfs_agency")
+        if not spark.catalog.tableExists(dependency):
+            raise ValueError("Publica agency en Silver antes de procesar routes.")
+        result = routes_spark.read_and_validate(source, columns, spec, _versioned_table(spark, dependency))
+        return publish_snapshot(
+            spark, result, spec, PublicationTables(catalog, schema, entity),
+            mode=mode, verify_history=verify_history, run_id=run_id,
+        )
+    result = read_and_validate(source, columns, spec, maximum)
     return publish_agency(
         spark, result, spec, PublicationTables(catalog, schema, entity),
         mode=mode, verify_history=verify_history, run_id=run_id,

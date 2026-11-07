@@ -11,6 +11,7 @@ from uuid import uuid4
 
 from .agency_validation import SnapshotSpec, ValidationResult
 from .agency_spark import result_frames
+from .models import PreparedSnapshot
 
 
 class SnapshotRejectedError(RuntimeError):
@@ -57,13 +58,14 @@ def _overwrite_scope(frame, table: str, predicate: str, *, allow_empty: bool = F
     """Un único commit Delta sustituye el ámbito; nunca toda la tabla existente."""
     spark = frame.sparkSession
     quoted = quoted_table(table)
-    if not allow_empty and frame.limit(1).count() == 0:
-        raise ValueError("La salida está vacía; bloqueo la escritura.")
-    # El esquema obliga a que toda fila pertenezca al ámbito que sustituirá.
+    # Una agregación comprueba vacío y ámbito en lugar de dos acciones independientes.
     from pyspark.sql import functions as F
     condition = F.expr(predicate)
-    outside = frame.filter(condition.isNull() | ~condition)
-    if outside.limit(1).count():
+    checks = frame.agg(F.count("*").alias("rows"),
+                       F.max(F.when(condition.isNull() | ~condition, 1).otherwise(0)).alias("outside")).first()
+    if not allow_empty and not checks["rows"]:
+        raise ValueError("La salida está vacía; bloqueo la escritura.")
+    if checks["outside"]:
         raise ValueError("Hay filas fuera del snapshot o ejecución seleccionados.")
     if spark.catalog.tableExists(quoted):
         details = spark.sql(f"describe detail {quoted}").first()
@@ -87,7 +89,7 @@ def _versioned_table(spark, table: str):
 
 
 def _same_rows(left, right) -> bool:
-    return not left.exceptAll(right).limit(1).count() and not right.exceptAll(left).limit(1).count()
+    return not left.exceptAll(right).unionByName(right.exceptAll(left)).limit(1).count()
 
 
 def _check_result(result: ValidationResult) -> None:
@@ -103,7 +105,7 @@ def _check_result(result: ValidationResult) -> None:
         raise ValueError("El conteo de copias consolidadas no puede ser negativo.")
 
 
-def _audit(spark, tables: PublicationTables, spec: SnapshotSpec, result: ValidationResult,
+def _audit(spark, tables: PublicationTables, spec: SnapshotSpec, result: ValidationResult | PreparedSnapshot,
            run_id: str, status: str, started: datetime, committed: bool, error: str | None = None) -> None:
     from pyspark.sql.types import (
         BooleanType, LongType, StringType, StructField, StructType, TimestampType,
@@ -141,14 +143,36 @@ def publish_agency(
     spark, result: ValidationResult, spec: SnapshotSpec, tables: PublicationTables,
     *, run_id: str | None = None, mode: str = "publish", verify_history: bool = True,
 ) -> dict[str, Any]:
-    """Publica agency; las siguientes entidades reutilizarán el escritor por ámbito."""
+    """Compatibilidad con agency_v1; la escritura común se ejecuta una sola vez."""
+    if tables.entity != "agency":
+        raise ValueError("Este adaptador solo acepta agency.")
+    _check_result(result)
+    frames = {} if mode == "validate" else result_frames(spark, result)
+    prepared = PreparedSnapshot(frames, result.summary, result.reference_versions)
+    return publish_snapshot(spark, prepared, spec, tables, run_id=run_id,
+                            mode=mode, verify_history=verify_history)
+
+
+def publish_snapshot(
+    spark, result: PreparedSnapshot, spec: SnapshotSpec, tables: PublicationTables,
+    *, run_id: str | None = None, mode: str = "publish", verify_history: bool = True,
+) -> dict[str, Any]:
+    """Un escritor para contratos ya validados; conserva esquemas y ámbito por snapshot."""
     from pyspark.sql import functions as F
 
-    if tables.entity != "agency":
-        raise ValueError("Solo agency tiene un procesador implementado.")
+    identifiers = {"agency": "agency_id", "routes": "route_id"}
+    if tables.entity not in identifiers or spec.entity != tables.entity:
+        raise ValueError("La entidad publicada debe coincidir con su contrato y snapshot.")
+    identifier = identifiers[tables.entity]
     if mode not in {"validate", "publish"}:
         raise ValueError("mode debe ser validate o publish.")
-    _check_result(result)
+    summary = result.summary
+    counts = ("input_rows", "candidate_rows", "rejected_rows", "identical_copies_consolidated", "warning_rows")
+    if (any(type(summary.get(key)) is not int or summary[key] < 0 for key in counts)
+            or summary["input_rows"] < 1 or not summary["reconciled"]
+            or summary["input_rows"] != sum(summary[key] for key in counts[1:4])
+            or summary["ready_for_publication"] != (summary["rejected_rows"] == 0)):
+        raise ValueError("El resultado no reconcilia; no publicar.")
     if mode == "validate":
         return {"status": "VALIDATED" if result.summary["ready_for_publication"] else "REJECTED",
                 "persisted": False, **result.summary}
@@ -162,10 +186,10 @@ def publish_agency(
     committed = False
     _audit(spark, tables, spec, result, run_id, "RUNNING", started, committed)
     try:
-        frames = result_frames(spark, result)
+        frames = result.frames
         # La cuarentena agrupa copias del mismo rechazo y conserva su multiplicidad.
         quarantine = (
-            frames["rejected"].groupBy("agency_id", "original_row_json", "error_codes", "silver_rule_version")
+            frames["rejected"].groupBy(identifier, "original_row_json", "error_codes", "silver_rule_version")
             .count().withColumnRenamed("count", "input_copies")
             .withColumn("record_hash", F.sha2(F.concat("original_row_json", F.to_json("error_codes")), 256))
             .withColumn("entity", F.lit(tables.entity))
@@ -183,10 +207,13 @@ def publish_agency(
             .withColumn("silver_run_id", F.lit(run_id))
             .withColumn("silver_loaded_at_utc", F.lit(started))
         )
-        if output.filter("agency_id is null or trim(agency_id) = ''").limit(1).count():
-            raise ValueError("No publicar IDs sin contenido.")
-        if output.groupBy("agency_id").count().filter("count > 1").limit(1).count():
-            raise ValueError("No publicar IDs repetidos.")
+        checks = output.agg(
+            F.count("*").alias("rows"), F.countDistinct(identifier).alias("ids"),
+            F.max(F.when(F.col(identifier).isNull() | F.col(identifier).rlike(r"(?U)^\s*$"), 1)
+                  .otherwise(0)).alias("blank"),
+        ).first()
+        if checks["blank"] or checks["rows"] != checks["ids"] or checks["rows"] != summary["candidate_rows"]:
+            raise ValueError("No publicar IDs vacíos, repetidos o conteos inconsistentes.")
         target = tables.name("silver")
         previous_others = None
         if verify_history and spark.catalog.tableExists(quoted_table(target)):

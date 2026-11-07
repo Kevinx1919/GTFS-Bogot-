@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+from copy import deepcopy
 import json
 from pathlib import Path, PurePosixPath
 
@@ -24,7 +25,7 @@ def build_job(repo_root: str, *, environment_version: str = "4") -> dict:
     requirements = Path(__file__).resolve().parents[1] / "requirements-silver.txt"
     dependencies = [line.strip() for line in requirements.read_text().splitlines()
                     if line.strip() and not line.lstrip().startswith("#")]
-    return {
+    job = {
         "name": "gtfs_bogota_silver_manual",
         "description": "Valida y publica snapshots habilitados, con auditoría y cuarentena. Sin calendario automático.",
         "max_concurrent_runs": 1,
@@ -67,6 +68,18 @@ def build_job(repo_root: str, *, environment_version: str = "4") -> dict:
             },
         }],
     }
+
+    # Una etapa por dependencia: routes no arranca si agency falla.
+    routes_items = [{**item, "entity": "routes"} for item in SNAPSHOTS]
+    job["parameters"].append({"name": "routes_work_items",
+                              "default": json.dumps(routes_items, separators=(",", ":"))})
+    routes_task = deepcopy(job["tasks"][0])
+    routes_task["task_key"] = "publish_routes"
+    routes_task["depends_on"] = [{"task_key": "publish_snapshots"}]
+    routes_task["for_each_task"]["inputs"] = "{{job.parameters.routes_work_items}}"
+    routes_task["for_each_task"]["task"]["task_key"] = "process_routes_snapshot"
+    job["tasks"].append(routes_task)
+    return job
 
 
 def main() -> None:

@@ -5,5 +5,13 @@
     "bronze_table": "bronze_gtfs_agency",
     "max_driver_rows": 1000,
     "depends_on": []
+  },
+  "routes": {
+    "enabled": true,
+    "validator": "routes_v1",
+    "bronze_table": "bronze_gtfs_routes",
+    "depends_on": [
+      "agency"
+    ]
   }
 }

@@ -1,0 +1,55 @@
+"""Compruebo el despacho y los límites de IO sin ejecutar Spark ni leer archivos."""
+
+from pathlib import Path
+import sys
+import unittest
+from unittest.mock import MagicMock, patch, sentinel
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "databricks"))
+from gtfs_silver import pipeline
+
+
+class SilverPipelineTests(unittest.TestCase):
+    def parameters(self, entity):
+        return dict(catalog="workspace", schema="fixture", staging_volume="staging", entity=entity,
+                    feed_version="2025-10-28", snapshot_sha256="a" * 64, mode="validate")
+
+    def test_routes_dispatches_with_matching_source_path_and_pinned_dependency(self):
+        spark = MagicMock()
+        spark.catalog.tableExists.return_value = True
+        with patch.object(pipeline.routes_spark, "read_source_header", return_value=("route_id",)), \
+             patch.object(pipeline, "_versioned_table", side_effect=[sentinel.bronze, sentinel.agency]) as read, \
+             patch.object(pipeline.routes_spark, "read_and_validate", return_value=sentinel.result) as validate, \
+             patch.object(pipeline, "publish_snapshot", return_value={"persisted": False}) as publish:
+            result = pipeline.run_entity(spark, **self.parameters("routes"))
+        self.assertFalse(result["persisted"])
+        self.assertEqual(read.call_count, 2)
+        arguments = validate.call_args.args
+        self.assertIs(arguments[0], sentinel.bronze)
+        self.assertIs(arguments[3], sentinel.agency)
+        self.assertEqual(arguments[2].entity, "routes")
+        self.assertTrue(arguments[2].source_path.endswith("/routes.txt"))
+        self.assertEqual(publish.call_args.kwargs["mode"], "validate")
+
+    def test_agency_keeps_bounded_validator_and_compatible_publication(self):
+        spark = MagicMock()
+        spark.catalog.tableExists.return_value = True
+        with patch.object(pipeline, "read_source_header", return_value=("agency_id",)), \
+             patch.object(pipeline, "_versioned_table", return_value=sentinel.bronze), \
+             patch.object(pipeline, "read_and_validate", return_value=sentinel.result) as validate, \
+             patch.object(pipeline, "publish_agency", return_value={"persisted": False}):
+            pipeline.run_entity(spark, **self.parameters("agency"))
+        self.assertEqual(validate.call_args.args[3], 1000)
+        self.assertEqual(validate.call_args.args[2].entity, "agency")
+
+    def test_unknown_entity_or_invalid_mode_stops_before_source_access(self):
+        for parameters in (self.parameters("trips"), {**self.parameters("routes"), "mode": "overwrite_all"}):
+            spark = MagicMock()
+            with self.subTest(parameters=parameters), self.assertRaises(ValueError):
+                pipeline.run_entity(spark, **parameters)
+            spark.conf.set.assert_not_called()
+            spark.catalog.tableExists.assert_not_called()
+
+
+if __name__ == "__main__":
+    unittest.main()

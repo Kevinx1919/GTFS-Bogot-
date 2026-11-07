@@ -85,9 +85,16 @@ class SilverConfigurationTests(unittest.TestCase):
 
     def test_only_implemented_entity_is_enabled(self):
         registry = load_registry()
-        self.assertEqual(list(registry), ["agency"])
+        self.assertEqual(list(registry), ["agency", "routes"])
         self.assertTrue(registry["agency"]["enabled"])
         self.assertEqual(registry["agency"]["depends_on"], [])
+        self.assertEqual(registry["routes"]["depends_on"], ["agency"])
+        self.assertEqual(registry["routes"]["validator"], "routes_v1")
+        job = build_job("/Workspace/Shared/example-project")
+        routes = job["tasks"][1]
+        self.assertEqual(routes["depends_on"], [{"task_key": "publish_snapshots"}])
+        self.assertEqual(routes["for_each_task"]["concurrency"], 1)
+        self.assertEqual(routes["for_each_task"]["inputs"], "{{job.parameters.routes_work_items}}")
 
     def test_false_reconciliation_is_rejected_before_any_write(self):
         result = validate_snapshot(data(spec()), COLUMNS, spec())
@@ -221,6 +228,47 @@ class SilverPublicationDeltaTests(unittest.TestCase):
             _overwrite_scope(existing.withColumn("source_sha256", F.lit("b" * 64)),
                              self.tables.name("silver"), snapshot_predicate(selected))
         self.assertEqual(self.spark.table(self.tables.name("silver")).count(), 7)
+
+    def test_routes_reuses_publication_audit_retry_and_quarantine(self):
+        from gtfs_silver.models import SnapshotSpec
+        from gtfs_silver.publication import publish_snapshot
+        from gtfs_silver.routes_spark import read_and_validate
+        from test_routes_validation import COLUMNS as route_columns, fixture as route_fixture
+        from pyspark.sql.types import StringType, StructField, StructType, TimestampType
+        selected = spec()
+        self.publish(selected)
+        dependency = self.spark.table(self.tables.name("silver"))
+        tables = PublicationTables("spark_catalog", self.namespace, "routes")
+        schema = StructType([StructField(c, StringType()) for c in
+                             (*route_columns, "source_feed_version", "source_sha256", "source_file_path")]
+                            + [StructField("bronze_loaded_at_utc", TimestampType())])
+        for version, content_hash in (("2025-10-28", "a" * 64), ("2026-09-29", "b" * 64)):
+            agency_spec = spec(version, content_hash)
+            if version != selected.feed_version:
+                self.publish(agency_spec)
+                dependency = self.spark.table(self.tables.name("silver"))
+            route_spec = SnapshotSpec(version, content_hash, "/fixture/routes.txt", "routes")
+            rows = [route_fixture("same", source_feed_version=version, source_sha256=content_hash,
+                                  route_long_name=version)]
+            result = read_and_validate(self.spark.createDataFrame(rows, schema), route_columns, route_spec, dependency)
+            preview = publish_snapshot(self.spark, result, route_spec, tables, mode="validate")
+            self.assertFalse(preview["persisted"])
+            self.assertFalse(self.spark.catalog.tableExists(tables.name("silver")) if version == selected.feed_version else False)
+            publish_snapshot(self.spark, result, route_spec, tables, run_id=version)
+        publish_snapshot(self.spark, result, route_spec, tables, run_id=version)
+        self.assertEqual(self.spark.table(tables.name("silver")).count(), 2)
+        self.assertEqual(self.spark.table(tables.name("silver")).schema["route_type"].dataType.simpleString(), "int")
+        rows[0]["route_type"] = "bad"
+        rejected = read_and_validate(self.spark.createDataFrame(rows * 2, schema), route_columns, route_spec, dependency)
+        with self.assertRaises(SnapshotRejectedError):
+            publish_snapshot(self.spark, rejected, route_spec, tables, run_id="route-rejected")
+        self.assertEqual(self.spark.table(tables.name("silver")).count(), 2)
+        quarantine = self.spark.table(tables.name("quarantine")).first()
+        self.assertEqual(quarantine.route_id, "same")
+        self.assertEqual(quarantine.input_copies, 2)
+        self.assertIn("ROUTE_TYPE_INVALID", quarantine.error_codes)
+        statuses = {row.status for row in self.spark.table(tables.name("audit")).filter("entity = 'routes'").collect()}
+        self.assertEqual(statuses, {"SUCCEEDED", "REJECTED"})
 
     def test_failure_after_commit_is_explicit_in_audit_and_requires_review(self):
         selected = spec()

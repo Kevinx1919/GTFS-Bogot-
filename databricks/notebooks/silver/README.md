@@ -27,6 +27,6 @@ El bloque 0 crea widgets; las consultas siguientes son de lectura. Las consultas
 | [Contrato v1 de agency](../../../docs/contracts/agency.md) | Tipos, obligatoriedad, errores y protección del histórico antes de transformar. |
 | [Plan Silver](../../../docs/silver_design.md) | Orden completo de entidades y criterios para avanzar. |
 
-Ya revisé las salidas del perfilador PySpark de agency para ambos snapshots. Preparé los validadores del contrato v1 y el notebook 09 de lectura. Su núcleo Python ya fue contrastado con ambos snapshots; el notebook 09 también fue ejecutado para ambos snapshots en Databricks. Implementé la publicación y el notebook 10, con 64 pruebas aprobadas localmente, sin omisiones. Falta la publicación y creación del Job en el workspace.
+Ya revisé y publiqué agency para ambos snapshots, y su Job manual terminó con éxito. El perfil real de [routes](../../../docs/routes_profile_2025_2026.md) y su [contrato v1](../../../docs/contracts/routes.md) están documentados. Su implementación Spark reutiliza el notebook 10 y la publicación común; todavía debo ejecutarla en Workspace.
 
-El perfilador y la guía ya quedaron versionados en GitHub. Los validadores y el notebook 09 ya quedaron versionados en GitHub. El notebook 10, la publicación, la configuración del Job y las actualizaciones de esta revisión están pendientes de commit/push. Genie no publica automáticamente mi código.
+Para las corridas habituales uso solo el notebook 10: bloque 1 de parámetros/imports y bloque 2 de ejecución. Los notebooks 08 y 09 conservan su valor de aprendizaje y diagnóstico; no son requisitos por corrida ni necesito duplicarlos para routes. Configuro dependencias en el entorno antes de ejecutar.

@@ -244,3 +244,19 @@ No hay una transacción de las tres tablas. Si Silver se escribió y una etapa p
 El Job usa el notebook 10 una vez por entrada, sin ejecutar 08 y 09 como pasos adicionales. La primera configuración limita a una ejecución y una iteración simultáneas. Es manual, sin schedule. Su definición se genera con gtfs_silver.job_config y queda versionada en databricks/jobs/. Las instrucciones de creación y la evolución hacia más entidades están en [ejecución Silver](silver_execution.md).
 
 verify_history=true compara las otras versiones contra una lectura Delta fijada antes de la escritura. Es una comprobación explícita adecuada para agency; para entidades grandes mediré su costo y mantendré las pruebas de preservación sin exigir un escaneo histórico completo en cada corrida.
+
+
+## Ampliación a routes y simplificación del notebook 10 — 6 de noviembre de 2026
+
+Ya publiqué agency para ambos snapshots y ejecuté su Job manual con éxito. Comprobé siete agencias por snapshot con Genie. El perfil inicial de routes y su contrato están en [perfil routes](routes_profile_2025_2026.md) y [routes_v1](contracts/routes.md).
+
+La versión actual del notebook 10 tiene únicamente estos bloques. Esta tabla sustituye las instrucciones anteriores de instalar/reiniciar dentro de la ejecución y el antiguo bloque 3:
+
+| Bloque | Propósito | Entradas | Salidas | Efectos y verificación |
+| --- | --- | --- | --- | --- |
+| 1 / parámetros e imports | Elegir entidad y snapshot; localizar el repositorio. | Widgets y módulos versionados; dependencias ya configuradas en el entorno. | Parámetros y run_entity importado. | Sin escrituras. Después de reiniciar Python comienzo aquí. |
+| 2 / ejecución | Leer versiones Delta fijadas, validar y publicar. | Bronze, encabezado real y, para routes, agency_v1 del mismo snapshot. | JSON con métricas, estado e ID de intento. | mode=validate no escribe; publish usa Silver, cuarentena y auditoría. Reconcilia y verifica la lectura posterior. |
+
+Retiré el conteo histórico automático del bloque 3 porque repetía lectura en cada iteración. Si necesito una inspección puntual uso el SQL de la [guía de ejecución](silver_execution.md). No añadí notebooks de perfil y validación separados para routes: sus reglas automáticas viven en routes_spark.py y la evidencia inicial en SQL/documentación.
+
+El pipeline mantiene la excepción acotada de agency (1.000 filas) y procesa routes con expresiones Spark y un cruce con agency del mismo snapshot. Los IDs siguen string; route_type y route_sort_order son int. La ausencia de route_desc en 2026 se conserva con source_columns. La plantilla del Job añade una etapa routes dependiente del éxito de agency; todavía debo aplicar y ejecutar esa ampliación en Databricks.

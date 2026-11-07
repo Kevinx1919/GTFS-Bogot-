@@ -316,6 +316,24 @@ Por ahora mantengo la propuesta string para los campos conocidos. No encontré u
 
 **Lo que falta:** sincronizar el notebook 10, crear el Job y ejecutar la primera publicación en el workspace. Ya identifiqué la raíz del repositorio y generé su configuración real fuera de Git. Al comprobar la carpeta, la consola indicó que no admite control automatizado; detuve la interacción sin crear recursos. Genie permite consultas, pero sus herramientas disponibles no crean Jobs y no tengo un perfil CLI local autenticado. La [guía de ejecución](docs/silver_execution.md) deja el procedimiento y la evolución hacia más tablas.
 
+### Hito 18 — Agency publicada y Job manual comprobado
+
+**Fecha:** 6 de noviembre de 2026. Publiqué agency para 2025 y 2026 desde el notebook 10. El primer resultado confirmó siete filas, cero rechazos y lectura posterior correcta; después apareció el segundo snapshot. Creé el Job manual y, tras corregir una sintaxis del notebook, obtuve dos ejecuciones exitosas. Confirmé con Genie siete filas e IDs únicos por snapshot, con agency_v1.
+
+Resolví dos diferencias entre preparar código y ejecutarlo: el entorno del notebook 10 necesitaba sus propias dependencias y errorifexists no era compatible con la primera creación. Cambié a writeTo(...).using("delta").create() y comprobé que no reemplaza una tabla existente. Al reiniciar Python tuve que volver al bloque de imports antes de ejecutar funciones.
+
+### Hito 19 — Routes con contrato propio y pipeline compartido
+
+**Fecha:** 6 de noviembre de 2026. Perfilé routes de ambos snapshots mediante Genie, recuperando resultados estructurados y conservando el SQL de lectura. Encontré 676 y 1.045 rutas, sin IDs vacíos, copias, conflictos ni agencias huérfanas en los controles ejecutados. El nombre largo nulo de 2025 tiene nombre corto; route_desc no fue publicado en 2026. No convierto estas diferencias en afirmaciones sobre operación real o continuidad entre años.
+
+Definí [routes_v1](docs/contracts/routes.md) e implementé sus conversiones, controles y duplicados con expresiones Spark. Reutilicé el escritor, auditoría, cuarentena y notebook 10; mantuve el esquema de agency. Fijé versiones Delta de entrada y preparé una etapa routes que depende del éxito de agency.
+
+Simplifiqué la ejecución: no copié notebooks 08 y 09 para routes, retiré la instalación y los dos reinicios que se repetían por iteración y eliminé el conteo histórico adicional del notebook 10. El resumen de publicación ya verifica la salida. Mi objetivo es reducir trabajo repetido sin quitar controles; no afirmo una mejora de tiempo hasta medir el Job ampliado.
+
+**Validación local:** pasaron 75 pruebas completas con Spark 4.0.1 y Delta 4.0.0, sin omisiones, y tres pruebas adicionales de despacho del pipeline sin IO. Comprobé reintentos, cuarentena y conservación de ambos snapshots; no extrapolo ese resultado a un tiempo de ejecución en Free Edition.
+
+**Alcance:** el perfil de origen y la dependencia agency están consultados en Databricks. El nuevo código y la plantilla están preparados localmente; todavía debo sincronizarlos, actualizar el Job existente y ejecutar routes_v1 en Workspace. No he modificado Bronze ni publicado routes mediante Genie.
+
 ## Qué no publicar
 
 - Access tokens, secretos, archivos `.env`, cookies, hostnames privados o identificadores de cuenta.
@@ -329,7 +347,7 @@ Por ahora mantengo la propuesta string para los campos conocidos. No encontré u
 - [ ] Validación de fuentes, licencia y conectividad desde Databricks.
 - [ ] Primer archivo GTFS-Realtime almacenado en raw con manifiesto.
 - [x] Primera carga Bronze y auditoría; reejecución manual comprobada para `stop_times`.
-- [ ] Decodificación a Silver con métricas de calidad y cuarentena.
+- [x] Primera entidad Silver (agency) publicada con métricas de calidad, cuarentena y Job manual.
 - [ ] Versión del GTFS estático vinculada a entidades realtime.
 - [ ] Primera métrica Gold de velocidad operacional y cobertura de flota.
 - [ ] Baseline histórico y detección determinista de anomalías.
