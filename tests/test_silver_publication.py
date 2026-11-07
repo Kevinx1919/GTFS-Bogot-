@@ -270,6 +270,41 @@ class SilverPublicationDeltaTests(unittest.TestCase):
         statuses = {row.status for row in self.spark.table(tables.name("audit")).filter("entity = 'routes'").collect()}
         self.assertEqual(statuses, {"SUCCEEDED", "REJECTED"})
 
+    def test_pipeline_reads_bronze_and_agency_with_real_versioned_delta_reader(self):
+        from gtfs_silver import pipeline
+        from test_routes_validation import COLUMNS as route_columns, fixture as route_fixture
+        from pyspark.sql.types import StringType, StructField, StructType, TimestampType
+        selected = spec()
+        parameters = dict(catalog="spark_catalog", schema=self.namespace, staging_volume="staging",
+                          feed_version=selected.feed_version, snapshot_sha256=selected.sha256)
+        base = (f"/Volumes/spark_catalog/{self.namespace}/staging/gtfs_static/"
+                f"feed_version={selected.feed_version}/sha256={selected.sha256}")
+        agency_spec = SnapshotSpec(selected.feed_version, selected.sha256, base + "/agency.txt")
+        agency_schema = StructType([
+            *[StructField(c, StringType()) for c in (*COLUMNS, "source_feed_version", "source_sha256", "source_file_path")],
+            StructField("bronze_loaded_at_utc", TimestampType()),
+        ])
+        agency_source = self.spark.createDataFrame(data(agency_spec), agency_schema)
+        agency_source.writeTo(f"spark_catalog.{self.namespace}.bronze_gtfs_agency").using("delta").create()
+        with patch.object(pipeline, "read_source_header", return_value=COLUMNS):
+            agency_output = pipeline.run_entity(self.spark, entity="agency", **parameters)
+        self.assertEqual(agency_output["status"], "SUCCEEDED")
+        self.assertEqual(agency_output["candidate_rows"], 7)
+        route_schema = StructType([
+            *[StructField(c, StringType()) for c in (*route_columns, "source_feed_version", "source_sha256", "source_file_path")],
+            StructField("bronze_loaded_at_utc", TimestampType()),
+        ])
+        route_source = self.spark.createDataFrame([route_fixture(source_file_path=base + "/routes.txt")], route_schema)
+        route_source.writeTo(f"spark_catalog.{self.namespace}.bronze_gtfs_routes").using("delta").create()
+        # Solo simulo el encabezado Staging; el pipeline, lector y escritor Delta son reales.
+        with patch.object(pipeline.routes_spark, "read_source_header", return_value=route_columns):
+            output = pipeline.run_entity(self.spark, entity="routes", **parameters)
+            retry = pipeline.run_entity(self.spark, entity="routes", **parameters)
+        self.assertEqual(output["status"], "SUCCEEDED")
+        self.assertEqual(retry["candidate_rows"], 1)
+        self.assertEqual(self.spark.table(f"spark_catalog.{self.namespace}.silver_gtfs_routes").count(), 1)
+        self.assertEqual(self.spark.table(self.tables.name("silver")).count(), 7)
+
     def test_failure_after_commit_is_explicit_in_audit_and_requires_review(self):
         selected = spec()
         with patch("gtfs_silver.publication._same_rows", return_value=False), self.assertRaises(RuntimeError):

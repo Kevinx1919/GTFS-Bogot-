@@ -334,6 +334,12 @@ Simplifiqué la ejecución: no copié notebooks 08 y 09 para routes, retiré la 
 
 **Alcance:** el perfil de origen y la dependencia agency están consultados en Databricks. El nuevo código y la plantilla están preparados localmente; todavía debo sincronizarlos, actualizar el Job existente y ejecutar routes_v1 en Workspace. No he modificado Bronze ni publicado routes mediante Genie.
 
+### Hito 20 — Corregir el lector del pipeline tras la primera ejecución ampliada
+
+Al ejecutar el Job ampliado encontré un doble entrecomillado de identificadores: el pipeline entregaba nombres con backticks a un lector que esperaba nombres planos. El fallo bloqueó agency antes de validar y dejó routes sin ejecutar. Corregí ambas rutas del código conservando la validación estricta de nombres.
+
+Las pruebas previas de despacho sustituían el lector, por lo que no detectaron esa incompatibilidad. Cambié esas pruebas para ejecutar la función real y reproduje el mismo ValueError antes de corregirlo. Añadí un recorrido con tablas Delta de prueba para agency, routes y reintento. Pasaron las tres pruebas de despacho corregidas y la nueva prueba de integración con Spark y Delta reales, incluido el reintento de routes sin duplicados. La recuperación del Job en el workspace requiere sincronizar la corrección y reparar el run; no presento las pruebas locales como esa recuperación.
+
 ## Qué no publicar
 
 - Access tokens, secretos, archivos `.env`, cookies, hostnames privados o identificadores de cuenta.

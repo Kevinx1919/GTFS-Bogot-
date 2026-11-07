@@ -17,13 +17,19 @@ class SilverPipelineTests(unittest.TestCase):
     def test_routes_dispatches_with_matching_source_path_and_pinned_dependency(self):
         spark = MagicMock()
         spark.catalog.tableExists.return_value = True
+        spark.sql.return_value.first.return_value = {"version": 4}
+        spark.read.option.return_value.table.side_effect = [sentinel.bronze, sentinel.agency]
         with patch.object(pipeline.routes_spark, "read_source_header", return_value=("route_id",)), \
-             patch.object(pipeline, "_versioned_table", side_effect=[sentinel.bronze, sentinel.agency]) as read, \
+             patch.object(pipeline, "_versioned_table", wraps=pipeline._versioned_table) as read, \
              patch.object(pipeline.routes_spark, "read_and_validate", return_value=sentinel.result) as validate, \
              patch.object(pipeline, "publish_snapshot", return_value={"persisted": False}) as publish:
             result = pipeline.run_entity(spark, **self.parameters("routes"))
         self.assertFalse(result["persisted"])
         self.assertEqual(read.call_count, 2)
+        self.assertEqual(read.call_args_list[0].args[1], "workspace.fixture.bronze_gtfs_routes")
+        self.assertEqual(read.call_args_list[1].args[1], "workspace.fixture.silver_gtfs_agency")
+        self.assertEqual(spark.sql.call_args_list[0].args[0],
+                         "describe history `workspace`.`fixture`.`bronze_gtfs_routes` limit 1")
         arguments = validate.call_args.args
         self.assertIs(arguments[0], sentinel.bronze)
         self.assertIs(arguments[3], sentinel.agency)
@@ -34,11 +40,16 @@ class SilverPipelineTests(unittest.TestCase):
     def test_agency_keeps_bounded_validator_and_compatible_publication(self):
         spark = MagicMock()
         spark.catalog.tableExists.return_value = True
+        spark.sql.return_value.first.return_value = {"version": 4}
+        spark.read.option.return_value.table.return_value = sentinel.bronze
         with patch.object(pipeline, "read_source_header", return_value=("agency_id",)), \
-             patch.object(pipeline, "_versioned_table", return_value=sentinel.bronze), \
+             patch.object(pipeline, "_versioned_table", wraps=pipeline._versioned_table), \
              patch.object(pipeline, "read_and_validate", return_value=sentinel.result) as validate, \
              patch.object(pipeline, "publish_agency", return_value={"persisted": False}):
             pipeline.run_entity(spark, **self.parameters("agency"))
+        self.assertIs(validate.call_args.args[0], sentinel.bronze)
+        self.assertEqual(spark.sql.call_args.args[0],
+                         "describe history `workspace`.`fixture`.`bronze_gtfs_agency` limit 1")
         self.assertEqual(validate.call_args.args[3], 1000)
         self.assertEqual(validate.call_args.args[2].entity, "agency")
 

@@ -50,14 +50,14 @@ def run_entity(spark, *, catalog: str, schema: str, staging_volume: str,
     spec = SnapshotSpec(feed_version, snapshot_sha256, source_path, entity)
     header_reader = read_source_header if entity == "agency" else routes_spark.read_source_header
     columns = header_reader(source_path)
-    bronze = quoted_table(f"{catalog}.{schema}.{configuration['bronze_table']}")
-    if not spark.catalog.tableExists(bronze):
+    bronze = f"{catalog}.{schema}.{configuration['bronze_table']}"
+    if not spark.catalog.tableExists(quoted_table(bronze)):
         raise ValueError("No existe Bronze para la entidad seleccionada.")
     # Fijar versiones Delta evita que acciones posteriores lean otro estado de entrada.
     source = _versioned_table(spark, bronze)
     if entity == "routes":
-        dependency = quoted_table(f"{catalog}.{schema}.silver_gtfs_agency")
-        if not spark.catalog.tableExists(dependency):
+        dependency = f"{catalog}.{schema}.silver_gtfs_agency"
+        if not spark.catalog.tableExists(quoted_table(dependency)):
             raise ValueError("Publica agency en Silver antes de procesar routes.")
         result = routes_spark.read_and_validate(source, columns, spec, _versioned_table(spark, dependency))
         return publish_snapshot(

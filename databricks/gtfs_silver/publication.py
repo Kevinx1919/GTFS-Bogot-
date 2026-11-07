@@ -83,6 +83,7 @@ def _overwrite_scope(frame, table: str, predicate: str, *, allow_empty: bool = F
 
 
 def _versioned_table(spark, table: str):
+    """Recibe catálogo.schema.tabla sin comillas y fija una versión Delta para su lectura."""
     quoted = quoted_table(table)
     version = spark.sql(f"describe history {quoted} limit 1").first()["version"]
     return spark.read.option("versionAsOf", version).table(quoted)
