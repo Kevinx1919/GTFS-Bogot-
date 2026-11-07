@@ -1,0 +1,499 @@
+{
+  "schema_version": 2,
+  "diagram_type": "workflow",
+  "meta": {
+    "locale": "es",
+    "quality_profile": "showcase",
+    "repository": {
+      "url": "https://github.com/Kevinx1919/GTFS-Bogot-.git",
+      "revision": "598bc0de6b65b25ffa2ef13b628ab0966fd41dcd"
+    },
+    "title": "Mi Job Silver: una entidad y un snapshot",
+    "output": "docs/flujo_pipeline/job_silver/iteracion_snapshot.html",
+    "views": [
+      {
+        "id": "publicacion",
+        "label": "Si el snapshot pasa",
+        "focus": [
+          "leer",
+          "validar",
+          "auditar",
+          "cuarentena",
+          "apto",
+          "publicar",
+          "verificar",
+          "exito"
+        ],
+        "note": "El flujo corresponde a mode=publish; primero valida y después escribe."
+      },
+      {
+        "id": "rechazos",
+        "label": "Si hay datos rechazados",
+        "focus": [
+          "validar",
+          "auditar",
+          "cuarentena",
+          "apto",
+          "rechazado"
+        ],
+        "note": "Conservo motivos en cuarentena y no publico un snapshot parcial."
+      },
+      {
+        "id": "error_entrada",
+        "label": "Si falla la preparación",
+        "focus": [
+          "leer",
+          "validar",
+          "auditar",
+          "previo"
+        ],
+        "note": "Si todavía no hay auditoría persistida, el error queda en la ejecución del Job."
+      },
+      {
+        "id": "error_escritura",
+        "label": "Si falla la publicación",
+        "focus": [
+          "publicar",
+          "verificar",
+          "fallido"
+        ],
+        "note": "FAILED puede tener silver_committed=true; reviso el intento antes de reintentar."
+      }
+    ],
+    "legend": {
+      "entries": {
+        "frontend": {
+          "label": "Acción manual"
+        },
+        "backend": {
+          "label": "Pipeline y estados"
+        }
+      }
+    }
+  },
+  "lanes": [
+    {
+      "id": "preparacion",
+      "label": "Lectura, reglas y evidencia"
+    },
+    {
+      "id": "salida",
+      "label": "Publicación confirmada"
+    },
+    {
+      "id": "errores",
+      "label": "Salidas que requieren revisión",
+      "variant": "exception"
+    }
+  ],
+  "mainPath": [
+    "leer",
+    "validar",
+    "auditar",
+    "cuarentena",
+    "apto",
+    "publicar",
+    "verificar",
+    "exito"
+  ],
+  "nodes": [
+    {
+      "id": "leer",
+      "lane": "preparacion",
+      "col": 0,
+      "type": "backend",
+      "label": "Leer snapshot",
+      "sublabel": "Bronze + encabezado",
+      "sources": [
+        {
+          "path": "databricks/gtfs_silver/pipeline.py",
+          "line": 45,
+          "end_line": 62,
+          "label": "Entradas y versiones Delta"
+        },
+        {
+          "path": "databricks/gtfs_silver/routes_spark.py",
+          "line": 65,
+          "end_line": 78,
+          "label": "Dependencia del mismo snapshot"
+        }
+      ]
+    },
+    {
+      "id": "validar",
+      "lane": "preparacion",
+      "col": 1,
+      "type": "backend",
+      "label": "Validar y tipar",
+      "sublabel": "Candidatos y rechazos",
+      "sources": [
+        {
+          "path": "databricks/gtfs_silver/pipeline.py",
+          "line": 62,
+          "end_line": 70,
+          "label": "Despacho por entidad"
+        },
+        {
+          "path": "databricks/gtfs_silver/routes_spark.py",
+          "line": 136,
+          "end_line": 174,
+          "label": "Tipos y reconciliación"
+        },
+        {
+          "path": "databricks/gtfs_silver/agency_spark.py",
+          "line": 36,
+          "end_line": 43,
+          "label": "Agency acotada"
+        }
+      ]
+    },
+    {
+      "id": "auditar",
+      "lane": "preparacion",
+      "col": 2,
+      "type": "backend",
+      "label": "Abrir auditoría",
+      "sublabel": "Estado RUNNING",
+      "sources": [
+        {
+          "path": "databricks/gtfs_silver/publication.py",
+          "line": 170,
+          "end_line": 188,
+          "label": "Controles e inicio del intento"
+        }
+      ]
+    },
+    {
+      "id": "cuarentena",
+      "lane": "preparacion",
+      "col": 3,
+      "type": "backend",
+      "label": "Guardar rechazos",
+      "sublabel": "Motivos + copias",
+      "sources": [
+        {
+          "path": "databricks/gtfs_silver/publication.py",
+          "line": 190,
+          "end_line": 203,
+          "label": "Persistencia de cuarentena"
+        }
+      ]
+    },
+    {
+      "id": "apto",
+      "lane": "preparacion",
+      "col": 4,
+      "type": "backend",
+      "label": "¿Sin rechazos?",
+      "sublabel": "Decisión del contrato",
+      "sources": [
+        {
+          "path": "databricks/gtfs_silver/publication.py",
+          "line": 203,
+          "end_line": 217,
+          "label": "Barrera antes de Silver"
+        }
+      ],
+      "icon": "decision"
+    },
+    {
+      "id": "publicar",
+      "lane": "preparacion",
+      "col": 5,
+      "type": "backend",
+      "label": "Publicar snapshot",
+      "sublabel": "Solo versión + hash",
+      "sources": [
+        {
+          "path": "databricks/gtfs_silver/publication.py",
+          "line": 54,
+          "end_line": 82,
+          "label": "Escritura por ámbito"
+        },
+        {
+          "path": "databricks/gtfs_silver/publication.py",
+          "line": 218,
+          "end_line": 223,
+          "label": "Commit de Silver"
+        }
+      ]
+    },
+    {
+      "id": "verificar",
+      "lane": "salida",
+      "col": 5,
+      "type": "backend",
+      "label": "Verificar escritura",
+      "sublabel": "Lectura e histórico",
+      "sources": [
+        {
+          "path": "databricks/gtfs_silver/publication.py",
+          "line": 224,
+          "end_line": 228,
+          "label": "Comparación posterior"
+        }
+      ],
+      "yOffset": -55
+    },
+    {
+      "id": "exito",
+      "lane": "salida",
+      "col": 5,
+      "type": "backend",
+      "label": "Cerrar auditoría",
+      "sublabel": "SUCCEEDED · persisted",
+      "sources": [
+        {
+          "path": "databricks/gtfs_silver/publication.py",
+          "line": 229,
+          "end_line": 231,
+          "label": "Cierre y resultado"
+        }
+      ],
+      "icon": "success",
+      "yOffset": 55
+    },
+    {
+      "id": "previo",
+      "lane": "errores",
+      "col": 0,
+      "type": "backend",
+      "label": "Error previo",
+      "sublabel": "Revisar logs del Job",
+      "sources": [
+        {
+          "path": "databricks/gtfs_silver/pipeline.py",
+          "line": 30,
+          "end_line": 62,
+          "label": "Configuración y entradas"
+        },
+        {
+          "path": "databricks/gtfs_silver/routes_spark.py",
+          "line": 51,
+          "end_line": 78,
+          "label": "Contrato y dependencia"
+        },
+        {
+          "path": "databricks/gtfs_silver/publication.py",
+          "line": 188,
+          "end_line": 189,
+          "label": "Auditoría inicial fuera del try"
+        }
+      ],
+      "icon": "failure"
+    },
+    {
+      "id": "rechazado",
+      "lane": "errores",
+      "col": 3,
+      "type": "backend",
+      "label": "Snapshot rechazado",
+      "sublabel": "REJECTED · Silver intacta",
+      "sources": [
+        {
+          "path": "databricks/gtfs_silver/publication.py",
+          "line": 204,
+          "end_line": 205,
+          "label": "Bloqueo por rechazos"
+        },
+        {
+          "path": "databricks/gtfs_silver/publication.py",
+          "line": 232,
+          "end_line": 241,
+          "label": "Auditoría y tarea fallida"
+        }
+      ],
+      "icon": "failure"
+    },
+    {
+      "id": "fallido",
+      "lane": "errores",
+      "col": 5,
+      "type": "backend",
+      "label": "Fallo de publicación",
+      "sublabel": "FAILED · revisar commit",
+      "sources": [
+        {
+          "path": "databricks/gtfs_silver/publication.py",
+          "line": 232,
+          "end_line": 241,
+          "label": "Estado y silver_committed"
+        }
+      ],
+      "icon": "failure"
+    }
+  ],
+  "edges": [
+    {
+      "id": "leer_validar",
+      "from": "leer",
+      "to": "validar",
+      "role": "main",
+      "variant": "emphasis"
+    },
+    {
+      "id": "validar_auditar",
+      "from": "validar",
+      "to": "auditar",
+      "role": "main",
+      "variant": "emphasis"
+    },
+    {
+      "id": "auditar_cuarentena",
+      "from": "auditar",
+      "to": "cuarentena",
+      "role": "main",
+      "variant": "emphasis"
+    },
+    {
+      "id": "cuarentena_apto",
+      "from": "cuarentena",
+      "to": "apto",
+      "role": "main",
+      "variant": "emphasis"
+    },
+    {
+      "id": "apto_publicar",
+      "from": "apto",
+      "to": "publicar",
+      "role": "main",
+      "variant": "emphasis",
+      "label": "Sí"
+    },
+    {
+      "id": "publicar_verificar",
+      "from": "publicar",
+      "to": "verificar",
+      "role": "main",
+      "variant": "emphasis"
+    },
+    {
+      "id": "verificar_exito",
+      "from": "verificar",
+      "to": "exito",
+      "role": "main",
+      "variant": "emphasis",
+      "label": "Coincide"
+    },
+    {
+      "id": "leer_previo",
+      "from": "leer",
+      "to": "previo",
+      "role": "error",
+      "variant": "security",
+      "label": "Error",
+      "fromSide": "bottom",
+      "toSide": "top",
+      "route": "straight"
+    },
+    {
+      "id": "validar_previo",
+      "from": "validar",
+      "to": "previo",
+      "role": "error",
+      "variant": "security",
+      "label": "No inicia"
+    },
+    {
+      "id": "auditar_previo",
+      "from": "auditar",
+      "to": "previo",
+      "role": "error",
+      "variant": "security",
+      "label": "Error inicial",
+      "fromSide": "bottom",
+      "toSide": "right"
+    },
+    {
+      "id": "apto_rechazado",
+      "from": "apto",
+      "to": "rechazado",
+      "role": "error",
+      "variant": "security",
+      "label": "No"
+    },
+    {
+      "id": "cuarentena_fallo",
+      "from": "cuarentena",
+      "to": "fallido",
+      "role": "error",
+      "variant": "security",
+      "label": "Error"
+    },
+    {
+      "id": "publicar_fallo",
+      "from": "publicar",
+      "to": "fallido",
+      "role": "error",
+      "variant": "security",
+      "label": "Error"
+    },
+    {
+      "id": "verificar_fallo",
+      "from": "verificar",
+      "to": "fallido",
+      "role": "error",
+      "variant": "security",
+      "label": "Error"
+    }
+  ],
+  "semanticChecks": {
+    "allowedRoots": [
+      "leer"
+    ],
+    "allowedTerminals": [
+      "previo",
+      "rechazado",
+      "fallido",
+      "exito"
+    ],
+    "requiredPaths": [
+      {
+        "from": "leer",
+        "to": "exito"
+      },
+      {
+        "from": "apto",
+        "to": "rechazado"
+      }
+    ]
+  },
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "Qué selecciono y qué valido",
+      "items": [
+        "Esta vista sigue una llamada al notebook 10 con mode=publish, una entidad, una versión y un hash.",
+        "Leo el encabezado real y una versión Delta fijada de Bronze. Routes exige agency_v1 del mismo snapshot.",
+        "Agency conserva string y tiene límite de 1.000 filas en su validador; routes procesa sus registros en Spark y convierte route_type a int."
+      ]
+    },
+    {
+      "dot": "emerald",
+      "title": "Qué significa publicar correctamente",
+      "items": [
+        "Reconcilio entrada = candidatos + rechazados + copias consolidadas.",
+        "Escribo silver_gtfs_agency o silver_gtfs_routes solo para la versión y hash seleccionados.",
+        "Compruebo la lectura posterior y, con verify_history=true, las otras versiones. Después cierro la auditoría con SUCCEEDED."
+      ]
+    },
+    {
+      "dot": "rose",
+      "title": "Qué hago ante un error",
+      "items": [
+        "Un rechazo conserva la fila original y sus motivos en quarantine_gtfs_<entidad>; el snapshot no se publica parcialmente.",
+        "Si fallan configuración, encabezado o dependencia antes de publicar, consulto el Job. La auditoría inicial también puede fallar.",
+        "Las escrituras de auditoría, cuarentena y Silver son independientes. FAILED puede indicar silver_committed=true y requiere revisión; no hago rollback automático."
+      ]
+    },
+    {
+      "dot": "amber",
+      "title": "Cómo interpreto la interacción",
+      "items": [
+        "Los colores y animaciones explican el recorrido definido en el código; no representan una ejecución en vivo.",
+        "La lectura con mode=validate termina sin escribir y queda fuera de este recorrido de publicación.",
+        "El Job puede reintentar una iteración desde el inicio. La escritura por snapshot evita duplicados; un nuevo intento conserva su propia auditoría."
+      ]
+    }
+  ]
+}

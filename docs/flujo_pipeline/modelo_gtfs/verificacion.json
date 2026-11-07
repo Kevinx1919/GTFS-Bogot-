@@ -1,0 +1,66 @@
+{
+  "schema_version": 1,
+  "checked_at_utc": "2026-11-07T05:16:24.586859+00:00",
+  "tool": "Archify 3.2.0",
+  "repository_revision": "598bc0de6b65b25ffa2ef13b628ab0966fd41dcd",
+  "delivery_method": "Generé y comprobé en una carpeta temporal fuera de OneDrive. Copié los HTML finales byte a byte; este resumen registra la igualdad y no sustituye los recibos locales de Archify.",
+  "scope": "Comprobaciones de documentación y navegador local. No ejecuté Jobs ni consulté tablas en Databricks.",
+  "artifacts": [
+    {
+      "source": "modelo_silver.erd.json",
+      "source_sha256": "a8b5e66fc9ada1441c41b762ea4faa84b69779792655a8031a6b76c59b7bcccb",
+      "html": "modelo_silver.html",
+      "html_sha256": "08c698ca6284359a4cba15ca03ec7eda724582d9c58ddc5072637db2d15c5c02",
+      "bytes": 856472,
+      "automated_gates": {
+        "validate": "pass",
+        "deliver": "pass",
+        "check": "pass",
+        "browser-check": "pass"
+      },
+      "browser_capture_checks": "passed",
+      "visual_review": {
+        "status": "reviewed",
+        "themes": [
+          "light",
+          "dark"
+        ],
+        "viewports": [
+          "1440x900",
+          "2048x1320"
+        ],
+        "scope": "Revisé las cuatro capturas del artefacto final: texto, conexiones, claves o grupos y controles visibles. El panorama largo admite desplazamiento vertical."
+      },
+      "final_copy_matches_validated_artifact": true,
+      "advisories": []
+    },
+    {
+      "source": "panorama_gtfs.tree.json",
+      "source_sha256": "c9adfec135bcfac193bb2b41d6b1502e9b1c08446eee054f99e37ff069feeb0f",
+      "html": "panorama_gtfs.html",
+      "html_sha256": "5d9b4041745659d4f2039fba675130ea5ed3d3cf4959bf195ad47005af29736c",
+      "bytes": 867026,
+      "automated_gates": {
+        "validate": "pass",
+        "deliver": "pass",
+        "check": "pass",
+        "browser-check": "pass"
+      },
+      "browser_capture_checks": "passed",
+      "visual_review": {
+        "status": "reviewed",
+        "themes": [
+          "light",
+          "dark"
+        ],
+        "viewports": [
+          "1440x900",
+          "2048x1320"
+        ],
+        "scope": "Revisé las cuatro capturas del artefacto final: texto, conexiones, claves o grupos y controles visibles. El panorama largo admite desplazamiento vertical."
+      },
+      "final_copy_matches_validated_artifact": true,
+      "advisories": []
+    }
+  ]
+}

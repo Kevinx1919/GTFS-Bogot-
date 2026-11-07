@@ -1,0 +1,353 @@
+{
+  "schema_version": 1,
+  "diagram_type": "tree",
+  "meta": {
+    "title": "Mi modelo GTFS: alcance y crecimiento",
+    "locale": "es",
+    "output": "docs/flujo_pipeline/modelo_gtfs/panorama_gtfs.html",
+    "quality_profile": "showcase",
+    "repository": {
+      "url": "https://github.com/Kevinx1919/GTFS-Bogot-.git",
+      "revision": "598bc0de6b65b25ffa2ef13b628ab0966fd41dcd"
+    },
+    "views": [
+      {
+        "id": "actual",
+        "label": "Lo implementado",
+        "focus": [
+          "hoy",
+          "agency",
+          "routes"
+        ],
+        "note": "Solo agency y routes están habilitadas en el pipeline Silver actual."
+      },
+      {
+        "id": "programacion",
+        "label": "Servicios y viajes",
+        "focus": [
+          "servicios",
+          "calendar",
+          "calendar_dates",
+          "service_dates",
+          "viajes",
+          "trips",
+          "frequencies",
+          "stop_times"
+        ],
+        "note": "Este grupo es una propuesta de desarrollo; sus contratos Silver aún están pendientes."
+      },
+      {
+        "id": "territorio",
+        "label": "Ubicaciones y contexto",
+        "focus": [
+          "ubicaciones",
+          "stops",
+          "shapes",
+          "contexto",
+          "feed_info",
+          "fare_attributes",
+          "fare_rules"
+        ],
+        "note": "Distingo geometrías, ubicaciones, tarifas y metadata; los opcionales dependen de la fuente."
+      }
+    ]
+  },
+  "layout": {
+    "direction": "right"
+  },
+  "nodes": [
+    {
+      "id": "gtfs",
+      "label": "Mi modelo GTFS",
+      "sublabel": "Implementación y alcance pendiente",
+      "sources": [
+        {
+          "path": "docs/silver_design.md",
+          "line": 62,
+          "end_line": 79,
+          "label": "Plan de entidades Silver"
+        }
+      ]
+    },
+    {
+      "id": "hoy",
+      "label": "Silver implementada",
+      "sublabel": "Contratos agency_v1 y routes_v1",
+      "sources": [
+        {
+          "path": "databricks/gtfs_silver/pipeline.py",
+          "line": 32,
+          "end_line": 37,
+          "label": "Procesadores habilitados"
+        }
+      ],
+      "parent": "gtfs"
+    },
+    {
+      "id": "agency",
+      "label": "agency",
+      "sublabel": "Agencias o marcas por snapshot",
+      "sources": [
+        {
+          "path": "databricks/gtfs_silver/agency_validation.py",
+          "line": 18,
+          "end_line": 24,
+          "label": "Contrato agency_v1"
+        }
+      ],
+      "parent": "hoy"
+    },
+    {
+      "id": "routes",
+      "label": "routes",
+      "sublabel": "Rutas; referencia a agency",
+      "sources": [
+        {
+          "path": "databricks/gtfs_silver/routes_spark.py",
+          "line": 65,
+          "end_line": 78,
+          "label": "Referencia del mismo snapshot"
+        }
+      ],
+      "parent": "hoy"
+    },
+    {
+      "id": "ubicaciones",
+      "label": "Ubicaciones y trazados",
+      "sublabel": "PENDIENTE EN SILVER",
+      "sources": [
+        {
+          "path": "docs/silver_design.md",
+          "line": 62,
+          "end_line": 79,
+          "label": "Plan de entidades Silver"
+        }
+      ],
+      "parent": "gtfs"
+    },
+    {
+      "id": "stops",
+      "label": "stops",
+      "sublabel": "Ubicaciones y jerarquía",
+      "sources": [
+        {
+          "path": "docs/silver_design.md",
+          "line": 62,
+          "end_line": 79,
+          "label": "Plan de entidades Silver"
+        }
+      ],
+      "parent": "ubicaciones"
+    },
+    {
+      "id": "shapes",
+      "label": "shape_points",
+      "sublabel": "Puntos de shapes.txt",
+      "sources": [
+        {
+          "path": "docs/silver_design.md",
+          "line": 62,
+          "end_line": 79,
+          "label": "Plan de entidades Silver"
+        }
+      ],
+      "parent": "ubicaciones"
+    },
+    {
+      "id": "servicios",
+      "label": "Servicios y calendario",
+      "sublabel": "PENDIENTE EN SILVER",
+      "sources": [
+        {
+          "path": "docs/silver_design.md",
+          "line": 62,
+          "end_line": 79,
+          "label": "Plan de entidades Silver"
+        }
+      ],
+      "parent": "gtfs"
+    },
+    {
+      "id": "calendar",
+      "label": "calendar",
+      "sublabel": "Patrón semanal publicado",
+      "sources": [
+        {
+          "path": "docs/silver_design.md",
+          "line": 62,
+          "end_line": 79,
+          "label": "Plan de entidades Silver"
+        }
+      ],
+      "parent": "servicios"
+    },
+    {
+      "id": "calendar_dates",
+      "label": "calendar_dates",
+      "sublabel": "Excepciones por fecha",
+      "sources": [
+        {
+          "path": "docs/silver_design.md",
+          "line": 62,
+          "end_line": 79,
+          "label": "Plan de entidades Silver"
+        }
+      ],
+      "parent": "servicios"
+    },
+    {
+      "id": "service_dates",
+      "label": "service_dates",
+      "sublabel": "Derivada: días activos",
+      "sources": [
+        {
+          "path": "docs/silver_design.md",
+          "line": 62,
+          "end_line": 79,
+          "label": "Plan de entidades Silver"
+        }
+      ],
+      "parent": "servicios"
+    },
+    {
+      "id": "viajes",
+      "label": "Viajes y horarios",
+      "sublabel": "PENDIENTE EN SILVER",
+      "sources": [
+        {
+          "path": "docs/silver_design.md",
+          "line": 62,
+          "end_line": 79,
+          "label": "Plan de entidades Silver"
+        }
+      ],
+      "parent": "gtfs"
+    },
+    {
+      "id": "trips",
+      "label": "trips",
+      "sublabel": "Viajes o patrones publicados",
+      "sources": [
+        {
+          "path": "docs/silver_design.md",
+          "line": 62,
+          "end_line": 79,
+          "label": "Plan de entidades Silver"
+        }
+      ],
+      "parent": "viajes"
+    },
+    {
+      "id": "frequencies",
+      "label": "frequencies",
+      "sublabel": "Ventanas por frecuencia",
+      "sources": [
+        {
+          "path": "docs/silver_design.md",
+          "line": 62,
+          "end_line": 79,
+          "label": "Plan de entidades Silver"
+        }
+      ],
+      "parent": "viajes"
+    },
+    {
+      "id": "stop_times",
+      "label": "stop_times",
+      "sublabel": "Visitas planificadas a paradas",
+      "sources": [
+        {
+          "path": "docs/silver_design.md",
+          "line": 62,
+          "end_line": 79,
+          "label": "Plan de entidades Silver"
+        }
+      ],
+      "parent": "viajes"
+    },
+    {
+      "id": "contexto",
+      "label": "Tarifas y metadata",
+      "sublabel": "PENDIENTE EN SILVER",
+      "sources": [
+        {
+          "path": "docs/silver_design.md",
+          "line": 62,
+          "end_line": 79,
+          "label": "Plan de entidades Silver"
+        }
+      ],
+      "parent": "gtfs"
+    },
+    {
+      "id": "feed_info",
+      "label": "feed_info",
+      "sublabel": "Metadata del feed, si existe",
+      "sources": [
+        {
+          "path": "docs/silver_design.md",
+          "line": 62,
+          "end_line": 79,
+          "label": "Plan de entidades Silver"
+        }
+      ],
+      "parent": "contexto"
+    },
+    {
+      "id": "fare_attributes",
+      "label": "fare_attributes",
+      "sublabel": "Tarifas publicadas, si existen",
+      "sources": [
+        {
+          "path": "docs/silver_design.md",
+          "line": 62,
+          "end_line": 79,
+          "label": "Plan de entidades Silver"
+        }
+      ],
+      "parent": "contexto"
+    },
+    {
+      "id": "fare_rules",
+      "label": "fare_rules",
+      "sublabel": "Reglas tarifarias, si existen",
+      "sources": [
+        {
+          "path": "docs/silver_design.md",
+          "line": 62,
+          "end_line": 79,
+          "label": "Plan de entidades Silver"
+        }
+      ],
+      "parent": "contexto"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "Qué representan las líneas",
+      "items": [
+        "Las ramas agrupan el alcance por responsabilidad; no representan joins, claves foráneas ni el orden exacto del Job.",
+        "Para la relación implementada entre agency y routes abro el ERD con todas sus columnas."
+      ]
+    },
+    {
+      "dot": "emerald",
+      "title": "Cómo amplio la documentación",
+      "items": [
+        "Al incorporar una entidad reviso sus datos, cierro su contrato, implemento sus tipos y compruebo su ejecución.",
+        "Entonces la muevo al grupo implementado y añado sus columnas y relaciones al ERD.",
+        "Es como un índice de capítulos: el índice muestra lo que quiero cubrir, aunque algunos capítulos sigan por escribir."
+      ]
+    },
+    {
+      "dot": "amber",
+      "title": "Qué sigue siendo propuesta",
+      "items": [
+        "Los nombres shape_points y service_dates proceden del plan; service_dates es una entidad derivada, no un TXT adicional.",
+        "La disponibilidad de una tabla Bronze o un archivo no significa que su contrato Silver esté implementado.",
+        "No invento filas para archivos opcionales ausentes. Mantengo el snapshot en las futuras claves y relaciones."
+      ]
+    }
+  ]
+}

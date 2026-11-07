@@ -1,0 +1,321 @@
+{
+  "schema_version": 1,
+  "diagram_type": "erd",
+  "meta": {
+    "title": "Mi modelo Silver: agency y routes",
+    "locale": "es",
+    "output": "docs/flujo_pipeline/modelo_gtfs/modelo_silver.html",
+    "quality_profile": "showcase",
+    "repository": {
+      "url": "https://github.com/Kevinx1919/GTFS-Bogot-.git",
+      "revision": "598bc0de6b65b25ffa2ef13b628ab0966fd41dcd"
+    },
+    "views": [
+      {
+        "id": "identidad",
+        "label": "Identidad del snapshot",
+        "focus": [
+          "agency",
+          "routes"
+        ],
+        "note": "Relaciono versión + hash + agency_id. El ID aislado no representa continuidad entre años."
+      },
+      {
+        "id": "agencias",
+        "label": "Tabla agency",
+        "focus": [
+          "agency"
+        ],
+        "note": "Una agencia o marca dentro de un snapshot; conservo todos sus campos como string."
+      },
+      {
+        "id": "rutas",
+        "label": "Tabla routes",
+        "focus": [
+          "routes"
+        ],
+        "note": "Una ruta del snapshot; route_type y route_sort_order son int, los IDs siguen como string."
+      }
+    ],
+    "legend": {
+      "entries": {
+        "pk": {
+          "label": "Clave validada"
+        },
+        "fk": {
+          "label": "Referencia validada"
+        }
+      }
+    }
+  },
+  "layout": {
+    "mode": "grid",
+    "gapX": 160,
+    "gapY": 38,
+    "entityW": 360,
+    "rowH": 24
+  },
+  "entities": [
+    {
+      "id": "agency",
+      "label": "silver_gtfs_agency",
+      "tag": "Silver implementada",
+      "row": 0,
+      "col": 0,
+      "attributes": [
+        {
+          "name": "agency_id",
+          "type": "string",
+          "key": "pk"
+        },
+        {
+          "name": "agency_name",
+          "type": "string"
+        },
+        {
+          "name": "agency_url",
+          "type": "string"
+        },
+        {
+          "name": "agency_timezone",
+          "type": "string"
+        },
+        {
+          "name": "agency_lang",
+          "type": "string"
+        },
+        {
+          "name": "agency_phone",
+          "type": "string"
+        },
+        {
+          "name": "agency_fare_url",
+          "type": "string"
+        },
+        {
+          "name": "agency_email",
+          "type": "string"
+        },
+        {
+          "name": "source_feed_version",
+          "type": "string",
+          "key": "pk"
+        },
+        {
+          "name": "source_sha256",
+          "type": "string",
+          "key": "pk"
+        },
+        {
+          "name": "source_file_path",
+          "type": "string"
+        },
+        {
+          "name": "bronze_loaded_at_utc",
+          "type": "timestamp"
+        },
+        {
+          "name": "source_columns",
+          "type": "array<string>"
+        },
+        {
+          "name": "silver_rule_version",
+          "type": "string"
+        },
+        {
+          "name": "silver_run_id",
+          "type": "string"
+        },
+        {
+          "name": "silver_loaded_at_utc",
+          "type": "timestamp"
+        }
+      ],
+      "sources": [
+        {
+          "path": "databricks/gtfs_silver/agency_validation.py",
+          "line": 18,
+          "end_line": 24,
+          "label": "Campos de agency_v1"
+        },
+        {
+          "path": "databricks/gtfs_silver/agency_spark.py",
+          "line": 46,
+          "end_line": 57,
+          "label": "Esquema candidato explícito"
+        },
+        {
+          "path": "databricks/gtfs_silver/publication.py",
+          "line": 206,
+          "end_line": 217,
+          "label": "Campos finales y unicidad"
+        }
+      ]
+    },
+    {
+      "id": "routes",
+      "label": "silver_gtfs_routes",
+      "tag": "Silver implementada",
+      "row": 0,
+      "col": 1,
+      "attributes": [
+        {
+          "name": "route_id",
+          "type": "string",
+          "key": "pk"
+        },
+        {
+          "name": "agency_id",
+          "type": "string",
+          "key": "fk",
+          "references": "agency.agency_id"
+        },
+        {
+          "name": "route_short_name",
+          "type": "string"
+        },
+        {
+          "name": "route_long_name",
+          "type": "string"
+        },
+        {
+          "name": "route_desc",
+          "type": "string"
+        },
+        {
+          "name": "route_type",
+          "type": "int"
+        },
+        {
+          "name": "route_url",
+          "type": "string"
+        },
+        {
+          "name": "route_color",
+          "type": "string"
+        },
+        {
+          "name": "route_text_color",
+          "type": "string"
+        },
+        {
+          "name": "route_sort_order",
+          "type": "int"
+        },
+        {
+          "name": "source_feed_version",
+          "type": "string",
+          "key": [
+            "pk",
+            "fk"
+          ],
+          "references": "agency.source_feed_version"
+        },
+        {
+          "name": "source_sha256",
+          "type": "string",
+          "key": [
+            "pk",
+            "fk"
+          ],
+          "references": "agency.source_sha256"
+        },
+        {
+          "name": "source_file_path",
+          "type": "string"
+        },
+        {
+          "name": "bronze_loaded_at_utc",
+          "type": "timestamp"
+        },
+        {
+          "name": "source_columns",
+          "type": "array<string>"
+        },
+        {
+          "name": "silver_rule_version",
+          "type": "string"
+        },
+        {
+          "name": "silver_run_id",
+          "type": "string"
+        },
+        {
+          "name": "silver_loaded_at_utc",
+          "type": "timestamp"
+        }
+      ],
+      "sources": [
+        {
+          "path": "databricks/gtfs_silver/routes_spark.py",
+          "line": 13,
+          "end_line": 20,
+          "label": "Tipos del contrato routes_v1"
+        },
+        {
+          "path": "databricks/gtfs_silver/routes_spark.py",
+          "line": 65,
+          "end_line": 78,
+          "label": "Dependencia del mismo snapshot"
+        },
+        {
+          "path": "databricks/gtfs_silver/routes_spark.py",
+          "line": 159,
+          "end_line": 167,
+          "label": "Esquema tipado de salida"
+        }
+      ]
+    }
+  ],
+  "relationships": [
+    {
+      "id": "agency_routes",
+      "from": "routes",
+      "to": "agency",
+      "label": "Mismo snapshot",
+      "fromCardinality": "many",
+      "toCardinality": "one",
+      "fromOptional": true,
+      "toOptional": false,
+      "identifying": false
+    }
+  ],
+  "cards": [
+    {
+      "dot": "emerald",
+      "title": "Cómo leo las claves",
+      "items": [
+        "PK representa la clave compuesta que valido en el pipeline, no una restricción PRIMARY KEY declarada en Delta.",
+        "Agency: (source_feed_version, source_sha256, agency_id). Routes: (source_feed_version, source_sha256, route_id).",
+        "Las tres columnas FK de routes forman una sola referencia compuesta hacia agency; no son tres relaciones independientes."
+      ]
+    },
+    {
+      "dot": "cyan",
+      "title": "Qué significa la relación",
+      "items": [
+        "Cada ruta aceptada referencia una agency del mismo snapshot; una agency puede tener cero o muchas rutas.",
+        "La URL y el nombre son atributos; no los uso como identificadores ni homologación entre años.",
+        "Es como separar dos ediciones de un catálogo: el código 2 de una edición no demuestra que sea el mismo elemento en la siguiente. Es un ejemplo explicativo."
+      ]
+    },
+    {
+      "dot": "violet",
+      "title": "Todas las columnas de salida",
+      "items": [
+        "Incluyo 16 columnas físicas de agency y 18 de routes, también las de procedencia y auditoría.",
+        "source_columns distingue lo publicado en el archivo de una columna ausente; no lo deduzco solo por null.",
+        "silver_run_id identifica una ejecución; silver_rule_version identifica las reglas aplicadas. Ninguno sustituye la clave del snapshot."
+      ]
+    },
+    {
+      "dot": "amber",
+      "title": "Cómo crecerá este modelo",
+      "items": [
+        "Esta vista solo presenta contratos implementados. El panorama GTFS enumera el alcance pendiente.",
+        "Las claves se comprueban mediante validaciones y unicidad antes de publicar; los tipos proceden del código.",
+        "La verificación de la documentación no equivale a ejecutar un Job ni a volver a comprobar tablas en Databricks."
+      ]
+    }
+  ]
+}

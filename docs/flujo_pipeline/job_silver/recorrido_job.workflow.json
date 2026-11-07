@@ -1,0 +1,353 @@
+{
+  "schema_version": 2,
+  "diagram_type": "workflow",
+  "meta": {
+    "locale": "es",
+    "quality_profile": "showcase",
+    "repository": {
+      "url": "https://github.com/Kevinx1919/GTFS-Bogot-.git",
+      "revision": "598bc0de6b65b25ffa2ef13b628ab0966fd41dcd"
+    },
+    "title": "Mi Job Silver: primero agency, después routes",
+    "output": "docs/flujo_pipeline/job_silver/recorrido_job.html",
+    "views": [
+      {
+        "id": "camino_correcto",
+        "label": "Publicación correcta",
+        "focus": [
+          "iniciar",
+          "agency",
+          "routes",
+          "terminado"
+        ],
+        "note": "Cada etapa termina antes de habilitar la siguiente."
+      },
+      {
+        "id": "falla_agency",
+        "label": "Si falla agency",
+        "focus": [
+          "agency",
+          "error_agency",
+          "bloqueada",
+          "reparar"
+        ],
+        "note": "Routes queda bloqueada si agency no termina correctamente."
+      },
+      {
+        "id": "falla_routes",
+        "label": "Si falla routes",
+        "focus": [
+          "routes",
+          "error_routes",
+          "reparar"
+        ],
+        "note": "Reviso el intento y reparo las tareas que no terminaron."
+      }
+    ],
+    "legend": {
+      "entries": {
+        "frontend": {
+          "label": "Acción manual"
+        },
+        "backend": {
+          "label": "Pipeline y estados"
+        }
+      }
+    }
+  },
+  "lanes": [
+    {
+      "id": "orden",
+      "label": "Orden del Job"
+    },
+    {
+      "id": "incidencias",
+      "label": "Errores y recuperación",
+      "variant": "exception"
+    }
+  ],
+  "mainPath": [
+    "iniciar",
+    "agency",
+    "routes",
+    "terminado"
+  ],
+  "nodes": [
+    {
+      "id": "iniciar",
+      "lane": "orden",
+      "col": 0,
+      "type": "frontend",
+      "label": "Run now",
+      "sublabel": "Inicio manual",
+      "sources": [
+        {
+          "path": "docs/silver_execution.md",
+          "line": 48,
+          "end_line": 50,
+          "label": "Job manual documentado"
+        }
+      ],
+      "icon": "start"
+    },
+    {
+      "id": "agency",
+      "lane": "orden",
+      "col": 1,
+      "type": "backend",
+      "label": "Procesar agency",
+      "sublabel": "For each · 2025 y 2026",
+      "sources": [
+        {
+          "path": "databricks/gtfs_silver/job_config.py",
+          "line": 10,
+          "end_line": 15,
+          "label": "Snapshots configurados"
+        },
+        {
+          "path": "databricks/gtfs_silver/job_config.py",
+          "line": 45,
+          "end_line": 67,
+          "label": "Notebook y reintento"
+        }
+      ]
+    },
+    {
+      "id": "routes",
+      "lane": "orden",
+      "col": 3,
+      "type": "backend",
+      "label": "Procesar routes",
+      "sublabel": "For each · 2025 y 2026",
+      "sources": [
+        {
+          "path": "databricks/gtfs_silver/job_config.py",
+          "line": 72,
+          "end_line": 81,
+          "label": "Dependencia de agency"
+        },
+        {
+          "path": "databricks/gtfs_silver/pipeline.py",
+          "line": 58,
+          "end_line": 65,
+          "label": "Cruce con agency Silver"
+        }
+      ]
+    },
+    {
+      "id": "terminado",
+      "lane": "orden",
+      "col": 5,
+      "type": "backend",
+      "label": "Job completado",
+      "sublabel": "Ambas etapas correctas",
+      "sources": [
+        {
+          "path": "databricks/gtfs_silver/job_config.py",
+          "line": 72,
+          "end_line": 81,
+          "label": "Etapas conectadas"
+        },
+        {
+          "path": "databricks/gtfs_silver/publication.py",
+          "line": 224,
+          "end_line": 231,
+          "label": "Publicación verificada"
+        }
+      ],
+      "icon": "success"
+    },
+    {
+      "id": "error_agency",
+      "lane": "incidencias",
+      "col": 1,
+      "type": "backend",
+      "label": "Error en agency",
+      "sublabel": "Tras agotar reintentos",
+      "sources": [
+        {
+          "path": "databricks/gtfs_silver/job_config.py",
+          "line": 65,
+          "end_line": 66,
+          "label": "Un reintento configurado"
+        },
+        {
+          "path": "databricks/gtfs_silver/job_config.py",
+          "line": 78,
+          "end_line": 78,
+          "label": "Dependencia entre etapas"
+        }
+      ],
+      "icon": "failure"
+    },
+    {
+      "id": "bloqueada",
+      "lane": "incidencias",
+      "col": 3,
+      "type": "backend",
+      "label": "Routes bloqueada",
+      "sublabel": "Falla su dependencia",
+      "sources": [
+        {
+          "path": "databricks/gtfs_silver/job_config.py",
+          "line": 72,
+          "end_line": 81,
+          "label": "Routes espera a agency"
+        }
+      ],
+      "icon": "waiting"
+    },
+    {
+      "id": "error_routes",
+      "lane": "incidencias",
+      "col": 4,
+      "type": "backend",
+      "label": "Error en routes",
+      "sublabel": "Tras agotar reintentos",
+      "sources": [
+        {
+          "path": "databricks/gtfs_silver/job_config.py",
+          "line": 65,
+          "end_line": 66,
+          "label": "Política del notebook"
+        },
+        {
+          "path": "databricks/gtfs_silver/job_config.py",
+          "line": 76,
+          "end_line": 80,
+          "label": "Routes hereda la política"
+        }
+      ],
+      "icon": "failure"
+    },
+    {
+      "id": "reparar",
+      "lane": "incidencias",
+      "col": 5,
+      "type": "frontend",
+      "label": "Reparación manual",
+      "sublabel": "Reviso y corrijo la causa",
+      "sources": [
+        {
+          "path": "docs/silver_execution.md",
+          "line": 153,
+          "end_line": 153,
+          "label": "Pull y Repair run"
+        }
+      ],
+      "icon": "active"
+    }
+  ],
+  "edges": [
+    {
+      "id": "inicio_agency",
+      "from": "iniciar",
+      "to": "agency",
+      "role": "main",
+      "variant": "emphasis"
+    },
+    {
+      "id": "agency_routes",
+      "from": "agency",
+      "to": "routes",
+      "role": "main",
+      "variant": "emphasis",
+      "label": "All succeeded"
+    },
+    {
+      "id": "routes_fin",
+      "from": "routes",
+      "to": "terminado",
+      "role": "main",
+      "variant": "emphasis",
+      "label": "All succeeded"
+    },
+    {
+      "id": "agency_error",
+      "from": "agency",
+      "to": "error_agency",
+      "role": "error",
+      "variant": "security",
+      "label": "Fallo final"
+    },
+    {
+      "id": "agency_bloquea",
+      "from": "error_agency",
+      "to": "bloqueada",
+      "role": "error",
+      "variant": "security",
+      "label": "Bloquea"
+    },
+    {
+      "id": "bloqueada_reparar",
+      "from": "bloqueada",
+      "to": "reparar",
+      "role": "branch",
+      "variant": "default",
+      "label": "Revisar"
+    },
+    {
+      "id": "routes_error",
+      "from": "routes",
+      "to": "error_routes",
+      "role": "error",
+      "variant": "security",
+      "label": "Fallo final"
+    },
+    {
+      "id": "routes_reparar",
+      "from": "error_routes",
+      "to": "reparar",
+      "role": "branch",
+      "variant": "default"
+    }
+  ],
+  "semanticChecks": {
+    "allowedRoots": [
+      "iniciar"
+    ],
+    "allowedTerminals": [
+      "terminado",
+      "reparar"
+    ],
+    "requiredEdges": [
+      {
+        "from": "agency",
+        "to": "routes"
+      },
+      {
+        "from": "error_agency",
+        "to": "bloqueada"
+      }
+    ]
+  },
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "Cómo recorro este mapa",
+      "items": [
+        "Sigo la fila superior para entender el orden. Abro una etapa para ver sus referencias al código.",
+        "Ambos For each llaman al mismo notebook 10. Cambian entity, feed_version y snapshot_sha256.",
+        "La vista de una iteración explica qué ocurre dentro de cada llamada."
+      ]
+    },
+    {
+      "dot": "emerald",
+      "title": "Qué se ejecuta y cuándo",
+      "items": [
+        "El Job es manual. La lista versionada contiene los snapshots 2025-10-28 y 2026-09-29.",
+        "Cada For each usa concurrencia 1; el Job admite una ejecución simultánea.",
+        "Antes de cada iteración preparo dependencias en el entorno, sin instalar ni reiniciar Python en las celdas."
+      ]
+    },
+    {
+      "dot": "amber",
+      "title": "Reintentos y alcance",
+      "items": [
+        "La plantilla permite un reintento por iteración con intervalo mínimo de 60 segundos.",
+        "Si el error persiste, reviso el fallo y uso Repair run tras corregirlo. No reconstruyo todo el lakehouse.",
+        "Este mapa explica la definición versionada: no muestra telemetría en vivo ni confirma ajustes externos de la interfaz."
+      ]
+    }
+  ]
+}

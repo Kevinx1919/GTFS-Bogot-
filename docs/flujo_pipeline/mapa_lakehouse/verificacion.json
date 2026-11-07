@@ -1,0 +1,43 @@
+{
+  "schema_version": 1,
+  "checked_at_utc": "2026-11-07T05:16:24.584116+00:00",
+  "tool": "Archify 3.2.0",
+  "repository_revision": "598bc0de6b65b25ffa2ef13b628ab0966fd41dcd",
+  "delivery_method": "Generé y comprobé en una carpeta temporal fuera de OneDrive. Copié los HTML finales byte a byte; este resumen registra la igualdad y no sustituye los recibos locales de Archify.",
+  "scope": "Comprobaciones de documentación y navegador local. No ejecuté Jobs ni consulté tablas en Databricks.",
+  "artifacts": [
+    {
+      "source": "mapa_lakehouse.dataflow.json",
+      "source_sha256": "a85696e033c1ba3bee33890989832e4104ba2cd53151425fda18e235e9e0d62a",
+      "html": "mapa_lakehouse.html",
+      "html_sha256": "be89305fa62dec943829e092c08e5057ddabc3b0057d1f6e42cf9e3286c2f29d",
+      "bytes": 855974,
+      "automated_gates": {
+        "validate": "pass",
+        "deliver": "pass",
+        "check": "pass",
+        "browser-check": "pass"
+      },
+      "browser_capture_checks": "passed",
+      "visual_review": {
+        "status": "reviewed",
+        "themes": [
+          "light",
+          "dark"
+        ],
+        "viewports": [
+          "1440x900",
+          "2048x1320"
+        ],
+        "scope": "Revisé las cuatro capturas del artefacto final: texto, conexiones, claves o grupos y controles visibles. El panorama largo admite desplazamiento vertical."
+      },
+      "final_copy_matches_validated_artifact": true,
+      "advisories": [
+        {
+          "subject": "Encabezado TXT",
+          "observation": "La ruta tiene cuatro cambios de dirección; revisé que se puede seguir sin atravesar nodos."
+        }
+      ]
+    }
+  ]
+}

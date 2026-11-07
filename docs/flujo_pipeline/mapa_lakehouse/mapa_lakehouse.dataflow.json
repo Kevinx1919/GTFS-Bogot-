@@ -1,0 +1,462 @@
+{
+  "schema_version": 1,
+  "diagram_type": "dataflow",
+  "meta": {
+    "title": "Mi lakehouse GTFS: de archivos a tablas",
+    "locale": "es",
+    "output": "docs/flujo_pipeline/mapa_lakehouse/mapa_lakehouse.html",
+    "quality_profile": "showcase",
+    "repository": {
+      "url": "https://github.com/Kevinx1919/GTFS-Bogot-.git",
+      "revision": "598bc0de6b65b25ffa2ef13b628ab0966fd41dcd"
+    },
+    "views": [
+      {
+        "id": "archivos",
+        "label": "Archivos en Volumes",
+        "focus": [
+          "captura",
+          "raw",
+          "extraer",
+          "staging"
+        ],
+        "note": "Conservo el ZIP en Raw y extraigo TXT en Staging; ambos son archivos, no tablas."
+      },
+      {
+        "id": "tablas",
+        "label": "Bronze y Silver",
+        "focus": [
+          "ingesta",
+          "bronze",
+          "transformar",
+          "silver"
+        ],
+        "note": "Bronze y Silver comparten workspace.gtfs_bogota; cambian su responsabilidad y sus prefijos."
+      },
+      {
+        "id": "futuro",
+        "label": "Siguiente destino",
+        "focus": [
+          "silver",
+          "agregar",
+          "gold",
+          "bi"
+        ],
+        "note": "Gold y Power BI son el destino previsto; estas etapas siguen pendientes."
+      }
+    ]
+  },
+  "stages": [
+    {
+      "label": "Fuente y Raw"
+    },
+    {
+      "label": "Extracción"
+    },
+    {
+      "label": "Bronze"
+    },
+    {
+      "label": "Silver"
+    },
+    {
+      "label": "Consumo futuro"
+    }
+  ],
+  "nodes": [
+    {
+      "id": "oficial",
+      "type": "external",
+      "label": "Fuente GTFS",
+      "sublabel": "ZIP publicado",
+      "stage": 0,
+      "row": 0,
+      "tag": "Estático",
+      "sources": [
+        {
+          "path": "databricks/notebooks/02_raw_static_gtfs_ingestion.ipynb",
+          "line": 122,
+          "end_line": 142,
+          "label": "Descarga y hash"
+        }
+      ]
+    },
+    {
+      "id": "captura",
+      "type": "backend",
+      "label": "Capturar",
+      "sublabel": "Descarga + SHA-256",
+      "stage": 0,
+      "row": 1,
+      "tag": "Notebook 02",
+      "sources": [
+        {
+          "path": "databricks/notebooks/02_raw_static_gtfs_ingestion.ipynb",
+          "line": 122,
+          "end_line": 142,
+          "label": "Petición HTTP"
+        },
+        {
+          "path": "databricks/notebooks/02_raw_static_gtfs_ingestion.ipynb",
+          "line": 300,
+          "end_line": 335,
+          "label": "Escritura del ZIP"
+        },
+        {
+          "path": "databricks/notebooks/02_raw_static_gtfs_ingestion.ipynb",
+          "line": 374,
+          "end_line": 380,
+          "label": "Manifiesto inmutable"
+        }
+      ]
+    },
+    {
+      "id": "raw",
+      "type": "database",
+      "label": "Raw · ZIP",
+      "sublabel": "ZIP + manifiestos",
+      "stage": 0,
+      "row": 2,
+      "tag": "Volume raw_gtfs",
+      "sources": [
+        {
+          "path": "databricks/notebooks/02_raw_static_gtfs_ingestion.ipynb",
+          "line": 300,
+          "end_line": 335,
+          "label": "Destino Raw"
+        },
+        {
+          "path": "databricks/notebooks/02_raw_static_gtfs_ingestion.ipynb",
+          "line": 374,
+          "end_line": 380,
+          "label": "Manifiesto JSON"
+        }
+      ]
+    },
+    {
+      "id": "extraer",
+      "type": "backend",
+      "label": "Extraer TXT",
+      "sublabel": "No altero el ZIP",
+      "stage": 1,
+      "row": 2,
+      "tag": "Notebook 03",
+      "sources": [
+        {
+          "path": "databricks/notebooks/03_bronze_static_gtfs.ipynb",
+          "line": 140,
+          "end_line": 163,
+          "label": "Lee ZIP de Raw"
+        },
+        {
+          "path": "databricks/notebooks/03_bronze_static_gtfs.ipynb",
+          "line": 185,
+          "end_line": 198,
+          "label": "Escribe TXT en Staging"
+        }
+      ]
+    },
+    {
+      "id": "staging",
+      "type": "database",
+      "label": "Staging · TXT",
+      "sublabel": "Archivos extraídos",
+      "stage": 1,
+      "row": 3,
+      "tag": "Volume staging_gtfs",
+      "sources": [
+        {
+          "path": "databricks/notebooks/03_bronze_static_gtfs.ipynb",
+          "line": 140,
+          "end_line": 145,
+          "label": "Ruta por snapshot"
+        },
+        {
+          "path": "databricks/notebooks/03_bronze_static_gtfs.ipynb",
+          "line": 185,
+          "end_line": 198,
+          "label": "Destino de la extracción"
+        }
+      ]
+    },
+    {
+      "id": "ingesta",
+      "type": "backend",
+      "label": "Ingesta Bronze",
+      "sublabel": "Texto + procedencia",
+      "stage": 2,
+      "row": 3,
+      "tag": "Notebooks 03–05",
+      "sources": [
+        {
+          "path": "databricks/notebooks/03_bronze_static_gtfs.ipynb",
+          "line": 277,
+          "end_line": 296,
+          "label": "Lectura y procedencia"
+        },
+        {
+          "path": "databricks/notebooks/04_bronze_static_gtfs_reference_entities.ipynb",
+          "line": 230,
+          "end_line": 254,
+          "label": "Referencias a Delta"
+        },
+        {
+          "path": "databricks/notebooks/05_bronze_static_gtfs_operational_entities.ipynb",
+          "line": 173,
+          "end_line": 197,
+          "label": "Operativas a Delta"
+        }
+      ]
+    },
+    {
+      "id": "bronze",
+      "type": "database",
+      "label": "Bronze · Delta",
+      "sublabel": "bronze_gtfs_*",
+      "stage": 2,
+      "row": 4,
+      "tag": "Tablas fuente",
+      "sources": [
+        {
+          "path": "databricks/notebooks/03_bronze_static_gtfs.ipynb",
+          "line": 329,
+          "end_line": 362,
+          "label": "Tabla routes y append"
+        },
+        {
+          "path": "databricks/notebooks/04_bronze_static_gtfs_reference_entities.ipynb",
+          "line": 230,
+          "end_line": 254,
+          "label": "Tablas de referencia"
+        },
+        {
+          "path": "databricks/notebooks/05_bronze_static_gtfs_operational_entities.ipynb",
+          "line": 173,
+          "end_line": 197,
+          "label": "Shapes y stop_times"
+        }
+      ]
+    },
+    {
+      "id": "transformar",
+      "type": "backend",
+      "label": "Pipeline Silver",
+      "sublabel": "Valido, tipo y publico",
+      "stage": 3,
+      "row": 4,
+      "tag": "agency + routes",
+      "sources": [
+        {
+          "path": "databricks/gtfs_silver/pipeline.py",
+          "line": 26,
+          "end_line": 71,
+          "label": "Lee Bronze y encabezado"
+        },
+        {
+          "path": "databricks/gtfs_silver/publication.py",
+          "line": 190,
+          "end_line": 229,
+          "label": "Rechazos y publicación"
+        }
+      ]
+    },
+    {
+      "id": "silver",
+      "type": "database",
+      "label": "Silver · Delta",
+      "sublabel": "silver_gtfs_*",
+      "stage": 3,
+      "row": 3,
+      "tag": "agency + routes",
+      "sources": [
+        {
+          "path": "databricks/gtfs_silver/publication.py",
+          "line": 44,
+          "end_line": 50,
+          "label": "Nombres de tablas"
+        },
+        {
+          "path": "databricks/gtfs_silver/publication.py",
+          "line": 206,
+          "end_line": 229,
+          "label": "Publicación verificada"
+        }
+      ]
+    },
+    {
+      "id": "agregar",
+      "type": "backend",
+      "label": "Agregación",
+      "sublabel": "Métricas por definir",
+      "stage": 4,
+      "row": 3,
+      "tag": "PENDIENTE",
+      "sources": [
+        {
+          "path": "docs/silver_design.md",
+          "line": 9,
+          "end_line": 11,
+          "label": "Objetivo analítico"
+        }
+      ]
+    },
+    {
+      "id": "gold",
+      "type": "database",
+      "label": "Gold · Delta",
+      "sublabel": "Grano por definir",
+      "stage": 4,
+      "row": 2,
+      "tag": "PENDIENTE",
+      "sources": [
+        {
+          "path": "docs/silver_design.md",
+          "line": 9,
+          "end_line": 11,
+          "label": "Indicadores futuros"
+        }
+      ]
+    },
+    {
+      "id": "bi",
+      "type": "external",
+      "label": "Power BI",
+      "sublabel": "Consumo analítico",
+      "stage": 4,
+      "row": 1,
+      "tag": "PENDIENTE",
+      "sources": [
+        {
+          "path": "docs/silver_design.md",
+          "line": 9,
+          "end_line": 11,
+          "label": "Destino previsto"
+        }
+      ]
+    }
+  ],
+  "flows": [
+    {
+      "id": "f1",
+      "from": "oficial",
+      "to": "captura",
+      "label": "ZIP por HTTP",
+      "variant": "default"
+    },
+    {
+      "id": "f2",
+      "from": "captura",
+      "to": "raw",
+      "label": "ZIP + JSON",
+      "variant": "default"
+    },
+    {
+      "id": "f3",
+      "from": "raw",
+      "to": "extraer",
+      "label": "ZIP original",
+      "variant": "default"
+    },
+    {
+      "id": "f4",
+      "from": "extraer",
+      "to": "staging",
+      "label": "TXT extraídos",
+      "variant": "default"
+    },
+    {
+      "id": "f5",
+      "from": "staging",
+      "to": "ingesta",
+      "label": "TXT fuente",
+      "variant": "default"
+    },
+    {
+      "id": "f6",
+      "from": "ingesta",
+      "to": "bronze",
+      "label": "Filas fuente",
+      "variant": "emphasis"
+    },
+    {
+      "id": "f7",
+      "from": "bronze",
+      "to": "transformar",
+      "label": "Snapshot",
+      "variant": "emphasis"
+    },
+    {
+      "id": "f8",
+      "from": "transformar",
+      "to": "silver",
+      "label": "Si es apto",
+      "variant": "emphasis"
+    },
+    {
+      "id": "f9",
+      "from": "silver",
+      "to": "agregar",
+      "label": "Plan futuro",
+      "variant": "default"
+    },
+    {
+      "id": "f10",
+      "from": "agregar",
+      "to": "gold",
+      "label": "Plan futuro",
+      "variant": "default"
+    },
+    {
+      "id": "f11",
+      "from": "gold",
+      "to": "bi",
+      "label": "Plan futuro",
+      "variant": "default"
+    },
+    {
+      "id": "header_source",
+      "from": "staging",
+      "to": "transformar",
+      "label": "Encabezado TXT",
+      "variant": "default"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "Cómo leo las capas",
+      "items": [
+        "Raw y Staging son archivos dentro de Volumes de Unity Catalog.",
+        "Bronze, Silver y la futura Gold son tablas Delta; no carpetas de TXT.",
+        "Mantengo Bronze y Silver en workspace.gtfs_bogota, con prefijos bronze_gtfs_ y silver_gtfs_."
+      ]
+    },
+    {
+      "dot": "emerald",
+      "title": "Qué cambia en Silver",
+      "items": [
+        "Leo filas de Bronze y el encabezado del TXT del mismo snapshot.",
+        "Valido claves, campos, duplicados y relaciones; aplico tipos explícitos.",
+        "Publico solo si el snapshot es apto; conservo versión, hash y procedencia."
+      ]
+    },
+    {
+      "dot": "amber",
+      "title": "Alcance actual",
+      "items": [
+        "Silver implementada: agency y routes. Las demás entidades siguen pendientes.",
+        "Gold, su agregación y Power BI aparecen como plan futuro; no hay salidas implementadas aquí.",
+        "El GTFS estático describe oferta planificada; no demuestra operación real, demanda ni puntualidad."
+      ]
+    },
+    {
+      "dot": "violet",
+      "title": "Controles y exploración",
+      "items": [
+        "La publicación mantiene audit_gtfs_silver_runs y quarantine_gtfs_<entidad>; su detalle está en el recorrido del Job.",
+        "Uso Genie para explorar con consultas de lectura; las transformaciones y escrituras corresponden al pipeline versionado.",
+        "Este mapa explica el código fijado en sus enlaces; no consulta tablas ni representa una ejecución en vivo."
+      ]
+    }
+  ]
+}

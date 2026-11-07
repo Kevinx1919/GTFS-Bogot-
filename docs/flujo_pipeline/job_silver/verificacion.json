@@ -1,0 +1,48 @@
+{
+  "schema_version": 1,
+  "archify_version": "3.2.0",
+  "source_revision": "598bc0de6b65b25ffa2ef13b628ab0966fd41dcd",
+  "scope": "Definición versionada del Job; mode=publish; sin telemetría en vivo.",
+  "generated_at_utc": "2026-11-07T04:54:18.382672+00:00",
+  "publication": "Copia byte a byte desde la generación temporal validada fuera de OneDrive.",
+  "artifacts": [
+    {
+      "html": "recorrido_job.html",
+      "source": "recorrido_job.workflow.json",
+      "html_sha256": "4822dd214a0fbc32ee349b15456ec19713299920022be20eb40d439b39a38a53",
+      "source_sha256": "5b9ad737c3310c47c7c95e7242ed550b121c5a325bf9eeafe21a4af739eb1e1a",
+      "bytes": 846458,
+      "automated_gates": {
+        "validate": "pass",
+        "deliver": "pass",
+        "check": "pass",
+        "browser-check": "pass"
+      },
+      "browser_captures": "passed",
+      "visual_review": {
+        "status": "passed",
+        "scope": "Capturas 1440×900 y 2048×1320, claro y oscuro; legibilidad y recorridos."
+      },
+      "published_copy_matches_validated_artifact": true
+    },
+    {
+      "html": "iteracion_snapshot.html",
+      "source": "iteracion_snapshot.workflow.json",
+      "html_sha256": "8aec3b8b78201593c2009ba5bb24a0fa4066fdd807d808bb835be3a2f0941c0e",
+      "source_sha256": "45a864ac6224575d84a5126e1f2ab7ea78839062b63797b1e8b342cc73b530f3",
+      "bytes": 855642,
+      "automated_gates": {
+        "validate": "pass",
+        "deliver": "pass",
+        "check": "pass",
+        "browser-check": "pass"
+      },
+      "browser_captures": "passed",
+      "visual_review": {
+        "status": "passed",
+        "scope": "Capturas 1440×900 y 2048×1320, claro y oscuro; legibilidad y recorridos."
+      },
+      "published_copy_matches_validated_artifact": true
+    }
+  ]
+}
