@@ -125,7 +125,7 @@ El notebook de descubrimiento de versiones funciona, pero todavía tengo que con
 
 ### Revisión del contrato antes de Silver
 
-Las correcciones locales de Raw/Bronze admiten las combinaciones válidas de calendarios, detienen Raw ante estructura incompleta y amplían la auditoría de procedencia. Las 16 pruebas locales pasan. Al repetir la validación de ambos snapshots obtuve estos resultados: 2025 terminó en `PASSED`, sin fallos ni advertencias; 2026 en `WARNING`, sin fallos bloqueantes y con cinco advertencias de evolución de esquema conocida. En 04, las ocho entidades de referencia de cada versión omitieron nuevas inserciones al reconocer el hash existente. Ese hito permitió perfilar agencias y rutas y definir sus contratos Silver, ya implementados y publicados. Después implementé y ejecuté stops; ahora continúo con el bloque calendar/calendar_dates. El detalle está en el [Hito 09](BUILD_IN_PUBLIC.md#hito-09--revisar-el-contrato-de-bronze-antes-de-diseñar-silver) y el [procedimiento de revalidación](docs/notebook_runbook.md#revalidación-en-databricks-de-los-snapshots-existentes).
+Las correcciones locales de Raw/Bronze admiten las combinaciones válidas de calendarios, detienen Raw ante estructura incompleta y amplían la auditoría de procedencia. Las 16 pruebas locales pasan. Al repetir la validación de ambos snapshots obtuve estos resultados: 2025 terminó en `PASSED`, sin fallos ni advertencias; 2026 en `WARNING`, sin fallos bloqueantes y con cinco advertencias de evolución de esquema conocida. En 04, las ocho entidades de referencia de cada versión omitieron nuevas inserciones al reconocer el hash existente. Ese hito permitió perfilar agencias y rutas y definir sus contratos Silver, ya implementados y publicados. Después implementé y ejecuté stops; también publiqué calendar/calendar_dates y ahora preparo service_dates. El detalle está en el [Hito 09](BUILD_IN_PUBLIC.md#hito-09--revisar-el-contrato-de-bronze-antes-de-diseñar-silver) y el [procedimiento de revalidación](docs/notebook_runbook.md#revalidación-en-databricks-de-los-snapshots-existentes).
 
 Para las pruebas de agency, instalo antes `databricks/requirements-silver.txt` en un entorno virtual. La suite no realiza llamadas de red: `python -B -m unittest discover -s tests -v`. Las pruebas nativas Spark requieren además PySpark y Java.
 
@@ -168,8 +168,18 @@ El [siguiente bloque del plan](docs/silver_design.md#siguiente-bloque-calendar-y
 
 Completé el [perfil conjunto de calendar y calendar_dates](docs/calendars_profile_2025_2026.md) con siete consultas definitivas conservadas en el [notebook 12](databricks/notebooks/silver/12_profile_gtfs_calendars.ipynb). Hay siete patrones por versión y 140 / 133 excepciones, sin errores en los controles de completitud, claves, formatos y procedencia ejecutados.
 
-El snapshot 2025 contiene intervalos de 2000 a 2099 y excepciones de 2023. Conservo las fechas originales y dejo el hallazgo visible. Los [contratos calendar_v1/calendar_dates_v1](docs/contracts/calendars.md) ya están implementados y publicados en Databricks, con las dos tareas añadidas al Job y sus datos consultados; antes de derivar service_dates cerraré el horizonte de análisis y sus limitaciones.
+El snapshot 2025 contiene intervalos de 2000 a 2099 y excepciones de 2023. Conservo las fechas originales y dejo el hallazgo visible. Los [contratos calendar_v1/calendar_dates_v1](docs/contracts/calendars.md) ya están implementados y publicados en Databricks, con las dos tareas añadidas al Job y sus datos consultados; para service_dates elegí comenzar solo por el año 2026; las anomalías temporales de 2025 quedan documentadas.
 
 La [guía de despliegue de calendarios](docs/silver_execution.md#despliegue-de-calendarios) conserva parámetros, resultados esperados y el orden de publicación. El escritor admite claves compuestas sin modificar los esquemas existentes de agency/routes/stops. Docker se usa solo para pruebas locales; las dependencias de producción no cambiaron.
 
-El [cierre de calendarios](docs/silver_execution.md#cierre-de-la-ejecución-de-calendarios) registra su ejecución y disponibilidad. Ahora paso del patrón y las excepciones a fechas de servicio activas; antes de expandir datos cerraré el horizonte de service_dates.
+El [cierre de calendarios](docs/silver_execution.md#cierre-de-la-ejecución-de-calendarios) registra su ejecución y disponibilidad. Ahora paso del patrón y las excepciones a fechas de servicio activas; el primer horizonte de service_dates será del 1 de enero al 31 de diciembre de 2026.
+
+
+### Service_dates: del patrón semanal a días activos
+
+Elegí comenzar solo con 2026. El [contrato derivado](docs/contracts/service_dates.md) convierte patrones y excepciones Silver en pares servicio-fecha. Como ejemplo, si el patrón activa los lunes pero una excepción retira un lunes festivo, ese día no aparece como activo; una adición puede activar otro día sin duplicarlo.
+
+La [vista previa consultada con Genie](docs/service_dates_preview.md) produce 1.403 pares activos para siete servicios. Eso todavía no cuenta viajes ni pasajeros. El [notebook 13](databricks/notebooks/silver/13_preview_gtfs_service_dates.ipynb) conserva las tres consultas de lectura. El módulo PySpark y la sexta tarea de la plantilla reutilizan el notebook 10; las fuentes se fijan por versión Delta y el horizonte queda explícito. La [guía de ejecución](docs/silver_execution.md#primera-derivación-service_dates-de-2026) distingue pruebas locales y primera publicación pendiente en Workspace.
+
+
+La verificación de service_dates terminó con 24 pruebas seleccionadas aprobadas sin omisiones, incluidas ocho nuevas y tres integraciones Delta en total. La primera publicación de la derivación en Databricks sigue pendiente; las cinco entidades fuente anteriores ya están publicadas.

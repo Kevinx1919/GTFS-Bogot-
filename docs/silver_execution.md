@@ -274,3 +274,43 @@ Dejé [requirements-spark.txt](../tests/requirements-spark.txt) para fijar el en
 Registro el alcance de lo comprobado: aquí no adjunto IDs de runs ni nuevos resúmenes numéricos por snapshot. Los conteos y advertencias de la tabla de resultados esperados proceden del perfil anterior; no los presento como una nueva medición de estas consultas breves. Las pruebas locales de reintento y conservación del histórico están documentadas por separado.
 
 Publicar las fuentes no corrige el alcance temporal de 2025: conserva los intervalos amplios y las excepciones de 2023. La derivación siguiente deberá fijar un horizonte explícito y mostrar esa limitación cuando corresponda. No vuelvo a ingerir Bronze ni despliego todavía service_dates como si fuera otro TXT.
+
+
+## Primera derivación: service_dates de 2026
+
+**Estado al 11 de noviembre de 2026:** las dos fuentes están publicadas y comprobadas. Acordé comenzar solo por 2026. El módulo derivado y la configuración están implementados y probados localmente: las 24 pruebas seleccionadas pasaron sin omisiones con Spark y Delta reales. No publicaré esta derivación como si estuviera comprobada en Workspace.
+
+El [notebook 13](../databricks/notebooks/silver/13_preview_gtfs_service_dates.ipynb) conserva tres consultas reales de lectura. La [vista previa](service_dates_preview.md) devuelve 1.403 pares servicio-fecha para 2026. La comparación de 2025 es solo diagnóstico y no aparece en la nueva lista de trabajo.
+
+### Parámetros y ejecución preparada
+
+Tras sincronizar el nuevo código, usaré el notebook 10 con los parámetros comunes anteriores y:
+
+| Parámetro | Valor |
+| --- | --- |
+| entity | service_dates |
+| feed_version | 2026-09-29 |
+| snapshot_sha256 | 08d14e0b3a5b9caa5451b722659871fd554e3273b94bdd770fdf81a26bf02097 |
+| window_start | 2026-01-01 |
+| window_end | 2026-12-31 |
+| mode | validate; después publish al revisar el resultado |
+
+Comenzaré por el bloque 1 después de reiniciar una sesión que ya hubiese importado módulos antiguos. La derivación lee tablas Silver y auditoría de archivos publicados; no requiere un service_dates.txt ni vuelve a leer Bronze para transformar fechas.
+
+El resultado esperado con las fuentes consultadas es candidate_rows=1.403, source_calendar_rows=7, source_calendar_dates_rows=133, weekly_service_days=1.460 y warning_rows=0. Las métricas de adiciones nuevas y retiradas efectivas explicarán el resultado: no se resta cada regla de baja como si hubiera un día activo por eliminar.
+
+### Sexta tarea preparada, todavía sin desplegar
+
+La plantilla añade publish_service_dates después de publish_calendar_dates. El parámetro general service_dates_work_items contiene un único elemento de 2026 con los dos límites del horizonte. La tarea interna process_service_dates_snapshot usa el notebook 10 y añade window_start={{input.window_start}} / window_end={{input.window_end}} a los tres campos de snapshot ya conocidos.
+
+La salida prevista es silver_gtfs_service_dates, con 13 columnas. Los campos de horizonte y las versiones Delta usadas permiten distinguir el alcance de la derivación. Un cambio de horizonte para un snapshot ya publicado se bloquea antes de sustituir datos y requiere una migración explícita.
+
+### Verificación local de service_dates
+
+Pasaron **24 pruebas seleccionadas en 301,570 segundos, sin fallos ni omisiones**, con Python 3.10.12, Spark 4.0.1 y Delta 4.0.0 en Linux. Son siete casos del módulo nuevo, seis de despacho, ocho de configuración y tres integraciones Delta. Las ocho pruebas nuevas (siete más una integración) están incluidas en esa selección; no afirmo haber repetido los 113 casos que ahora define la suite completa.
+
+Las fixtures comprueban patrón semanal, adiciones repetidas, retiradas efectivas e inactivas, reglas fuera de ventana, uso de una sola fuente, advertencias temporales, tipos, duplicados y procedencia. La integración nueva valida sin escribir, publica 13 columnas y repite sin duplicar. También bloquea un cambio de horizonte o una fuente inválida conservando el destino. Las dos integraciones de regresión cubren calendarios con histórico/cuarentena y el lector versionado usado por Bronze/agency y routes.
+
+El primer intento se detuvo porque Docker no estaba disponible. Tras iniciar el motor, reutilicé la imagen y las librerías ya descargadas, sin red ni reinstalaciones globales. Corregí solo los saltos de línea del ejecutor temporal para Linux. El contenedor tuvo código de solo lectura y sus escrituras quedaron en almacenamiento temporal; no modifiqué archivos recuperados ni datos de Databricks.
+
+También comprobé compilación, igualdad de código entre repositorio y contenedor, plantilla regenerable del Job, dos bloques Python del notebook 10, tres consultas de lectura sin outputs en el notebook 13 y enlaces locales. Sigue pendiente sincronizar este incremento y ejecutar primero validate y después publish en Workspace.

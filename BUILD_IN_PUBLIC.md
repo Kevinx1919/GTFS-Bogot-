@@ -400,6 +400,14 @@ El [cierre de ejecución](docs/silver_execution.md#cierre-de-la-ejecución-de-ca
 
 El siguiente paso es service_dates, orden 4b del [plan](docs/silver_design.md#próximo-incremento-service_dates): transformar patrón y excepciones en días activos por servicio y snapshot. Antes de expandir acordaré el horizonte; el intervalo 2000–2099 y las excepciones de 2023 no autorizan a inventar un calendario festivo de 2025. No modifiqué las fuentes ni Archify.
 
+### Hito 27 — Primera derivación acotada a 2026
+
+**Fecha:** 11 de noviembre de 2026. Después del push 2a8002f consulté las fuentes Silver y una vista previa de service_dates mediante Genie, sin crear tablas. Recuperé 29 campos de esquema, cuatro resúmenes y dos escenarios sin truncamiento. El escenario 2026 produce 1.403 pares servicio-fecha; el de 2025 produce 1.670 sin excepciones del año analizado y no lo trato como una comparación de oferta.
+
+Elegí empezar solo con 2026-01-01 a 2026-12-31. Preparé el modelo derivado sin TXT ficticio, la combinación de patrón y excepciones, la trazabilidad por versiones Delta y el bloqueo de un cambio silencioso de horizonte. La plantilla añade una sola iteración de service_dates después de las fuentes. Todavía no la publiqué.
+
+La compilación, los enlaces y la plantilla regenerable pasaron. Tras iniciar Docker, ejecuté 24 pruebas seleccionadas en 301,570 segundos con Spark 4.0.1 y Delta 4.0.0: todas pasaron, sin omisiones. Incluyen las ocho nuevas de contrato, reglas y publicación, más regresiones de despacho, configuración, calendarios y lectura versionada de Bronze/agency. Comprobé idempotencia, horizonte estable y protección ante fuentes inválidas. No repetí la suite completa anterior ni equiparo su resultado histórico con esta selección. El [contrato](docs/contracts/service_dates.md) y la [guía](docs/silver_execution.md#primera-derivación-service_dates-de-2026) conservan el estado real. Archify sigue pendiente.
+
 ## Qué no publicar
 
 - Access tokens, secretos, archivos `.env`, cookies, hostnames privados o identificadores de cuenta.

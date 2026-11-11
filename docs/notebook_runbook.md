@@ -323,3 +323,22 @@ Conservo los mismos dos bloques de código; no creo otro notebook para validar o
 La clave compuesta service_id + date se conserva como dos columnas en ventanas, comprobaciones de unicidad y cuarentena. Una excepción fuera del intervalo semanal o de año distinto no cambia automáticamente sus fechas. El aviso de intervalo largo usa 120 meses y no recorta el origen.
 
 La [guía de ejecución](silver_execution.md#despliegue-de-calendarios) mantiene el orden de primera validación/publicación y los parámetros generales del Job. El notebook 12 conserva el perfil inicial; su SQL no se modifica ni se añade al Job. Ya ejecuté las dos tareas de calendarios y comprobé las tablas y sus datos en Workspace. El [cierre](silver_execution.md#cierre-de-la-ejecución-de-calendarios) registra esta comprobación sin convertir los conteos del perfil previo en nuevos conteos de publicación.
+
+
+## Notebook 13 — silver/13_preview_gtfs_service_dates — 11 de noviembre de 2026
+
+**Propósito:** conservar una vista previa de lectura desde Silver antes de publicar una derivación. Las tres consultas se ejecutaron mediante Genie y sus 35 filas estructuradas se recuperaron sin truncamiento. El cuaderno no tiene todavía una ejecución completa documentada como notebook.
+
+| Bloque | Pregunta | Entradas | Salida verificada | Efectos y límites |
+| --- | --- | --- | --- | --- |
+| 1 / esquema | ¿Qué tipos tienen las fuentes Silver? | information_schema de calendar y calendar_dates. | 29 campos físicos. | Solo lectura; no es el esquema de service_dates. |
+| 2 / fuentes | ¿Cuántos registros y qué reglas están publicadas? | Ambas Silver, dos pares versión/hash. | Cuatro resúmenes, claves y marcadores correctos. | No modifica los contratos ni las fechas históricas. |
+| 3 / escenarios | ¿Qué días quedan activos al aplicar excepciones? | Patrones y excepciones, acotados al año del escenario. | 1.670 pares en 2025 y 1.403 en 2026. | Solo diagnóstico: se eligió publicar primero 2026, no ambos escenarios. |
+
+El [informe](service_dates_preview.md) explica por qué esos conteos no son viajes ni oferta comparable entre años. Este notebook no se añade al Job ni crea tablas.
+
+## Notebook 10 — Entrada de service_dates_v1 — 11 de noviembre de 2026
+
+Mantengo dos bloques. El primero incorpora window_start y window_end, vacíos para las entidades fuente; solo service_dates los exige. El segundo llama al mismo run_entity.
+
+La derivación identifica archivos publicados desde auditoría, carga versiones Delta fijadas de las fuentes Silver, aplica el horizonte y produce días activos. Validate no escribe. Publish usa el escritor común con clave servicio + fecha, registra su ejecución y protege el horizonte publicado. Pasaron las 24 pruebas seleccionadas con Spark y Delta; su primer despliegue y comprobación en Databricks siguen pendientes.

@@ -11,7 +11,7 @@ from uuid import uuid4
 
 from .agency_validation import SnapshotSpec, ValidationResult
 from .agency_spark import result_frames
-from .models import PreparedSnapshot
+from .models import PreparedSnapshot, DerivedSnapshotSpec
 
 
 class SnapshotRejectedError(RuntimeError):
@@ -50,7 +50,7 @@ class PublicationTables:
         return f"{self.catalog}.{self.schema}.{names[kind]}"
 
 
-def snapshot_predicate(spec: SnapshotSpec) -> str:
+def snapshot_predicate(spec: SnapshotSpec | DerivedSnapshotSpec) -> str:
     return f"source_feed_version = '{spec.feed_version}' and source_sha256 = '{spec.sha256}'"
 
 
@@ -82,11 +82,12 @@ def _overwrite_scope(frame, table: str, predicate: str, *, allow_empty: bool = F
         frame.writeTo(quoted).using("delta").create()
 
 
-def _versioned_table(spark, table: str):
+def _versioned_table(spark, table: str, *, with_version: bool = False):
     """Recibe catálogo.schema.tabla sin comillas y fija una versión Delta para su lectura."""
     quoted = quoted_table(table)
     version = spark.sql(f"describe history {quoted} limit 1").first()["version"]
-    return spark.read.option("versionAsOf", version).table(quoted)
+    frame = spark.read.option("versionAsOf", version).table(quoted)
+    return (frame, int(version)) if with_version else frame
 
 
 def _same_rows(left, right) -> bool:
@@ -106,7 +107,7 @@ def _check_result(result: ValidationResult) -> None:
         raise ValueError("El conteo de copias consolidadas no puede ser negativo.")
 
 
-def _audit(spark, tables: PublicationTables, spec: SnapshotSpec, result: ValidationResult | PreparedSnapshot,
+def _audit(spark, tables: PublicationTables, spec: SnapshotSpec | DerivedSnapshotSpec, result: ValidationResult | PreparedSnapshot,
            run_id: str, status: str, started: datetime, committed: bool, error: str | None = None) -> None:
     from pyspark.sql.types import (
         BooleanType, LongType, StringType, StructField, StructType, TimestampType,
@@ -155,14 +156,15 @@ def publish_agency(
 
 
 def publish_snapshot(
-    spark, result: PreparedSnapshot, spec: SnapshotSpec, tables: PublicationTables,
+    spark, result: PreparedSnapshot, spec: SnapshotSpec | DerivedSnapshotSpec, tables: PublicationTables,
     *, run_id: str | None = None, mode: str = "publish", verify_history: bool = True,
 ) -> dict[str, Any]:
     """Un escritor para contratos ya validados; conserva esquemas y ámbito por snapshot."""
     from pyspark.sql import functions as F
 
     identifiers = {"agency": ("agency_id",), "routes": ("route_id",), "stops": ("stop_id",),
-                   "calendar": ("service_id",), "calendar_dates": ("service_id", "date")}
+                   "calendar": ("service_id",), "calendar_dates": ("service_id", "date"),
+                   "service_dates": ("service_id", "service_date")}
     if tables.entity not in identifiers or spec.entity != tables.entity:
         raise ValueError("La entidad publicada debe coincidir con su contrato y snapshot.")
     keys = identifiers[tables.entity]

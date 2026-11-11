@@ -44,3 +44,10 @@ El [contrato stops_v1](../../../docs/contracts/stops.md) y la [guía de desplieg
 ## Siguiente bloque del plan
 
 Completé el perfil de calendar y calendar_dates: patrón semanal y excepciones de servicio. El [notebook 12](12_profile_gtfs_calendars.ipynb) conserva siete consultas definitivas de lectura y el [informe](../../../docs/calendars_profile_2025_2026.md) explica el alcance temporal anómalo de 2025. Implementé los contratos en calendars_spark.py; ya validé/publiqué con el notebook 10, ejecuté ambas tareas del Job y consulté las tablas. Después derivaré service_dates antes de pasar a geometrías y viajes. La guía de perfilado no se añade al Job. Los cinco procesadores ya tienen ejecución y tablas comprobadas en Workspace; la siguiente derivación es service_dates, con horizonte explícito; el detalle está en el [plan](../../../docs/silver_design.md#siguiente-bloque-calendar-y-calendar_dates).
+
+
+## Service_dates: de reglas a días activos
+
+El [notebook 13](13_preview_gtfs_service_dates.ipynb) conserva las tres consultas de vista previa. El [informe](../../../docs/service_dates_preview.md) registra el resultado de lectura y el [contrato](../../../docs/contracts/service_dates.md) define horizonte, trazabilidad y publicación.
+
+Elegí comenzar por 2026. El procesador y la sexta tarea del Job están implementados y probados localmente; falta sincronizar y comprobar la primera publicación en Databricks. Uso el notebook 10 con entity=service_dates y window_start/window_end explícitos. En este incremento pasaron 24 pruebas seleccionadas sin omisiones, incluidas ocho nuevas; la verificación anterior de 105 casos queda como antecedente y no como una nueva ejecución completa de toda la suite.

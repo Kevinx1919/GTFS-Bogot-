@@ -85,7 +85,7 @@ class SilverConfigurationTests(unittest.TestCase):
 
     def test_only_implemented_entity_is_enabled(self):
         registry = load_registry()
-        self.assertEqual(list(registry), ["agency", "routes", "stops", "calendar", "calendar_dates"])
+        self.assertEqual(list(registry), ["agency", "routes", "stops", "calendar", "calendar_dates", "service_dates"])
         self.assertTrue(registry["agency"]["enabled"])
         self.assertEqual(registry["agency"]["depends_on"], [])
         self.assertEqual(registry["routes"]["depends_on"], ["agency"])
@@ -109,7 +109,7 @@ class SilverConfigurationTests(unittest.TestCase):
         self.assertEqual(registry["calendar"]["depends_on"],[])
         self.assertEqual(registry["calendar_dates"]["depends_on"],[])
         self.assertEqual(registry["calendar_dates"]["depends_on_if_published"],["calendar"])
-        self.assertEqual(len(job["tasks"]),5)
+        self.assertEqual(len(job["tasks"]),6)
         parameters={p["name"]:p["default"] for p in job["parameters"]}
         for entity,position,parent in (("calendar",3,"publish_stops"),("calendar_dates",4,"publish_calendar")):
             task=job["tasks"][position]
@@ -432,6 +432,40 @@ class SilverPublicationDeltaTests(unittest.TestCase):
         self.assertTrue(all(r.date=="20230101" for r in rejected))
         self.assertTrue(all("SERVICE_KEY_CONFLICT" in r.error_codes for r in rejected))
         self.assertEqual(len(self.spark.table(f"spark_catalog.{self.namespace}.silver_gtfs_calendar").columns),18)
+
+    def test_service_dates_pipeline_reads_curated_versions_and_preserves_horizon(self):
+        from gtfs_silver import pipeline
+        from test_service_dates import SPEC as derived_spec, calendar_frame, exceptions_frame
+        from pyspark.sql import functions as F
+        common=dict(catalog="spark_catalog",schema=self.namespace,staging_volume="unused",entity="service_dates",
+                    feed_version=derived_spec.feed_version,snapshot_sha256=derived_spec.sha256,
+                    window_start=derived_spec.window_start,window_end=derived_spec.window_end)
+        for entity,frame in (("calendar",calendar_frame(self.spark)),("calendar_dates",exceptions_frame(self.spark))):
+            frame.writeTo(f"spark_catalog.{self.namespace}.silver_gtfs_{entity}").using("delta").create()
+        observations=self.spark.createDataFrame([(derived_spec.feed_version,derived_spec.sha256,name) for name in ("calendar.txt","calendar_dates.txt")],"source_feed_version string,source_sha256 string,source_file_name string")
+        observations.writeTo(f"spark_catalog.{self.namespace}.audit_gtfs_source_schema_observations").using("delta").create()
+        preview=pipeline.run_entity(self.spark,**common,mode="validate")
+        self.assertFalse(preview["persisted"])
+        target=f"spark_catalog.{self.namespace}.silver_gtfs_service_dates"
+        self.assertFalse(self.spark.catalog.tableExists(target))
+        published=pipeline.run_entity(self.spark,**common)
+        retry=pipeline.run_entity(self.spark,**common)
+        self.assertEqual((published["candidate_rows"],retry["candidate_rows"]),(5,5))
+        output=self.spark.table(target)
+        self.assertEqual(output.count(),5)
+        self.assertEqual(len(output.columns),13)
+        self.assertNotIn("source_file_path",output.columns)
+        references=json.loads(output.first().input_versions_json)
+        self.assertEqual(references["calendar_delta_version"],"0")
+        self.assertEqual(references["calendar_dates_delta_version"],"0")
+        with self.assertRaisesRegex(ValueError,"otro horizonte"):
+            pipeline.run_entity(self.spark,**{**common,"window_start":"2026-01-02","window_end":"2026-01-08"})
+        self.assertEqual(self.spark.table(target).count(),5)
+        # Un fallo de la fuente curada no sustituye la derivación publicada.
+        source=f"spark_catalog.{self.namespace}.silver_gtfs_calendar_dates"
+        exceptions_frame(self.spark).withColumn("exception_type",F.lit(3)).write.format("delta").mode("overwrite").saveAsTable(source)
+        with self.assertRaises(ValueError):pipeline.run_entity(self.spark,**common)
+        self.assertEqual(self.spark.table(target).count(),5)
 
     def test_failure_after_commit_is_explicit_in_audit_and_requires_review(self):
         selected = spec()

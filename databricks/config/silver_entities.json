@@ -34,5 +34,15 @@
     "depends_on_if_published": [
       "calendar"
     ]
+  },
+  "service_dates": {
+    "enabled": true,
+    "validator": "service_dates_v1",
+    "source_layer": "silver",
+    "depends_on": [],
+    "depends_on_if_published": [
+      "calendar",
+      "calendar_dates"
+    ]
   }
 }

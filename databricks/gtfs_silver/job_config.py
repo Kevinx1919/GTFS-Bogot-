@@ -83,6 +83,18 @@ def build_job(repo_root: str, *, environment_version: str = "4") -> dict:
         task["for_each_task"]["inputs"] = "{{job.parameters." + parameter + "}}"
         task["for_each_task"]["task"]["task_key"] = f"process_{entity}_snapshot"
         job["tasks"].append(task)
+    # Primer horizonte acordado: 2026. Las fuentes de 2025 permanecen publicadas.
+    derived_items = [{**SNAPSHOTS[1], "entity": "service_dates",
+                      "window_start": "2026-01-01", "window_end": "2026-12-31"}]
+    job["parameters"].append({"name": "service_dates_work_items", "default": json.dumps(derived_items, separators=(",", ":"))})
+    derived = deepcopy(job["tasks"][0])
+    derived["task_key"] = "publish_service_dates"
+    derived["depends_on"] = [{"task_key": "publish_calendar_dates"}]
+    derived["for_each_task"]["inputs"] = "{{job.parameters.service_dates_work_items}}"
+    derived["for_each_task"]["task"]["task_key"] = "process_service_dates_snapshot"
+    derived["for_each_task"]["task"]["notebook_task"]["base_parameters"].update({
+        "window_start": "{{input.window_start}}", "window_end": "{{input.window_end}}"})
+    job["tasks"].append(derived)
     return job
 
 

@@ -37,3 +37,26 @@ class PreparedSnapshot:
     frames: dict[str, Any]
     summary: dict[str, Any]
     reference_versions: dict[str, str]
+
+
+@dataclass(frozen=True)
+class DerivedSnapshotSpec:
+    """Identidad de una derivación; no inventa un TXT ni una ruta Raw."""
+    feed_version: str
+    sha256: str
+    window_start: str
+    window_end: str
+    entity: str = "service_dates"
+
+    def __post_init__(self) -> None:
+        if self.entity != "service_dates":
+            raise ValueError("La especificación derivada solo admite service_dates.")
+        for value in (self.feed_version, self.window_start, self.window_end):
+            if not isinstance(value, str) or not re.fullmatch(r"\d{4}-\d{2}-\d{2}", value):
+                raise ValueError("Las fechas de la derivación deben usar AAAA-MM-DD.")
+            date.fromisoformat(value)
+        if not re.fullmatch(r"[0-9a-f]{64}", self.sha256):
+            raise ValueError("snapshot_sha256 debe contener 64 caracteres hexadecimales minúsculos.")
+        days = (date.fromisoformat(self.window_end) - date.fromisoformat(self.window_start)).days + 1
+        if not 1 <= days <= 366:
+            raise ValueError("La ventana de service_dates_v1 debe abarcar entre 1 y 366 días; no se recorta automáticamente.")
