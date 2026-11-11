@@ -71,6 +71,34 @@ class SilverPipelineTests(unittest.TestCase):
         self.assertTrue(validate.call_args.args[2].source_path.endswith("/stops.txt"))
         self.assertEqual(publish.call_args.kwargs["mode"], "validate")
 
+    def test_calendars_dispatch_with_conditional_pinned_weekly_dependency(self):
+        for entity, weekly in (("calendar", False), ("calendar_dates", True), ("calendar_dates", False)):
+            spark = MagicMock()
+            spark.catalog.tableExists.side_effect = [True, True] if weekly else [True, False]
+            spark.sql.return_value.first.return_value = {"version": 4}
+            spark.read.option.return_value.table.side_effect = [sentinel.bronze, sentinel.calendar] if weekly else [sentinel.bronze]
+            with patch.object(pipeline.calendars_spark, "read_source_header", return_value=("service_id",)), \
+                 patch.object(pipeline.calendars_spark, "calendar_source_present", return_value=weekly), \
+                 patch.object(pipeline.calendars_spark, "read_and_validate", return_value=sentinel.result) as validate, \
+                 patch.object(pipeline, "publish_snapshot", return_value={"persisted": False}):
+                pipeline.run_entity(spark, **self.parameters(entity))
+            self.assertEqual(validate.call_args.args[2].entity, entity)
+            if entity == "calendar_dates":
+                self.assertEqual(validate.call_args.kwargs["calendar_published"], weekly)
+            self.assertEqual(len(validate.call_args.args), 4 if weekly else 3)
+            if weekly:
+                self.assertIs(validate.call_args.args[3], sentinel.calendar)
+                self.assertEqual(spark.sql.call_args.args[0], "describe history `workspace`.`fixture`.`silver_gtfs_calendar` limit 1")
+
+    def test_published_weekly_source_requires_silver_calendar(self):
+        spark=MagicMock()
+        spark.catalog.tableExists.side_effect=[True, False]
+        spark.sql.return_value.first.return_value={"version": 1}
+        with patch.object(pipeline.calendars_spark,"read_source_header",return_value=("service_id",)), \
+             patch.object(pipeline.calendars_spark,"calendar_source_present",return_value=True):
+            with self.assertRaisesRegex(ValueError,"Publica calendar"):
+                pipeline.run_entity(spark,**self.parameters("calendar_dates"))
+
     def test_unknown_entity_or_invalid_mode_stops_before_source_access(self):
         for parameters in (self.parameters("trips"), {**self.parameters("routes"), "mode": "overwrite_all"}):
             spark = MagicMock()

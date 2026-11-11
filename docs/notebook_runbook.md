@@ -292,3 +292,34 @@ Mantengo los mismos dos bloques de código y los mismos widgets. La implementaci
 Los casts de stops convierten coordenadas a double y categorías a int. Conservo las ausencias de opcionales y uso el default semántico de location_type solo durante validación. Quito espacios Unicode de los bordes de nombres; no normalizo IDs. Los padres se agrupan antes del join, de modo que copias o conflictos no multipliquen filas. Un conflicto bloquea publicación, aunque el nombre normalizado coincida.
 
 La plantilla añade una tercera etapa serial para stops, que no depende de routes como dato. La serialización limita escritores sobre la auditoría compartida. La [guía de despliegue](silver_execution.md#despliegue-de-stops_v1) separa validate, publish y reintento; ya ejecuté el Job de stops en Workspace y comprobé la tabla y sus datos. El [cierre](silver_execution.md#cierre-de-la-ejecución-de-stops) registra el alcance de esta comprobación sin sustituir los conteos del perfil por conteos nuevos no recuperados.
+
+
+## Notebook 12 — silver/12_profile_gtfs_calendars — 10 de noviembre de 2026
+
+**Propósito:** entender conjuntamente patrones semanales y excepciones antes de implementar los contratos fuente. Consulté los dos snapshots mediante Genie y recuperé los resultados de las siete consultas definitivas, sin truncamiento. El notebook no tiene aún una ejecución completa documentada como cuaderno.
+
+| Bloque | Propósito | Entradas | Salidas verificadas | Efectos y límites |
+| --- | --- | --- | --- | --- |
+| 1 / esquema | Comprobar tipos históricos. | information_schema de las dos tablas Bronze. | 21 filas de metadata. | Solo lectura; no prueba presencia de encabezado. |
+| 2 / encabezados | Comprobar campos publicados. | Auditoría de calendar.txt y calendar_dates.txt por versión/hash. | Cuatro conjuntos de columnas. | Solo lectura; el orden auditado no implica orden físico. |
+| 3 / patrones | Leer significado de las 14 filas pequeñas. | Calendar de ambos snapshots, límite 100. | Siete servicios por versión; intervalos 2000–2099 y 2026. | Solo lectura; IDs y patrones no identifican agencias. |
+| 4 / completitud | Separar nulos, vacíos, espacios y controles Unicode. | 13 campos de negocio por dos snapshots. | 26 perfiles sin esos problemas. | No normaliza ni rellena campos. |
+| 5 / claves y procedencia | Medir duplicados, conflictos y metadata incoherente. | Fuentes seleccionadas por hash; clave simple o compuesta en JSON. | Cuatro resúmenes, controles de error cero. | No elimina filas; JSON evita colisiones por separadores. |
+| 6 / contexto | Relacionar excepciones con patrón y año de publicación. | Calendar agrupada por clave y calendar_dates; mismo snapshot. | 14 grupos; 140 excepciones de 2023 en el snapshot 2025. | Agrupar antes del join evita multiplicaciones; año diferente es contexto. |
+| 7 / formatos | Revisar fechas y códigos incluyendo null. | Los campos fuente; conversión try_cast segura. | Cuatro resúmenes, valores inválidos cero. | No publica fechas ni crea service_dates. |
+
+El [informe](calendars_profile_2025_2026.md) y la [propuesta de contrato](contracts/calendars.md) registran el hallazgo temporal. Conservaré los valores publicados; antes de derivar service_dates cerraré el horizonte analítico. No añadí este notebook al Job y no modifiqué el registro de procesadores.
+
+
+## Ampliación del notebook 10 a calendarios — 10 de noviembre de 2026
+
+Conservo los mismos dos bloques de código; no creo otro notebook para validar o publicar. Calendars_spark.py contiene dos contratos que comparten mecánica y mantienen tipos y claves propios.
+
+| Bloque | Propósito actualizado | Entradas | Salidas | Efectos y validación |
+| --- | --- | --- | --- | --- |
+| 1 / parámetros e imports | Elegir calendar o calendar_dates y cargar el pipeline. | Repositorio sincronizado, widgets y entorno existente. | Parámetros de entidad/snapshot y run_entity. | Sin escrituras; tras reiniciar o cambiar parámetros vuelvo a este bloque. |
+| 2 / ejecución | Validar y, según mode, publicar. | Bronze Delta fijada y encabezado real. Si está publicado calendar.txt, excepciones usan Silver calendar_v1 del mismo snapshot. | Fechas date, códigos int, IDs string; métricas comunes y avisos temporales. | Validate no escribe. Publish reutiliza escritor, cuarentena y auditoría; no hay transacción conjunta entre tablas. |
+
+La clave compuesta service_id + date se conserva como dos columnas en ventanas, comprobaciones de unicidad y cuarentena. Una excepción fuera del intervalo semanal o de año distinto no cambia automáticamente sus fechas. El aviso de intervalo largo usa 120 meses y no recorta el origen.
+
+La [guía de ejecución](silver_execution.md#despliegue-de-calendarios) mantiene el orden de primera validación/publicación y los parámetros generales del Job. El notebook 12 conserva el perfil inicial; su SQL no se modifica ni se añade al Job. Los calendarios todavía no tienen ejecución remota documentada.

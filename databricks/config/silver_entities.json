@@ -19,5 +19,20 @@
     "validator": "stops_v1",
     "bronze_table": "bronze_gtfs_stops",
     "depends_on": []
+  },
+  "calendar": {
+    "enabled": true,
+    "validator": "calendar_v1",
+    "bronze_table": "bronze_gtfs_calendar",
+    "depends_on": []
+  },
+  "calendar_dates": {
+    "enabled": true,
+    "validator": "calendar_dates_v1",
+    "bronze_table": "bronze_gtfs_calendar_dates",
+    "depends_on": [],
+    "depends_on_if_published": [
+      "calendar"
+    ]
   }
 }

@@ -370,6 +370,28 @@ Resolví la referencia a stops_work_items creando el parámetro en Job parameter
 
 El siguiente bloque del [plan](docs/silver_design.md#siguiente-bloque-calendar-y-calendar_dates) es calendar y calendar_dates: entender y validar patrón semanal y excepciones antes de derivar service_dates. Todavía no implementé esos procesadores ni expandí los horarios por fecha. Primero revisaré sus datos y cerraré las reglas con evidencia.
 
+### Hito 24 — Perfil conjunto de calendarios antes de tipar
+
+**Fecha:** 10 de noviembre de 2026. Después del push del cierre de stops f78e1cd comencé calendar y calendar_dates. Consulté solo Bronze y metadata mediante Genie, sin modificar tablas ni preparar otro entorno de pruebas. Conservé siete consultas definitivas en un solo notebook y recuperé 87 filas estructuradas de esos resultados, sin truncamiento.
+
+Encontré siete patrones por snapshot, 140 excepciones en 2025 y 133 en 2026, sin nulos, vacíos, espacios extremos, copias, conflictos ni errores de formatos o procedencia en los controles ejecutados. Las referencias a calendar resuelven dentro del mismo snapshot. Contrasté las 14 filas pequeñas de patrones mediante un cálculo independiente.
+
+El hallazgo relevante no fue un cast: el snapshot 2025 publica intervalos 2000–2099 y sus 140 excepciones son de 2023. No cambié años ni deduje cobertura festiva de 2025. Es como recibir un horario habitual acompañado de una hoja de cambios de otro año: puedo conservar ambos, pero debo explicar qué período respalda cada uno.
+
+Dejé el [informe](docs/calendars_profile_2025_2026.md) y una [propuesta de contrato](docs/contracts/calendars.md), todavía sin procesadores ni publicación. Antes de derivar service_dates cerraré el horizonte y la política de advertencias. El notebook es una guía de lectura; sus consultas están ejecutadas individualmente, no el contenedor completo. Archify y las carpetas recuperadas permanecen sin cambios en este incremento.
+
+### Hito 25 — Contratos ejecutables de calendarios y clave compuesta
+
+**Fecha:** 10 de noviembre de 2026. Implementé calendar_v1 y calendar_dates_v1 en un solo módulo Spark, reutilizando preparación, reconciliación y publicación. Las fechas pasan a date, los indicadores a int y los IDs conservan string. Las excepciones usan servicio + fecha como clave; adapté ventanas, unicidad y cuarentena para tratar las dos columnas sin fabricar una identidad concatenada.
+
+Conservé las fechas originales y separé errores de advertencias: el intervalo 2000–2099 y las excepciones de 2023 del snapshot 2025 siguen visibles. El umbral de 120 meses solo avisa de un alcance amplio; no recorta el origen. Un servicio sin días semanales puede activarse por excepciones.
+
+La dependencia es condicional: si calendar.txt está publicado, calendar_dates requiere calendar_v1 Silver del mismo snapshot; si solo se publicó el archivo de fechas, no exige un patrón semanal. Detecto el caso distinto de un archivo Staging perdido con filas Bronze para ese hash y detengo la ejecución. La plantilla añade dos etapas seriales conservando las tres actuales y el notebook 10 mantiene sus dos bloques.
+
+**Verificación, cerrada el 11 de noviembre de 2026:** compilación y seis pruebas de despacho aprobadas. Quedaron comprobados 105 casos únicos sin omisiones: las reglas y los once casos de publicación Delta, repetidos estos últimos después de corregir el montaje temporal que impedía cargar Snappy. Las pruebas incluyen fechas imposibles, códigos, conflictos, modalidad de solo fechas, dependencia semanal, ambos snapshots y reintento sin duplicación. El detalle de ambos pases está en la [guía de despliegue](docs/silver_execution.md#verificación-local-de-calendarios); no presento el primer pase con errores de entorno como una ejecución completa aprobada.
+
+El código y la configuración están preparados localmente, todavía sin publicación de calendarios en Databricks. La primera ejecución irá en orden calendar → calendar_dates por snapshot. Service_dates requiere después un horizonte acordado; no la construí ni expandí horarios. No modifiqué Archify, Raw ni Bronze.
+
 ## Qué no publicar
 
 - Access tokens, secretos, archivos `.env`, cookies, hostnames privados o identificadores de cuenta.

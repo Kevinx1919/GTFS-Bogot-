@@ -11,7 +11,7 @@ from .agency_spark import read_and_validate
 from .publication import (
     PublicationTables, _versioned_table, publish_agency, publish_snapshot, quoted_table, simple_identifier,
 )
-from . import routes_spark, stops_spark
+from . import routes_spark, stops_spark, calendars_spark
 
 REGISTRY_PATH = Path(__file__).resolve().parents[1] / "config" / "silver_entities.json"
 
@@ -32,7 +32,8 @@ def run_entity(spark, *, catalog: str, schema: str, staging_volume: str,
     configuration = load_registry().get(entity)
     if not configuration or not configuration["enabled"]:
         raise ValueError(f"No hay un contrato habilitado para {entity}.")
-    validators = {"agency": "agency_v1", "routes": "routes_v1", "stops": "stops_v1"}
+    validators = {"agency": "agency_v1", "routes": "routes_v1", "stops": "stops_v1",
+                  "calendar": "calendar_v1", "calendar_dates": "calendar_dates_v1"}
     if entity not in validators or configuration["validator"] != validators[entity]:
         raise ValueError("La entidad todavía no tiene procesador implementado.")
     if configuration["bronze_table"] != f"bronze_gtfs_{entity}":
@@ -48,7 +49,8 @@ def run_entity(spark, *, catalog: str, schema: str, staging_volume: str,
         f"feed_version={feed_version}/sha256={snapshot_sha256}/{entity}.txt"
     )
     spec = SnapshotSpec(feed_version, snapshot_sha256, source_path, entity)
-    processors = {"routes": routes_spark, "stops": stops_spark}
+    processors = {"routes": routes_spark, "stops": stops_spark,
+                  "calendar": calendars_spark, "calendar_dates": calendars_spark}
     header_reader = read_source_header if entity == "agency" else processors[entity].read_source_header
     columns = header_reader(source_path)
     bronze = f"{catalog}.{schema}.{configuration['bronze_table']}"
@@ -63,7 +65,26 @@ def run_entity(spark, *, catalog: str, schema: str, staging_volume: str,
             if not spark.catalog.tableExists(quoted_table(dependency)):
                 raise ValueError("Publica agency en Silver antes de procesar routes.")
             dependencies.append(_versioned_table(spark, dependency))
-        result = processors[entity].read_and_validate(source, columns, spec, *dependencies)
+        options = {}
+        if entity == "calendar_dates":
+            weekly_published = calendars_spark.calendar_source_present(source_path)
+            options["calendar_published"] = weekly_published
+            if weekly_published:
+                dependency = f"{catalog}.{schema}.silver_gtfs_calendar"
+                if not spark.catalog.tableExists(quoted_table(dependency)):
+                    raise ValueError("Publica calendar en Silver antes de sus excepciones del mismo snapshot.")
+                dependencies.append(_versioned_table(spark, dependency))
+            else:
+                # Una pérdida de Staging no equivale a una ausencia legítima del archivo.
+                weekly_bronze = f"{catalog}.{schema}.bronze_gtfs_calendar"
+                if spark.catalog.tableExists(quoted_table(weekly_bronze)):
+                    from pyspark.sql import functions as F
+                    weekly_rows = _versioned_table(spark, weekly_bronze).filter(
+                        F.col("source_sha256") == snapshot_sha256).limit(1).count()
+                    if weekly_rows:
+                        raise ValueError("Falta calendar.txt en Staging, pero Bronze tiene filas de su hash. "
+                                         "Revisa Staging; no lo interpretaré como un archivo no publicado.")
+        result = processors[entity].read_and_validate(source, columns, spec, *dependencies, **options)
         return publish_snapshot(
             spark, result, spec, PublicationTables(catalog, schema, entity),
             mode=mode, verify_history=verify_history, run_id=run_id,

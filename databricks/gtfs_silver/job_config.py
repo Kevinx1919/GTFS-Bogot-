@@ -71,7 +71,9 @@ def build_job(repo_root: str, *, environment_version: str = "4") -> dict:
 
     # Serializo también stops para evitar escritores concurrentes en la auditoría común.
     # Stops no tiene una dependencia de datos con routes: su jerarquía es interna.
-    for entity, predecessor in (("routes", "publish_snapshots"), ("stops", "publish_routes")):
+    # Calendar_dates requiere calendar cuando el archivo semanal está publicado.
+    for entity, predecessor in (("routes", "publish_snapshots"), ("stops", "publish_routes"),
+                                ("calendar", "publish_stops"), ("calendar_dates", "publish_calendar")):
         items = [{**item, "entity": entity} for item in SNAPSHOTS]
         parameter = f"{entity}_work_items"
         job["parameters"].append({"name": parameter, "default": json.dumps(items, separators=(",", ":"))})

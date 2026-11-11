@@ -85,7 +85,7 @@ class SilverConfigurationTests(unittest.TestCase):
 
     def test_only_implemented_entity_is_enabled(self):
         registry = load_registry()
-        self.assertEqual(list(registry), ["agency", "routes", "stops"])
+        self.assertEqual(list(registry), ["agency", "routes", "stops", "calendar", "calendar_dates"])
         self.assertTrue(registry["agency"]["enabled"])
         self.assertEqual(registry["agency"]["depends_on"], [])
         self.assertEqual(registry["routes"]["depends_on"], ["agency"])
@@ -103,6 +103,20 @@ class SilverConfigurationTests(unittest.TestCase):
         parameters = {p["name"]: p["default"] for p in job["parameters"]}
         self.assertEqual([i["entity"] for i in json.loads(parameters["stops_work_items"])], ["stops", "stops"])
 
+
+    def test_calendar_configuration_preserves_existing_tasks_and_conditional_dependency(self):
+        registry=load_registry();job=build_job("/Workspace/Shared/example-project")
+        self.assertEqual(registry["calendar"]["depends_on"],[])
+        self.assertEqual(registry["calendar_dates"]["depends_on"],[])
+        self.assertEqual(registry["calendar_dates"]["depends_on_if_published"],["calendar"])
+        self.assertEqual(len(job["tasks"]),5)
+        parameters={p["name"]:p["default"] for p in job["parameters"]}
+        for entity,position,parent in (("calendar",3,"publish_stops"),("calendar_dates",4,"publish_calendar")):
+            task=job["tasks"][position]
+            self.assertEqual(task["depends_on"],[{"task_key":parent}])
+            self.assertEqual(task["for_each_task"]["inputs"],"{{job.parameters."+entity+"_work_items}}")
+            self.assertEqual([i["entity"] for i in json.loads(parameters[entity+"_work_items"])],[entity,entity])
+            self.assertEqual(task["for_each_task"]["concurrency"],1)
 
     def test_false_reconciliation_is_rejected_before_any_write(self):
         result = validate_snapshot(data(spec()), COLUMNS, spec())
@@ -365,6 +379,59 @@ class SilverPublicationDeltaTests(unittest.TestCase):
         self.assertIn("STOP_LAT_INVALID", quarantine.error_codes)
         statuses = {r.status for r in self.spark.table(tables.name("audit")).filter("entity = 'stops'").collect()}
         self.assertEqual(statuses, {"SUCCEEDED", "REJECTED"})
+
+    def test_calendars_pipeline_composite_publication_retry_history_and_quarantine(self):
+        from gtfs_silver import pipeline
+        from gtfs_silver.calendars_spark import BUSINESS_TYPES as calendar_types
+        from test_calendars_validation import fixture as calendar_fixture, frame as calendar_frame
+        from pyspark.sql import functions as F
+        from datetime import date
+        for version,content_hash in (("2025-10-28","a"*64),("2026-09-29","b"*64)):
+            common=dict(catalog="spark_catalog",schema=self.namespace,staging_volume="staging",
+                        feed_version=version,snapshot_sha256=content_hash)
+            base=(f"/Volumes/spark_catalog/{self.namespace}/staging/gtfs_static/"
+                  f"feed_version={version}/sha256={content_hash}")
+            for entity in ("calendar","calendar_dates"):
+                selected=SnapshotSpec(version,content_hash,base+"/"+entity+".txt",entity)
+                rows=[calendar_fixture(selected)]
+                if entity=="calendar_dates":rows.append(calendar_fixture(selected,date="20230102"))
+                source=calendar_frame(self.spark,selected,rows)
+                source.write.format("delta").mode("append").saveAsTable(f"spark_catalog.{self.namespace}.bronze_gtfs_{entity}")
+                with patch.object(pipeline.calendars_spark,"read_source_header",return_value=tuple(calendar_types[entity])), \
+                     patch.object(pipeline.calendars_spark,"calendar_source_present",return_value=True):
+                    if version=="2025-10-28":
+                        preview=pipeline.run_entity(self.spark,entity=entity,**common,mode="validate")
+                        self.assertFalse(preview["persisted"])
+                    result=pipeline.run_entity(self.spark,entity=entity,**common)
+                self.assertEqual(result["status"],"SUCCEEDED")
+            # Un archivo semanal perdido no debe cambiar silenciosamente a dates_only.
+            with patch.object(pipeline.calendars_spark,"read_source_header",return_value=tuple(calendar_types["calendar_dates"])), \
+                 patch.object(pipeline.calendars_spark,"calendar_source_present",return_value=False):
+                with self.assertRaisesRegex(ValueError,"Staging"):
+                    pipeline.run_entity(self.spark,entity="calendar_dates",**common)
+        old_table=f"spark_catalog.{self.namespace}.silver_gtfs_calendar_dates"
+        old_rows=self.spark.table(old_table).filter("source_feed_version='2025-10-28'").orderBy("date").collect()
+        with patch.object(pipeline.calendars_spark,"read_source_header",return_value=tuple(calendar_types["calendar_dates"])), \
+             patch.object(pipeline.calendars_spark,"calendar_source_present",return_value=True):
+            retry=pipeline.run_entity(self.spark,entity="calendar_dates",**common)
+            self.assertEqual(retry["candidate_rows"],2)
+            table=self.spark.table(old_table)
+            self.assertEqual(table.count(),4)
+            self.assertEqual(len(table.columns),11)
+            self.assertEqual(table.schema["date"].dataType.simpleString(),"date")
+            self.assertEqual(table.filter("source_feed_version='2025-10-28'").orderBy("date").collect(),old_rows)
+            self.assertEqual({r.date for r in table.collect()},{date(2023,1,1),date(2023,1,2)})
+            bad=[calendar_fixture(selected,date="20230101",exception_type="2")]*2
+            calendar_frame(self.spark,selected,bad).write.format("delta").mode("append").saveAsTable(f"spark_catalog.{self.namespace}.bronze_gtfs_calendar_dates")
+            with self.assertRaises(SnapshotRejectedError):
+                pipeline.run_entity(self.spark,entity="calendar_dates",**common)
+        self.assertEqual(self.spark.table(old_table).count(),4)
+        quarantine=self.spark.table(f"spark_catalog.{self.namespace}.quarantine_gtfs_calendar_dates")
+        rejected=quarantine.filter(F.size("error_codes")>0).collect()
+        self.assertEqual(sum(r.input_copies for r in rejected),3)
+        self.assertTrue(all(r.date=="20230101" for r in rejected))
+        self.assertTrue(all("SERVICE_KEY_CONFLICT" in r.error_codes for r in rejected))
+        self.assertEqual(len(self.spark.table(f"spark_catalog.{self.namespace}.silver_gtfs_calendar").columns),18)
 
     def test_failure_after_commit_is_explicit_in_audit_and_requires_review(self):
         selected = spec()

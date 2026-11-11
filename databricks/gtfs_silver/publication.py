@@ -161,10 +161,11 @@ def publish_snapshot(
     """Un escritor para contratos ya validados; conserva esquemas y ámbito por snapshot."""
     from pyspark.sql import functions as F
 
-    identifiers = {"agency": "agency_id", "routes": "route_id", "stops": "stop_id"}
+    identifiers = {"agency": ("agency_id",), "routes": ("route_id",), "stops": ("stop_id",),
+                   "calendar": ("service_id",), "calendar_dates": ("service_id", "date")}
     if tables.entity not in identifiers or spec.entity != tables.entity:
         raise ValueError("La entidad publicada debe coincidir con su contrato y snapshot.")
-    identifier = identifiers[tables.entity]
+    keys = identifiers[tables.entity]
     if mode not in {"validate", "publish"}:
         raise ValueError("mode debe ser validate o publish.")
     summary = result.summary
@@ -190,7 +191,7 @@ def publish_snapshot(
         frames = result.frames
         # La cuarentena agrupa copias del mismo rechazo y conserva su multiplicidad.
         quarantine = (
-            frames["rejected"].groupBy(identifier, "original_row_json", "error_codes", "silver_rule_version")
+            frames["rejected"].groupBy(*keys, "original_row_json", "error_codes", "silver_rule_version")
             .count().withColumnRenamed("count", "input_copies")
             .withColumn("record_hash", F.sha2(F.concat("original_row_json", F.to_json("error_codes")), 256))
             .withColumn("entity", F.lit(tables.entity))
@@ -208,10 +209,13 @@ def publish_snapshot(
             .withColumn("silver_run_id", F.lit(run_id))
             .withColumn("silver_loaded_at_utc", F.lit(started))
         )
+        # Unicidad por todas las columnas de clave, sin IDs sintéticos concatenados.
+        blank_key = F.lit(False)
+        for key in keys:
+            blank_key = blank_key | F.col(key).isNull() | F.col(key).cast("string").rlike(r"(?U)^\s*$")
         checks = output.agg(
-            F.count("*").alias("rows"), F.countDistinct(identifier).alias("ids"),
-            F.max(F.when(F.col(identifier).isNull() | F.col(identifier).rlike(r"(?U)^\s*$"), 1)
-                  .otherwise(0)).alias("blank"),
+            F.count("*").alias("rows"), F.countDistinct(*keys).alias("ids"),
+            F.max(F.when(blank_key, 1).otherwise(0)).alias("blank"),
         ).first()
         if checks["blank"] or checks["rows"] != checks["ids"] or checks["rows"] != summary["candidate_rows"]:
             raise ValueError("No publicar IDs vacíos, repetidos o conteos inconsistentes.")

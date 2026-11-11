@@ -12,7 +12,7 @@ if TYPE_CHECKING:
 
 def prepare_source(
     bronze_df: "DataFrame", published: Sequence[str], business_types: Mapping[str, str],
-    identifier: str, spec: SnapshotSpec,
+    identifier: str | Sequence[str], spec: SnapshotSpec,
 ) -> "DataFrame":
     """Comprueba tipos Bronze y conserva huellas fuente antes de normalizar."""
     from pyspark.sql import functions as F, Window
@@ -39,14 +39,15 @@ def prepare_source(
         "original_row_json", F.to_json(F.struct(*[F.col(name) for name in (*published, *TECHNICAL_FIELDS)]),
                                        {"ignoreNullFields": "false"}),
     )
-    by_id = Window.partitionBy(identifier)
+    keys = (identifier,) if isinstance(identifier, str) else tuple(identifier)
+    by_id = Window.partitionBy(*keys)
     return (selected.withColumn("_variant_min", F.min("_business_json").over(by_id))
             .withColumn("_variant_max", F.max("_business_json").over(by_id)))
 
 
 def finish_validation(
     selected: "DataFrame", published: Sequence[str], spec: SnapshotSpec,
-    identifier: str, rule_version: str, errors: Sequence["Column"], warnings: Sequence["Column"],
+    identifier: str | Sequence[str], rule_version: str, errors: Sequence["Column"], warnings: Sequence["Column"],
     expressions: Sequence["Column"], *, extra_metrics: Mapping[str, "Column"] | None = None,
 ) -> PreparedSnapshot:
     """Reconcilia entradas y copias sin traer registros de negocio al driver."""
@@ -85,10 +86,11 @@ def finish_validation(
         F.array(*[F.lit(name) for name in published]).alias("source_columns"),
         F.lit(rule_version).alias("silver_rule_version"),
     )
+    keys = (identifier,) if isinstance(identifier, str) else tuple(identifier)
     rejected = checked.filter(~F.col("_is_valid")).select(
-        identifier, "source_feed_version", "source_sha256", "original_row_json", "error_codes",
+        *keys, "source_feed_version", "source_sha256", "original_row_json", "error_codes",
         F.lit(rule_version).alias("silver_rule_version"),
     )
-    warning_frame = checked.filter(F.size("warning_codes") > 0).select(identifier, "warning_codes")
+    warning_frame = checked.filter(F.size("warning_codes") > 0).select(*keys, "warning_codes")
     return PreparedSnapshot({"candidates": candidates, "rejected": rejected, "warnings": warning_frame},
                             summary, {})

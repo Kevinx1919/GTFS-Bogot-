@@ -1,6 +1,6 @@
 # Mi ejecución Silver por entidad y snapshot
 
-**Estado actualizado al 10 de noviembre de 2026:** agency, routes y stops están publicadas en Silver. Ejecuté el Job ampliado y comprobé las tablas; para stops también consulté sus datos. El [cierre de ejecución](#cierre-de-la-ejecución-de-stops) distingue esta comprobación de los conteos del perfil fuente y de las pruebas locales. El siguiente bloque del plan es calendar y calendar_dates, todavía sin procesadores Silver implementados.
+**Estado actualizado al 11 de noviembre de 2026:** agency, routes y stops están publicadas en Silver. Ejecuté el Job ampliado y comprobé las tablas; para stops también consulté sus datos. El [cierre de ejecución](#cierre-de-la-ejecución-de-stops) distingue esta comprobación de los conteos del perfil fuente y de las pruebas locales. Calendar y calendar_dates ya tienen procesadores locales; falta su primera validación/publicación en Databricks.
 
 ## Mi recorrido habitual
 
@@ -113,7 +113,7 @@ from workspace.gtfs_bogota.silver_gtfs_routes
 
 ## Cómo reduciré el trabajo para las demás tablas
 
-El [registro de entidades](../databricks/config/silver_entities.json) habilita agency, routes y stops. Routes depende de agency; el Job aplica esa dependencia y el pipeline comprueba su snapshot incluso si ejecuto routes manualmente. Reutilizaré parámetros, ejecución por snapshot, escritura por ámbito y auditoría. Añadiré cada entidad con su contrato y procesador específico antes de habilitarla; cambiar un nombre de tabla no crea automáticamente sus reglas.
+El [registro de entidades](../databricks/config/silver_entities.json) habilita agency, routes, stops, calendar y calendar_dates. Routes depende de agency; calendar_dates requiere calendar del mismo snapshot cuando el archivo semanal está publicado. El detalle de calendarios está en su sección de despliegue. Para routes, el Job aplica esa dependencia y el pipeline comprueba su snapshot incluso si ejecuto routes manualmente. Reutilizaré parámetros, ejecución por snapshot, escritura por ámbito y auditoría. Añadiré cada entidad con su contrato y procesador específico antes de habilitarla; cambiar un nombre de tabla no crea automáticamente sus reglas.
 
 Con nueve o cien tablas, separaré el trabajo que se hace una vez de lo que corre siempre:
 
@@ -184,7 +184,7 @@ El [contrato stops_v1](contracts/stops.md) detalla las reglas. La normalización
 
 stops_spark.py contiene las reglas de ubicaciones, coordenadas, nombres y padres. spark_validation.py reúne la preparación de Bronze y la reconciliación de filas/copias que ahora comparten routes y stops; no contiene una regla que limpie nombres de routes. Cada entidad sigue definiendo sus propias reglas y expresiones de salida.
 
-pipeline.py selecciona el procesador, publication.py conserva la escritura común y job_config.py prepara las tres tareas seriales. El notebook 10 es la entrada de ejecución y no duplica esas funciones. No cambié los tipos ni la política de nombres de agency/routes.
+pipeline.py selecciona el procesador y publication.py conserva la escritura común. job_config.py preparó tres tareas seriales para agency/routes/stops y ahora añade las dos de calendarios. El notebook 10 es la entrada de ejecución y no duplica esas funciones. No cambié los tipos ni la política de nombres de agency/routes.
 
 ### Verificación local de esta ampliación
 
@@ -212,3 +212,56 @@ Resolví el error Reference 'job.parameters.stops_work_items' refers to an undef
 Guardo primero los parámetros generales y después sus referencias en cada For each. Los dos objetos de cada lista deben llevar la misma entidad, con su fecha y hash correspondientes. En la tarea interna conservo entity={{input.entity}}, feed_version={{input.feed_version}} y snapshot_sha256={{input.snapshot_sha256}}. Si uso referencias job.parameters para otros valores, también debo definir sus claves generales; para valores estáticos puedo conservar los literales de la tarea.
 
 El Pull sincroniza el código, pero no modifica por sí mismo el Job creado en la interfaz. Amplié la configuración de Workspace para ejecutar stops con el mismo notebook 10; la plantilla versionada ya describe sus tres tareas seriales. La cadena agency → routes → stops serializa las escrituras; stops mantiene una jerarquía interna y no una dependencia de datos con routes.
+
+
+La [guía de contratos y cuarentena](data_contracts_and_quarantine.md) explica de dónde salen las reglas, qué conserva un rechazo y cómo consultarlo por ejecución.
+
+## Despliegue de calendarios
+
+**Estado:** calendar_v1 y calendar_dates_v1 implementados localmente; todavía no validados ni publicados en Workspace. Conservo las fechas fuente. No se necesita repetir Bronze, instalar librerías nuevas de producción ni ejecutar el notebook 12 como requisito del Job.
+
+### Recorrido de mi primera ejecución
+
+1. Sincronizo el repositorio completo después de publicar el cambio en Git. Si ya importé módulos en la sesión, reinicio Python y comienzo por el bloque 1 del notebook 10. Conservo el entorno que funciona con agency/routes/stops.
+2. Para 2025 configuro entity=calendar, mode=validate, feed_version=2025-10-28 y snapshot_sha256=07ba2ba9bb3b5bc1e38357355956757ce84fc68e6d05b74577bf017e189ab952. Ejecuto bloque 1 y bloque 2. Si reconciled y ready_for_publication son true, reviso el aviso de alcance y publico esa entidad con mode=publish.
+3. Cambio a entity=calendar_dates manteniendo ese par versión/hash. Valido y publico sus excepciones. En este snapshot existe calendar.txt: la dependencia Silver calendar debe estar publicada primero. Si falta, el pipeline explica qué publicar antes de continuar.
+4. Repito el orden calendar → calendar_dates para feed_version=2026-09-29 y snapshot_sha256=08d14e0b3a5b9caa5451b722659871fd554e3273b94bdd770fdf81a26bf02097. Conservo catalog=workspace, schema=gtfs_bogota, staging_volume=staging_gtfs y verify_history=true.
+5. Compruebo status=SUCCEEDED, persisted=true y las tablas silver_gtfs_calendar / silver_gtfs_calendar_dates. Si el origen sigue coincidiendo con el perfil, los resultados esperados son los de la tabla siguiente; no son publicaciones ya ejecutadas.
+
+| Entidad | Snapshot | Candidatos esperados | Rechazos esperados | Diagnóstico temporal esperado |
+| --- | --- | ---: | ---: | --- |
+| calendar | 2025-10-28 | 7 | 0 | Siete intervalos mayores de diez años; warning_rows=7. |
+| calendar_dates | 2025-10-28 | 140 | 0 | 140 excepciones de un año distinto al snapshot; warning_rows=140. |
+| calendar | 2026-09-29 | 7 | 0 | Sin esos avisos; warning_rows=0. |
+| calendar_dates | 2026-09-29 | 133 | 0 | Sin esos avisos; warning_rows=0. |
+
+Calendar conserva 2000-01-01 a 2099-01-01 para 2025 y 2026-01-01 a 2026-12-31 para 2026. Las excepciones del primer snapshot siguen fechadas en 2023. Aceptar esos registros no verifica la cobertura festiva de 2025 para Gold.
+
+### Cómo amplío el Job existente
+
+La plantilla conserva las tres tareas actuales y añade publish_calendar después de publish_stops y publish_calendar_dates después de publish_calendar, con concurrencia 1. No crea un Job nuevo ni cambia automáticamente el que está en la interfaz.
+
+Creo primero los parámetros generales calendar_work_items y calendar_dates_work_items, cada uno con los dos pares versión/hash ya indicados y entity igual a calendar o calendar_dates en sus dos elementos. Guardo esos parámetros antes de referenciarlos como {{job.parameters.calendar_work_items}} / {{job.parameters.calendar_dates_work_items}} en Inputs.
+
+Cada tarea interna utiliza el notebook 10 y entity={{input.entity}}, feed_version={{input.feed_version}}, snapshot_sha256={{input.snapshot_sha256}}. Los valores comunes pueden ser literales o referencias a parámetros generales que realmente existan. Para la publicación automática del recorrido manual, mode debe ser publish. No añado el notebook de perfilado al Job.
+
+Para versiones futuras con un TXT legítimamente ausente, omitiré ese trabajo y ajustaré las dependencias aplicables. No ejecutaré una entidad ausente esperando que fabrique una tabla vacía. La modalidad de solo excepciones no exige Silver calendar; la ausencia de Staging con filas Bronze del mismo hash bloquea para revisión.
+
+### Verificación local de calendarios
+
+**Cierre revisado el 11 de noviembre de 2026:** quedaron aprobados **105 casos únicos, sin omisiones**, con Spark 4.0.1 y Delta 4.0.0. Comprobé que los archivos de código, pruebas y configuración actuales son idénticos a la copia probada. La compilación y las seis pruebas de despacho también pasaron.
+
+El primer pase completo ejecutó 105 casos y terminó con diez errores de integración Delta por no poder cargar Snappy desde el montaje temporal sin exec. Los 94 casos ajenos a la clase de publicación pasaron; también pasó su caso de lectura sin escritura. Corregí únicamente el montaje del contenedor y repetí los once casos Delta: los once terminaron OK. Por eso registro 94 + 11 casos únicos comprobados, sin presentar el primer pase fallido como una suite completa aprobada en una sola ejecución.
+
+La integración nueva publicó ambos snapshots sintéticos, conservó fechas de 2023, aceptó dos fechas para el mismo servicio y verificó un reintento sin duplicación. Un conflicto de servicio + fecha quedó en cuarentena con sus tres copias fuente y dejó Silver intacta. También pasó la protección ante calendar.txt perdido en Staging con filas Bronze del mismo hash, junto con las regresiones de agency/routes/stops.
+
+Estas pruebas no publican en Databricks ni miden el tiempo del Job real. La validación y publicación de calendarios en Workspace siguen pendientes.
+
+
+### Entorno de pruebas reutilizado
+
+Usé Docker solo para probar localmente, no para ejecutar el lakehouse en Databricks. Reutilicé apache/spark:4.0.1-python3 con Python 3.10 y Java de la imagen, una copia temporal del código fuera de OneDrive montada como lectura y JARs Delta 4.0.0 locales. El contenedor de la suite no tiene red ni acceso de escritura al repositorio. Su carpeta temporal se monta con --tmpfs /tmp:rw,exec,mode=1777,size=2g para permitir cargar la librería nativa Snappy. El montaje inicial sin exec impidió las escrituras Delta; corregí el entorno, sin cambiar el pipeline, y repetí las pruebas de publicación afectadas.
+
+Al preparar los paquetes reutilizados corregí permisos de lectura de archivos provenientes de Linux y seleccioné importlib-metadata 8.7.0 / zipp 3.23.0, compatibles con ese Python. Solo descargué esos dos paquetes pequeños, comprobando sus hashes contra PyPI; no volví a descargar Spark/Java. Retiré lazy_importer de esta preparación porque no es una dependencia de las versiones finalmente usadas.
+
+Dejé [requirements-spark.txt](../tests/requirements-spark.txt) para fijar el entorno local y evitar resolver dependencias transitivas distintas en cada entidad. Ese archivo no se instala en Databricks: requirements-silver.txt y el entorno del Job conservan sus dependencias anteriores. En una imagen que ya incluye Spark se reutilizan su distribución y PYTHONPATH en vez de instalar otra copia.
