@@ -1,6 +1,6 @@
 # Mi ejecución Silver por entidad y snapshot
 
-**Estado actualizado al 11 de noviembre de 2026:** agency, routes y stops están publicadas en Silver. Ejecuté el Job ampliado y comprobé las tablas; para stops también consulté sus datos. El [cierre de ejecución](#cierre-de-la-ejecución-de-stops) distingue esta comprobación de los conteos del perfil fuente y de las pruebas locales. Calendar y calendar_dates ya tienen procesadores locales; falta su primera validación/publicación en Databricks.
+**Estado actualizado al 11 de noviembre de 2026:** agency, routes, stops, calendar y calendar_dates están publicadas en Silver. Ejecuté el Job ampliado y comprobé las tablas; para stops también consulté sus datos. El [cierre de ejecución](#cierre-de-la-ejecución-de-stops) distingue esta comprobación de los conteos del perfil fuente y de las pruebas locales. Ejecuté las dos tareas nuevas de calendarios y comprobé sus tablas y datos; el siguiente paso del plan es la derivación service_dates, con horizonte explícito.
 
 ## Mi recorrido habitual
 
@@ -218,7 +218,7 @@ La [guía de contratos y cuarentena](data_contracts_and_quarantine.md) explica d
 
 ## Despliegue de calendarios
 
-**Estado:** calendar_v1 y calendar_dates_v1 implementados localmente; todavía no validados ni publicados en Workspace. Conservo las fechas fuente. No se necesita repetir Bronze, instalar librerías nuevas de producción ni ejecutar el notebook 12 como requisito del Job.
+**Estado:** despliegue funcional completado. Ejecuté las dos tareas de calendarios del Job, comprobé silver_gtfs_calendar y silver_gtfs_calendar_dates y consulté sus datos en Workspace. Conservo los pasos siguientes como procedimiento de ejecución y recuperación. Conservo las fechas fuente. No se necesita repetir Bronze, instalar librerías nuevas de producción ni ejecutar el notebook 12 como requisito del Job.
 
 ### Recorrido de mi primera ejecución
 
@@ -255,7 +255,7 @@ El primer pase completo ejecutó 105 casos y terminó con diez errores de integr
 
 La integración nueva publicó ambos snapshots sintéticos, conservó fechas de 2023, aceptó dos fechas para el mismo servicio y verificó un reintento sin duplicación. Un conflicto de servicio + fecha quedó en cuarentena con sus tres copias fuente y dejó Silver intacta. También pasó la protección ante calendar.txt perdido en Staging con filas Bronze del mismo hash, junto con las regresiones de agency/routes/stops.
 
-Estas pruebas no publican en Databricks ni miden el tiempo del Job real. La validación y publicación de calendarios en Workspace siguen pendientes.
+Estas pruebas no publican en Databricks ni miden el tiempo del Job real. Posteriormente ejecuté los calendarios en Workspace y comprobé sus tablas y datos, como registro en el cierre siguiente.
 
 
 ### Entorno de pruebas reutilizado
@@ -265,3 +265,12 @@ Usé Docker solo para probar localmente, no para ejecutar el lakehouse en Databr
 Al preparar los paquetes reutilizados corregí permisos de lectura de archivos provenientes de Linux y seleccioné importlib-metadata 8.7.0 / zipp 3.23.0, compatibles con ese Python. Solo descargué esos dos paquetes pequeños, comprobando sus hashes contra PyPI; no volví a descargar Spark/Java. Retiré lazy_importer de esta preparación porque no es una dependencia de las versiones finalmente usadas.
 
 Dejé [requirements-spark.txt](../tests/requirements-spark.txt) para fijar el entorno local y evitar resolver dependencias transitivas distintas en cada entidad. Ese archivo no se instala en Databricks: requirements-silver.txt y el entorno del Job conservan sus dependencias anteriores. En una imagen que ya incluye Spark se reutilizan su distribución y PYTHONPATH en vez de instalar otra copia.
+
+
+## Cierre de la ejecución de calendarios
+
+**Fecha:** 11 de noviembre de 2026. Después de sincronizar el commit 8e77fb9 amplié el Job con publish_calendar y publish_calendar_dates, ejecuté ambas tareas y comprobé físicamente las dos tablas Silver. Consulté sus datos y confirmé que contienen información. Doy por completado el despliegue funcional de las dos entidades fuente y continúo con el orden 4b del plan: service_dates.
+
+Registro el alcance de lo comprobado: aquí no adjunto IDs de runs ni nuevos resúmenes numéricos por snapshot. Los conteos y advertencias de la tabla de resultados esperados proceden del perfil anterior; no los presento como una nueva medición de estas consultas breves. Las pruebas locales de reintento y conservación del histórico están documentadas por separado.
+
+Publicar las fuentes no corrige el alcance temporal de 2025: conserva los intervalos amplios y las excepciones de 2023. La derivación siguiente deberá fijar un horizonte explícito y mostrar esa limitación cuando corresponda. No vuelvo a ingerir Bronze ni despliego todavía service_dates como si fuera otro TXT.

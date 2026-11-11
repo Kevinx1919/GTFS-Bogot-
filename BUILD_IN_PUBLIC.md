@@ -392,6 +392,14 @@ La dependencia es condicional: si calendar.txt está publicado, calendar_dates r
 
 El código y la configuración están preparados localmente, todavía sin publicación de calendarios en Databricks. La primera ejecución irá en orden calendar → calendar_dates por snapshot. Service_dates requiere después un horizonte acordado; no la construí ni expandí horarios. No modifiqué Archify, Raw ni Bronze.
 
+### Hito 26 — Calendarios publicados y paso a fechas de servicio
+
+**Fecha:** 11 de noviembre de 2026. Después del Pull del commit 8e77fb9 incorporé las dos tareas al Job, ejecuté calendar y calendar_dates y comprobé físicamente sus tablas Silver. Hice consultas y confirmé que contienen información. Actualicé las guías que todavía mostraban ese despliegue como pendiente.
+
+El [cierre de ejecución](docs/silver_execution.md#cierre-de-la-ejecución-de-calendarios) conserva el alcance de esta comprobación sin atribuirle conteos nuevos no registrados. Las pruebas locales, los conteos del perfil fuente y la consulta de disponibilidad en Workspace son evidencias distintas.
+
+El siguiente paso es service_dates, orden 4b del [plan](docs/silver_design.md#próximo-incremento-service_dates): transformar patrón y excepciones en días activos por servicio y snapshot. Antes de expandir acordaré el horizonte; el intervalo 2000–2099 y las excepciones de 2023 no autorizan a inventar un calendario festivo de 2025. No modifiqué las fuentes ni Archify.
+
 ## Qué no publicar
 
 - Access tokens, secretos, archivos `.env`, cookies, hostnames privados o identificadores de cuenta.

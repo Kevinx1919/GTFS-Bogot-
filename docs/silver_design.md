@@ -2,7 +2,7 @@
 
 ## 1. Estado y propósito
 
-**Estado de este documento:** este es mi plan para construir Silver por etapas. La carpeta Silver contiene una guía SQL de agency como punto de entrada y un perfilador PySpark como alternativa. Revisé las salidas del perfilador PySpark de agency para 2025 y 2026 y las contrasté con consultas SQL mediante Genie. La guía SQL con widgets no tiene una comprobación de ejecución completa documentada. El [contrato v1 de agency](contracts/agency.md) define el primer incremento. Su núcleo Python de validación ya fue implementado y contrastado; el notebook 09 de lectura fue ejecutado y revisado en Databricks para ambos snapshots. La [publicación y el Job manual](silver_execution.md) ya están preparados y probados localmente con Delta real. Agency ya fue publicada para ambos snapshots y su Job manual terminó con éxito. Implementé y publiqué [routes_v1](contracts/routes.md) con Spark y el Job compartido. Al 10 de noviembre completé el [perfil de stops](stops_profile_2025_2026.md) en lectura. El contrato stops_v1 ya está implementado y ejecutado en Databricks: comprobé el Job, la tabla Silver y sus datos con una consulta breve. Calendar y calendar_dates ya están implementados localmente, pendientes de validar/publicar en Databricks; después derivaré service_dates. Las demás entidades continúan como propuestas. El [cierre de stops](silver_execution.md#cierre-de-la-ejecución-de-stops) distingue esta comprobación de los conteos del perfil y de las pruebas locales.
+**Estado de este documento:** este es mi plan para construir Silver por etapas. La carpeta Silver contiene una guía SQL de agency como punto de entrada y un perfilador PySpark como alternativa. Revisé las salidas del perfilador PySpark de agency para 2025 y 2026 y las contrasté con consultas SQL mediante Genie. La guía SQL con widgets no tiene una comprobación de ejecución completa documentada. El [contrato v1 de agency](contracts/agency.md) define el primer incremento. Su núcleo Python de validación ya fue implementado y contrastado; el notebook 09 de lectura fue ejecutado y revisado en Databricks para ambos snapshots. La [publicación y el Job manual](silver_execution.md) ya están preparados y probados localmente con Delta real. Agency ya fue publicada para ambos snapshots y su Job manual terminó con éxito. Implementé y publiqué [routes_v1](contracts/routes.md) con Spark y el Job compartido. Al 10 de noviembre completé el [perfil de stops](stops_profile_2025_2026.md) en lectura. El contrato stops_v1 ya está implementado y ejecutado en Databricks: comprobé el Job, la tabla Silver y sus datos con una consulta breve. Calendar y calendar_dates ya están implementados y publicados: ejecuté sus tareas y consulté las tablas en Workspace. El siguiente paso es service_dates, previa definición de su horizonte. Las demás entidades continúan como propuestas. El [cierre de stops](silver_execution.md#cierre-de-la-ejecución-de-stops) distingue esta comprobación de los conteos del perfil y de las pruebas locales.
 
 **Punto de partida:** al reejecutar 04 comprobé que reconoció los hashes ya cargados de las ocho entidades de referencia de cada versión. La auditoría 07 de 2025 terminó en PASSED, sin fallos ni advertencias; la de 2026 en WARNING, sin fallos bloqueantes y con cinco advertencias de esquema conocidas. Esto no significa que ya estén probados los tipos, la unicidad o todas las reglas GTFS que necesitará Silver.
 
@@ -63,7 +63,7 @@ Los conteos pueden incluir categorías derivadas del mismo valor; no los sumaré
 
 Llamaré **S** a la pareja (source_feed_version, source_sha256). Todas las claves y relaciones se evaluarán dentro de S. No mezclaré filas de 2025 y 2026 en un join por ID aislado. Una fecha de publicación no es una fecha de servicio. run_id identifica una ejecución, no una ruta o parada.
 
-Agency, routes y stops ya tienen sus tablas silver_gtfs_* publicadas y su ejecución revisada en Workspace. El orden 4a, calendar y calendar_dates, ya tiene perfil y contratos implementados localmente; falta ejecutarlos en Databricks. Después construiré service_dates, en el 4b. Los nombres y tipos de las demás entidades continúan como propuestas. Los archivos opcionales se procesarán solo si están publicados; su ausencia se documentará sin inventar registros.
+Agency, routes y stops ya tienen sus tablas silver_gtfs_* publicadas y su ejecución revisada en Workspace. El orden 4a, calendar y calendar_dates, ya está ejecutado en Databricks y comprobé sus datos. Ahora continúo con service_dates, en el orden 4b, definiendo primero un horizonte explícito. Los nombres y tipos de las demás entidades continúan como propuestas. Los archivos opcionales se procesarán solo si están publicados; su ausencia se documentará sin inventar registros.
 
 | Orden | Entidad Silver | Qué representa una fila / clave dentro de S | Tipos principales propuestos | Qué revisaré y qué permite analizar |
 | --- | --- | --- | --- | --- |
@@ -208,7 +208,7 @@ No convierto el límite de 1.000 filas de agency en una regla para todas las tab
 
 ## Siguiente bloque: calendar y calendar_dates
 
-**Estado al 10 de noviembre de 2026:** cerré la ejecución de stops y completé el [perfil conjunto de calendar/calendar_dates](calendars_profile_2025_2026.md), con [contratos implementados](contracts/calendars.md). Implementé y habilité localmente calendar_v1 y calendar_dates_v1; su validación/publicación en Databricks siguen pendientes. Encontré intervalos 2000–2099 y excepciones de 2023 en el snapshot 2025; conservo esa evidencia y revisaré su alcance antes de derivar service_dates.
+**Estado al 10 de noviembre de 2026:** cerré la ejecución de stops y completé el [perfil conjunto de calendar/calendar_dates](calendars_profile_2025_2026.md), con [contratos implementados](contracts/calendars.md). Implementé y publiqué calendar_v1 y calendar_dates_v1; ejecuté el Job ampliado y comprobé las tablas y su información en Workspace. Encontré intervalos 2000–2099 y excepciones de 2023 en el snapshot 2025; conservo esa evidencia y revisaré su alcance antes de derivar service_dates.
 
 Calendar describe el patrón semanal de un servicio dentro de un intervalo de fechas. Calendar_dates registra excepciones para fechas concretas. Es como tener el horario habitual de una tienda y una lista de festivos en los que abre o cierra: necesito interpretar ambas fuentes juntas cuando estén publicadas.
 
@@ -219,6 +219,16 @@ Calendar describe el patrón semanal de un servicio dentro de un intervalo de fe
 5. Cerré los contratos y reutilicé el pipeline, el escritor y el notebook 10. Las pruebas cubren fechas, claves compuestas, dependencia semanal condicional y reintentos; antes de afirmar publicación ejecutaré validate/publish en Databricks.
 
 El orden 4b será service_dates: una fila por servicio activo y fecha, dentro de versión + hash, derivada del patrón y sus excepciones. No es otro TXT que deba descargar. No expandiré todavía los millones de horarios por todas las fechas ni confundiré fecha de publicación con fecha de servicio. La referencia de existencia de un servicio no dependerá de que tenga días activos dentro de un horizonte arbitrario de consulta.
+
+## Próximo incremento: service_dates
+
+**Estado al 11 de noviembre de 2026:** el despliegue funcional de las dos fuentes está completado. Service_dates es el siguiente paso acordado, no shape_points todavía. No es un archivo nuevo del ZIP: la derivaré de las dos tablas Silver ya publicadas.
+
+Una fila representará un servicio activo en una fecha dentro del mismo snapshot. Aplicaré el patrón semanal en el intervalo correspondiente, añadiré excepciones de tipo 1 y retiraré las de tipo 2. Registraré la procedencia y el horizonte utilizado para no mezclar una expansión parcial con una cobertura completa.
+
+Antes de implementar o publicar la derivación fijo el período que voy a calcular. En 2025, el intervalo fuente 2000–2099 no decide por sí solo un horizonte analítico y las excepciones son de 2023; no las traslado a otro año. Esta decisión no cambia las fuentes ni decide si existe un service_id. La existencia de servicios para validar trips se tratará independientemente de que tengan días activos en una ventana.
+
+Después de service_dates el plan continúa con shape_points, trips, frequencies y stop_times. Todavía no paso a Gold ni expando horarios por todas las fechas.
 
 ## Definición de negocio obligatoria para cada futura tabla Gold
 

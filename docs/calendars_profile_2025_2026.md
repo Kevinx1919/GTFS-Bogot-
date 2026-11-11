@@ -2,7 +2,7 @@
 
 **Fecha:** 10 de noviembre de 2026. Después de cerrar stops, consulté calendar y calendar_dates mediante Genie en modo lectura. Conservé las siete consultas definitivas en [un solo notebook](../databricks/notebooks/silver/12_profile_gtfs_calendars.ipynb), sin duplicar archivos SQL ni añadir pasos al Job. Recuperé sus resultados estructurados: 87 filas de metadata, patrones y agregados, todas sin truncamiento. No modifiqué tablas.
 
-**Estado:** perfil inicial completado y contratos calendar_v1/calendar_dates_v1 implementados localmente después de revisar los hallazgos. Los procesadores están habilitados en código, pero todavía no validé ni publiqué calendarios en Databricks. El notebook conserva SQL individual ejecutado; no tiene aún una ejecución completa documentada como cuaderno. La evidencia fuente no equivale a una publicación Silver.
+**Estado:** perfil inicial completado y contratos calendar_v1/calendar_dates_v1 implementados localmente después de revisar los hallazgos. Después ejecuté el Job de ambos calendarios en Databricks, comprobé físicamente las tablas Silver y consulté sus datos. El notebook conserva SQL individual ejecutado; no tiene aún una ejecución completa documentada como cuaderno. La evidencia fuente no equivale a una publicación Silver.
 
 ## Qué representa cada tabla
 
@@ -74,6 +74,6 @@ En Power BI separaré snapshot de fecha de servicio, mostraré la limitación de
 
 ## Límites y siguiente paso
 
-El perfil comprende las dos fuentes y sus relaciones internas; no consulta viajes ni horarios y no demuestra todavía esas referencias. No verifiqué un calendario oficial de festivos ni la operación real. Los procesadores y la plantilla ampliada existen localmente; no hay una publicación Silver ni una ejecución remota de calendarios comprobada.
+El perfil comprende las dos fuentes y sus relaciones internas; no consulta viajes ni horarios y no demuestra todavía esas referencias. No verifiqué un calendario oficial de festivos ni la operación real. Después del perfil ejecuté ambas tareas del Job en Workspace y comprobé las tablas y sus datos. El [cierre](silver_execution.md#cierre-de-la-ejecución-de-calendarios) distingue esa ejecución de las métricas fuente de este informe.
 
-Tras revisar esta interpretación implementé el tipado con el pipeline compartido. El siguiente paso es sincronizar el cambio y validar/publicar calendar antes de calendar_dates en Databricks. Service_dates será un incremento derivado posterior. Los archivos raw, tablas Bronze, carpetas temporales recuperadas y documentación Archify permanecen sin cambios.
+Tras revisar esta interpretación implementé el tipado con el pipeline compartido. La publicación de ambas fuentes ya quedó comprobada. El siguiente paso es service_dates, fijando primero su horizonte; las fechas y métricas de este informe siguen siendo evidencia del perfil inicial. Los archivos raw, tablas Bronze, carpetas temporales recuperadas y documentación Archify permanecen sin cambios.

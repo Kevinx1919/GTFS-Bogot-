@@ -1,6 +1,6 @@
 # Mis contratos Silver calendar_v1 y calendar_dates_v1
 
-**Fecha:** 10 de noviembre de 2026. **Estado:** implementación local con Spark nativo, registro y plantilla del Job preparados. La validación/publicación en Databricks todavía no está ejecutada. El [perfil real](../calendars_profile_2025_2026.md) conserva las fechas originales; el [despliegue](../silver_execution.md#despliegue-de-calendarios) registra pruebas y pasos pendientes.
+**Fecha:** 10 de noviembre de 2026. **Estado:** calendar_v1 y calendar_dates_v1 ejecutados y publicados en Databricks. Amplié el Job con ambas tareas, comprobé físicamente las dos tablas Silver y consulté sus datos. El [cierre de ejecución](../silver_execution.md#cierre-de-la-ejecución-de-calendarios) registra el alcance de esta comprobación. El [perfil real](../calendars_profile_2025_2026.md) conserva las fechas originales; el [despliegue](../silver_execution.md#despliegue-de-calendarios) registra pruebas y pasos pendientes.
 
 La [explicación de contratos y cuarentena](../data_contracts_and_quarantine.md) distingue los requisitos oficiales, lo que publicó cada archivo y las decisiones propias del proyecto.
 
