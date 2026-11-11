@@ -69,16 +69,18 @@ def build_job(repo_root: str, *, environment_version: str = "4") -> dict:
         }],
     }
 
-    # Una etapa por dependencia: routes no arranca si agency falla.
-    routes_items = [{**item, "entity": "routes"} for item in SNAPSHOTS]
-    job["parameters"].append({"name": "routes_work_items",
-                              "default": json.dumps(routes_items, separators=(",", ":"))})
-    routes_task = deepcopy(job["tasks"][0])
-    routes_task["task_key"] = "publish_routes"
-    routes_task["depends_on"] = [{"task_key": "publish_snapshots"}]
-    routes_task["for_each_task"]["inputs"] = "{{job.parameters.routes_work_items}}"
-    routes_task["for_each_task"]["task"]["task_key"] = "process_routes_snapshot"
-    job["tasks"].append(routes_task)
+    # Serializo también stops para evitar escritores concurrentes en la auditoría común.
+    # Stops no tiene una dependencia de datos con routes: su jerarquía es interna.
+    for entity, predecessor in (("routes", "publish_snapshots"), ("stops", "publish_routes")):
+        items = [{**item, "entity": entity} for item in SNAPSHOTS]
+        parameter = f"{entity}_work_items"
+        job["parameters"].append({"name": parameter, "default": json.dumps(items, separators=(",", ":"))})
+        task = deepcopy(job["tasks"][0])
+        task["task_key"] = f"publish_{entity}"
+        task["depends_on"] = [{"task_key": predecessor}]
+        task["for_each_task"]["inputs"] = "{{job.parameters." + parameter + "}}"
+        task["for_each_task"]["task"]["task_key"] = f"process_{entity}_snapshot"
+        job["tasks"].append(task)
     return job
 
 

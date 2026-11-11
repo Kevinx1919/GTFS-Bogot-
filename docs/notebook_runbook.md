@@ -259,4 +259,36 @@ La versión actual del notebook 10 tiene únicamente estos bloques. Esta tabla s
 
 Retiré el conteo histórico automático del bloque 3 porque repetía lectura en cada iteración. Si necesito una inspección puntual uso el SQL de la [guía de ejecución](silver_execution.md). No añadí notebooks de perfil y validación separados para routes: sus reglas automáticas viven en routes_spark.py y la evidencia inicial en SQL/documentación.
 
-El pipeline mantiene la excepción acotada de agency (1.000 filas) y procesa routes con expresiones Spark y un cruce con agency del mismo snapshot. Los IDs siguen string; route_type y route_sort_order son int. La ausencia de route_desc en 2026 se conserva con source_columns. La plantilla del Job añade una etapa routes dependiente del éxito de agency; todavía debo aplicar y ejecutar esa ampliación en Databricks.
+El pipeline mantiene la excepción acotada de agency (1.000 filas) y procesa routes con expresiones Spark y un cruce con agency del mismo snapshot. Los IDs siguen string; route_type y route_sort_order son int. La ausencia de route_desc en 2026 se conserva con source_columns. El Job ampliado incluye routes dependiente del éxito de agency. Después de sincronizar el fix del lector ejecuté el flujo en Databricks y comprobé las tablas Silver.
+
+
+## Notebook 11 — silver/11_profile_gtfs_stops — 10 de noviembre de 2026
+
+**Propósito:** conservar el primer perfil de stops como una guía de lectura. Las seis consultas SQL se ejecutaron mediante Genie y sus resultados estructurados fueron recuperados; el nuevo contenedor del notebook no tiene una ejecución completa documentada en Databricks. No vuelvo a perfilar para trasladar consultas a un archivo.
+
+**Configuración y alcance:** usa los nombres reales workspace.gtfs_bogota y los snapshots 2025-10-28 / 2026-09-29 con sus hashes fijados. Estos valores son contexto de una evidencia concreta; el notebook 10 mantiene la configuración reutilizable del pipeline. Las celdas usan %sql y no dependen de estado Python. No hay instalaciones, widgets, imports, archivos de salida, vistas temporales ni escrituras persistentes. No forma parte del Job.
+
+| Bloque | Propósito | Entradas | Salida pequeña | Efectos y comprobación |
+| --- | --- | --- | --- | --- |
+| 1 / esquema | Entender columnas y tipos actuales. | information_schema.columns de Bronze stops. | 13 filas de metadata. | Solo lectura; el esquema histórico no prueba presencia en cada TXT. |
+| 2 / snapshots | Contar filas e IDs y descubrir hashes por fecha. | Bronze stops, dos fechas. | Dos parejas versión/hash con 6.530 y 8.314 filas e IDs. | Solo lectura; no implica crecimiento de oferta ni identidad entre años. |
+| 3 / encabezados | Comprobar qué columnas fueron publicadas. | Auditoría de stops.txt y pares exactos. | Dos conjuntos de columnas. | Solo lectura de auditoría; no relee TXT o Raw. |
+| 4 / distribución | Distinguir tipos de ubicación y códigos observados. | location_type, wheelchair_boarding y zone_id de los dos snapshots. | Ocho grupos; límite SQL de 50. | [NULL] es etiqueta de salida. No rellena valores; zone_id es tarifario. |
+| 5 / campos | Medir null, vacío, espacios, contenido y variedad. | Nueve campos de negocio. | 18 filas agregadas con regex Unicode. | Las cuatro categorías básicas reconcilian el total; evita nueve CTEs de agregación repetidos. |
+| 6 / controles | Revisar identidad, conversiones, rangos y padres. | Bronze stops; cruce consigo misma por versión/hash/parent_station. | Dos filas de controles; errores observados cero. | Casteos y valor efectivo de tipo solo en consulta. Requiere interpretar antes la unicidad de IDs para no multiplicar hijos en el join. |
+
+Los [resultados y límites](stops_profile_2025_2026.md) explican los opcionales ausentes, 27 / 1 nombres con espacios y las 750 referencias válidas de 2026. Estos controles no implementan stops_v1 ni equivalen a publicar Silver. Primero revisaré esa evidencia y cerraré las reglas.
+
+
+## Ampliación del notebook 10 a stops_v1 — 10 de noviembre de 2026
+
+Mantengo los mismos dos bloques de código y los mismos widgets. La implementación se amplía mediante el registro y los módulos versionados; el notebook 11 no se añade a la cadena de ejecución.
+
+| Bloque | Propósito actualizado | Entradas | Salidas | Efectos y validación |
+| --- | --- | --- | --- | --- |
+| 1 / parámetros e imports | Seleccionar agency, routes o stops y cargar el pipeline. | Repositorio completo sincronizado, librerías existentes y widgets. | run_entity y parámetros; entity=stops elige stops_v1. | Sin escrituras. Reinicio Python si ya importé código anterior y vuelvo a este bloque. |
+| 2 / ejecución | Validar y, según mode, publicar un snapshot. | Para stops: Bronze Delta fijada y encabezado Staging; padres dentro de la misma fuente. | Resumen común, name_trimmed_rows y stations_without_children para stops. | Validate no escribe. Publish usa Silver/cuarentena/auditoría y conserva otros snapshots. Las nuevas métricas detalladas pertenecen al resultado devuelto; la auditoría conserva sus columnas actuales. |
+
+Los casts de stops convierten coordenadas a double y categorías a int. Conservo las ausencias de opcionales y uso el default semántico de location_type solo durante validación. Quito espacios Unicode de los bordes de nombres; no normalizo IDs. Los padres se agrupan antes del join, de modo que copias o conflictos no multipliquen filas. Un conflicto bloquea publicación, aunque el nombre normalizado coincida.
+
+La plantilla añade una tercera etapa serial para stops, que no depende de routes como dato. La serialización limita escritores sobre la auditoría compartida. La [guía de despliegue](silver_execution.md#mi-siguiente-despliegue-stops_v1) separa validate, publish y reintento; todavía no hay ejecución remota de stops documentada.

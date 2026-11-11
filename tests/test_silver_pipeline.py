@@ -53,6 +53,24 @@ class SilverPipelineTests(unittest.TestCase):
         self.assertEqual(validate.call_args.args[3], 1000)
         self.assertEqual(validate.call_args.args[2].entity, "agency")
 
+    def test_stops_dispatches_without_agency_or_routes_and_uses_plain_table_name(self):
+        spark = MagicMock()
+        spark.catalog.tableExists.return_value = True
+        spark.sql.return_value.first.return_value = {"version": 4}
+        spark.read.option.return_value.table.return_value = sentinel.stops
+        with patch.object(pipeline.stops_spark, "read_source_header", return_value=("stop_id",)), \
+             patch.object(pipeline.stops_spark, "read_and_validate", return_value=sentinel.result) as validate, \
+             patch.object(pipeline, "publish_snapshot", return_value={"persisted": False}) as publish:
+            result = pipeline.run_entity(spark, **self.parameters("stops"))
+        self.assertFalse(result["persisted"])
+        self.assertEqual(spark.catalog.tableExists.call_count, 1)
+        self.assertEqual(spark.sql.call_args.args[0],
+                         "describe history `workspace`.`fixture`.`bronze_gtfs_stops` limit 1")
+        self.assertEqual(len(validate.call_args.args), 3)
+        self.assertEqual(validate.call_args.args[2].entity, "stops")
+        self.assertTrue(validate.call_args.args[2].source_path.endswith("/stops.txt"))
+        self.assertEqual(publish.call_args.kwargs["mode"], "validate")
+
     def test_unknown_entity_or_invalid_mode_stops_before_source_access(self):
         for parameters in (self.parameters("trips"), {**self.parameters("routes"), "mode": "overwrite_all"}):
             spark = MagicMock()

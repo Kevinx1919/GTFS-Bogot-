@@ -43,3 +43,8 @@ La herramienta está instalada y los cinco HTML de los tres documentos están ge
 Para evitar un problema de reemplazo de archivos de control en OneDrive genero en una carpeta temporal fuera de la sincronización y publico copias byte a byte de los HTML comprobados. Conservo en el proyecto un resumen público de verificación; los controles de entrega y recuperación locales quedan excluidos de Git.
 
 Referencias: [Archify](https://github.com/tt-a1i/archify), [skill](https://github.com/tt-a1i/archify/blob/a4065941f12be7967436261d9934784e381d423c/archify/SKILL.md), [guía operativa Silver](../silver_execution.md) y [contratos](../contracts).
+
+
+## Revisión pendiente tras stops_v1
+
+El código local incorpora stops_v1 y una tercera tarea serial del Job. Los cinco HTML actuales siguen explicando la revisión fijada en sus referencias, con agency y routes; el panorama todavía muestra stops como pendiente de ese incremento. Cuando el nuevo código quede en un commit actualizaré las vistas y las validaré contra esa revisión. No cambio referencias a archivos sin commit ni presento el modelo anterior como prueba de la implementación local nueva. El estado de stops está en el [contrato](../contracts/stops.md) y la [guía de ejecución](../silver_execution.md).

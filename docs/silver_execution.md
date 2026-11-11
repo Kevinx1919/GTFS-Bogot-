@@ -1,6 +1,6 @@
 # Mi ejecución Silver por entidad y snapshot
 
-**Estado al 6 de noviembre de 2026:** publiqué agency en Silver para ambos snapshots y ejecuté su Job manual con éxito. Confirmé con Genie siete filas e IDs únicos por snapshot. Preparé routes_v1 con reglas Spark y el mismo escritor, notebook y auditoría. Su publicación y la ampliación del Job en el workspace siguen pendientes.
+**Estado actualizado al 10 de noviembre de 2026:** agency y routes están publicadas en Silver. Tras sincronizar el fix del lector ejecuté el Job ampliado y comprobé la existencia de las tablas. Esta confirmación corresponde a la ejecución que revisé durante el desarrollo; no es una nueva consulta de Silver hecha en el perfil de stops. Hoy completé el [perfil de stops](stops_profile_2025_2026.md) en lectura; su contrato implementado y publicación siguen pendientes.
 
 ## Mi recorrido habitual
 
@@ -20,7 +20,8 @@ La publicación crea o actualiza estas tablas en mi catálogo y schema configura
 | Tabla | Qué conserva |
 | --- | --- |
 | silver_gtfs_agency | Una agencia publicada por versión, hash e ID. |
-| quarantine_gtfs_agency | Rechazos por intento y snapshot, con contenido original, motivos y multiplicidad. |
+| silver_gtfs_routes | Una ruta publicada por versión, hash e ID. |
+| quarantine_gtfs_agency / quarantine_gtfs_routes | Rechazos por entidad, intento y snapshot, con contenido original, motivos y multiplicidad. |
 | audit_gtfs_silver_runs | Una fila por intento y snapshot con RUNNING, SUCCEEDED, REJECTED o FAILED, conteos y marca de si Silver llegó a escribirse. |
 
 No sustituiré toda la historia: el escritor usa [replaceWhere](https://docs.databricks.com/aws/en/delta/selective-overwrite) con versión y hash y comprueba el ámbito antes de escribir. Una salida Silver vacía o fuera del snapshot falla. No hay evolución automática de esquema.
@@ -71,7 +72,7 @@ Si dispongo de Databricks CLI autenticada, puedo usar la misma definición:
 databricks jobs create --json "@$env:TEMP\gtfs_silver_job.json"
 ```
 
-Ese comando crea un Job nuevo: para mi Job existente necesito actualizar su configuración, no crear otro duplicado. La integración Genie permite consultas, pero no expone creación o edición de Jobs. No tengo CLI autenticada y la consola no admite control automatizado. Creé y ejecuté el Job de agency manualmente; la plantilla ampliada todavía requiere actualización en Workspace.
+Ese comando crea un Job nuevo: para mi Job existente necesito actualizar su configuración, no crear otro duplicado. La integración Genie permite consultas, pero no expone creación o edición de Jobs. No tengo CLI autenticada y la consola no admite control automatizado. Creé y ejecuté el Job de agency manualmente; después apliqué y ejecuté la ampliación agency → routes en Workspace. Las próximas entidades aún requieren contrato e integración antes de añadir tareas.
 
 ## Cómo incorporo routes al Job que ya funciona
 
@@ -132,7 +133,7 @@ Probé coexistencia de 2025 y 2026, reejecución sin duplicación, dos hashes co
 
 La preparación de librerías ocurre fuera de la suite. Para repetir todas las pruebas en Linux necesito las dependencias de requirements-silver.txt, PySpark 4.0.1 y los JARs locales delta-spark_2.13 4.0.0 y delta-storage 4.0.0. Configuro GTFS_DELTA_TEST_JARS con ambos archivos separados por coma y PYSPARK_SUBMIT_ARGS con --jars y esa misma lista, y ejecuto python -B -m unittest discover -s tests -v. Los tests no descargan JARs ni llaman a servicios externos. Sin ese entorno, los casos nativos quedan omitidos y no deben contarse como aprobados.
 
-La primera prueba nativa en Windows no pudo iniciar Spark por faltar componentes Hadoop. La comprobación válida se realizó después en Linux. Estas pruebas históricas se complementaron después con la publicación y el Job de agency en Workspace. Las pruebas de routes se documentan aparte; su ejecución real sigue pendiente.
+La primera prueba nativa en Windows no pudo iniciar Spark por faltar componentes Hadoop. La comprobación válida se realizó después en Linux. Estas pruebas históricas se complementaron después con la publicación y el Job de agency en Workspace. Las pruebas de routes se documentan aparte. Posteriormente ejecuté el Job ampliado y comprobé las tablas Silver; esa confirmación complementa las pruebas locales.
 
 
 ## Verificación de routes_v1
@@ -150,6 +151,43 @@ Conservo los nombres como catálogo.schema.tabla dentro del pipeline y aplico qu
 
 Reproduje el fallo con las pruebas de despacho usando el lector real; antes lo sustituían y no detectaban el error. Añadí además una prueba con Bronze, Silver agency y Silver routes Delta reales, simulando únicamente la lectura del encabezado Staging. Esta prueba recorre run_entity y comprueba un reintento sin duplicación.
 
-Para desplegar sincronizo la corrección con Pull y reparo la ejecución fallida desde Runs → Repair run. Reviso que incluya agency y la etapa routes dependiente que quedó sin ejecutar. El fallo de nombres ocurre antes de la publicación de ese intento; los snapshots ya publicados en ejecuciones anteriores permanecen disponibles. La reparación en el workspace sigue pendiente.
+Para desplegar sincronizo la corrección con Pull y reparo la ejecución fallida desde Runs → Repair run. Reviso que incluya agency y la etapa routes dependiente que quedó sin ejecutar. El fallo de nombres ocurre antes de la publicación de ese intento; los snapshots ya publicados en ejecuciones anteriores permanecen disponibles. Después de sincronizar la corrección ejecuté el flujo y comprobé la existencia de las tablas Silver; la recuperación ya quedó confirmada durante el desarrollo.
 
-**Validación de este fix:** las tres pruebas de despacho pasaron después de reproducir el fallo anterior. También pasó la nueva prueba de integración con Spark 4.0.1 y Delta 4.0.0: ejecuté run_entity para agency y routes sobre tablas Delta sintéticas y repetí routes sin duplicar registros. Simulé únicamente los encabezados Staging. La reparación del Job real sigue pendiente.
+**Validación de este fix:** las tres pruebas de despacho pasaron después de reproducir el fallo anterior. También pasó la nueva prueba de integración con Spark 4.0.1 y Delta 4.0.0: ejecuté run_entity para agency y routes sobre tablas Delta sintéticas y repetí routes sin duplicar registros. Simulé únicamente los encabezados Staging. Después confirmé la ejecución del Job real y la existencia de las tablas Silver. No confundo esa evidencia de ejecución con la prueba de integración sintética.
+
+
+## Mi siguiente despliegue: stops_v1
+
+Implementé stops con Spark nativo y el mismo escritor de agency/routes. El procesador está habilitado en el registro local, pero todavía no ejecuté su validación o publicación en Databricks. Primero comprobaré los resultados de las pruebas; después sincronizaré el repositorio y seguiré estos pasos con el Job detenido:
+
+1. En el notebook 10 configuro entity=stops, mode=validate y el par versión/hash de 2025. Ejecuto desde el bloque 1. Espero 6.530 candidatos, cero rechazos y 27 nombres normalizados si el origen sigue coincidiendo con el perfil. No espero que las cuatro ausencias de stop_code causen rechazos.
+2. Repito con el par de 2026. Espero 8.314 candidatos, cero rechazos, un nombre normalizado y 12 estaciones sin hijos referenciados. Las advertencias pueden coexistir en una misma fila; warning_rows no es la suma de los dos motivos.
+3. Reviso reconciled=true, ready_for_publication=true, name_trimmed_rows, stations_without_children y warning_rows. El modo validate no modifica tablas. Si hay rechazos, reviso el cambio respecto del perfil antes de publicar.
+4. Cambio a mode=publish para cada snapshot y compruebo persisted=true y status=SUCCEEDED. La salida será silver_gtfs_stops, con 17 columnas. La cuarentena y auditoría usan el escritor existente. No repito Bronze.
+5. Amplío el Job existente con stops_work_items y publish_stops a partir de la plantilla, conservando las tareas agency/routes. La dependencia de publish_stops respecto de publish_routes sirve para serializar escrituras sobre la auditoría común; no representa una clave foránea entre esas tablas.
+6. Después de la primera publicación compruebo una reejecución: el ámbito de versión + hash se reconstruye sin añadir copias ni cambiar los demás snapshots. Cualquier fallo con silver_committed=true se revisa antes del reintento.
+
+Los dos elementos para stops_work_items son:
+
+```json
+[
+  {"entity": "stops", "feed_version": "2025-10-28", "snapshot_sha256": "07ba2ba9bb3b5bc1e38357355956757ce84fc68e6d05b74577bf017e189ab952"},
+  {"entity": "stops", "feed_version": "2026-09-29", "snapshot_sha256": "08d14e0b3a5b9caa5451b722659871fd554e3273b94bdd770fdf81a26bf02097"}
+]
+```
+
+En la tarea interna uso el mismo notebook 10 y los mismos parámetros por input que en agency/routes. No añado 11_profile_gtfs_stops al Job: es evidencia de lectura. Si la sesión interactiva ya importó módulos anteriores al Pull, reinicio Python y comienzo de nuevo por el bloque 1; los Jobs deben usar el repositorio sincronizado.
+
+El [contrato stops_v1](contracts/stops.md) detalla las reglas. La normalización solo limpia los bordes Unicode de stop_name; las claves se conservan. Las estaciones sin hijos y el par geográfico (0, 0) producen advertencias para revisión; los errores de identidad, conversión, procedencia y jerarquía bloquean el snapshot completo. No añado librerías de producción ni columnas a la auditoría existente.
+
+### Qué cambió en los archivos Python
+
+stops_spark.py contiene las reglas de ubicaciones, coordenadas, nombres y padres. spark_validation.py reúne la preparación de Bronze y la reconciliación de filas/copias que ahora comparten routes y stops; no contiene una regla que limpie nombres de routes. Cada entidad sigue definiendo sus propias reglas y expresiones de salida.
+
+pipeline.py selecciona el procesador, publication.py conserva la escritura común y job_config.py prepara las tres tareas seriales. El notebook 10 es la entrada de ejecución y no duplica esas funciones. No cambié los tipos ni la política de nombres de agency/routes.
+
+### Verificación local de esta ampliación
+
+El 10 de noviembre de 2026 pasaron las **91 pruebas de la suite completa, sin omisiones**, en un entorno Linux aislado con Python 3.12, Java 17, Spark 4.0.1 y Delta 4.0.0. Incluyen las regresiones de agency/routes, los cuatro recorridos de despacho y las reglas de stops: tipos, ausencias, limpieza Unicode, conflictos, jerarquía y más de 1.000 ubicaciones.
+
+La integración de stops leyó tablas Delta de prueba mediante el pipeline real, publicó dos snapshots, reejecutó uno sin duplicados y rechazó una entrada inválida dejando Silver intacta y registrando sus dos filas fuente en cuarentena. Sustituí únicamente la lectura del encabezado Staging por un encabezado de fixture; los datos eran sintéticos. La compilación también pasó. Esta evidencia comprueba el código local; la validación y publicación de stops en Databricks siguen pendientes. No medí todavía el tiempo del Job ampliado en Free Edition.

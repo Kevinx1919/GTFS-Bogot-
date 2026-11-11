@@ -11,7 +11,7 @@ from .agency_spark import read_and_validate
 from .publication import (
     PublicationTables, _versioned_table, publish_agency, publish_snapshot, quoted_table, simple_identifier,
 )
-from . import routes_spark
+from . import routes_spark, stops_spark
 
 REGISTRY_PATH = Path(__file__).resolve().parents[1] / "config" / "silver_entities.json"
 
@@ -32,7 +32,7 @@ def run_entity(spark, *, catalog: str, schema: str, staging_volume: str,
     configuration = load_registry().get(entity)
     if not configuration or not configuration["enabled"]:
         raise ValueError(f"No hay un contrato habilitado para {entity}.")
-    validators = {"agency": "agency_v1", "routes": "routes_v1"}
+    validators = {"agency": "agency_v1", "routes": "routes_v1", "stops": "stops_v1"}
     if entity not in validators or configuration["validator"] != validators[entity]:
         raise ValueError("La entidad todavía no tiene procesador implementado.")
     if configuration["bronze_table"] != f"bronze_gtfs_{entity}":
@@ -48,18 +48,22 @@ def run_entity(spark, *, catalog: str, schema: str, staging_volume: str,
         f"feed_version={feed_version}/sha256={snapshot_sha256}/{entity}.txt"
     )
     spec = SnapshotSpec(feed_version, snapshot_sha256, source_path, entity)
-    header_reader = read_source_header if entity == "agency" else routes_spark.read_source_header
+    processors = {"routes": routes_spark, "stops": stops_spark}
+    header_reader = read_source_header if entity == "agency" else processors[entity].read_source_header
     columns = header_reader(source_path)
     bronze = f"{catalog}.{schema}.{configuration['bronze_table']}"
     if not spark.catalog.tableExists(quoted_table(bronze)):
         raise ValueError("No existe Bronze para la entidad seleccionada.")
     # Fijar versiones Delta evita que acciones posteriores lean otro estado de entrada.
     source = _versioned_table(spark, bronze)
-    if entity == "routes":
-        dependency = f"{catalog}.{schema}.silver_gtfs_agency"
-        if not spark.catalog.tableExists(quoted_table(dependency)):
-            raise ValueError("Publica agency en Silver antes de procesar routes.")
-        result = routes_spark.read_and_validate(source, columns, spec, _versioned_table(spark, dependency))
+    if entity in processors:
+        dependencies = []
+        if entity == "routes":
+            dependency = f"{catalog}.{schema}.silver_gtfs_agency"
+            if not spark.catalog.tableExists(quoted_table(dependency)):
+                raise ValueError("Publica agency en Silver antes de procesar routes.")
+            dependencies.append(_versioned_table(spark, dependency))
+        result = processors[entity].read_and_validate(source, columns, spec, *dependencies)
         return publish_snapshot(
             spark, result, spec, PublicationTables(catalog, schema, entity),
             mode=mode, verify_history=verify_history, run_id=run_id,

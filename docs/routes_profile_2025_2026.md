@@ -20,7 +20,7 @@ En los campos publicados no encontré cadenas vacías, valores compuestos por es
 
 `route_desc` se publicó en 2025 con 676 valores y cinco descripciones distintas. No se publicó en 2026: sus 1.045 null históricos no representan errores de celdas del archivo. route_url y route_sort_order tampoco están publicados en estos snapshots. Los colores de 2026 están en minúsculas, lo cual es válido; no necesito cambiarlos para aprobar el formato hexadecimal.
 
-Confirmé agency_v1 con siete filas y siete IDs únicos por snapshot en Silver. Esto respalda la dependencia de routes. También cuento con dos ejecuciones exitosas del Job de agency en la evidencia de la sesión; todavía no he ejecutado el procesador routes_v1 en Databricks.
+Confirmé agency_v1 con siete filas y siete IDs únicos por snapshot en Silver. Esto respalda la dependencia de routes. En el momento de este perfil inicial contaba con dos ejecuciones exitosas del Job de agency. **Actualización al 10 de noviembre:** posteriormente ejecuté routes_v1 con el Job ampliado y comprobé las tablas Silver después de corregir el lector de nombres. Las métricas de este informe siguen correspondiendo al perfil inicial de lectura; no son métricas de una nueva ejecución del Job.
 
 Un primer SQL de Genie falló al usar DISTINCT en una ventana. Recuperé y conservé la consulta corregida con agregación por ID; no cuento el intento fallido como prueba aprobada. Las consultas verifican las condiciones indicadas: no equivalen a una garantía de calidad perfecta ni demuestran la publicación de routes.
 

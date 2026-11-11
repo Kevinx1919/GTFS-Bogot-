@@ -161,7 +161,7 @@ def publish_snapshot(
     """Un escritor para contratos ya validados; conserva esquemas y ámbito por snapshot."""
     from pyspark.sql import functions as F
 
-    identifiers = {"agency": "agency_id", "routes": "route_id"}
+    identifiers = {"agency": "agency_id", "routes": "route_id", "stops": "stop_id"}
     if tables.entity not in identifiers or spec.entity != tables.entity:
         raise ValueError("La entidad publicada debe coincidir con su contrato y snapshot.")
     identifier = identifiers[tables.entity]

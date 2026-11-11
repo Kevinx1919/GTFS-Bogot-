@@ -85,7 +85,7 @@ class SilverConfigurationTests(unittest.TestCase):
 
     def test_only_implemented_entity_is_enabled(self):
         registry = load_registry()
-        self.assertEqual(list(registry), ["agency", "routes"])
+        self.assertEqual(list(registry), ["agency", "routes", "stops"])
         self.assertTrue(registry["agency"]["enabled"])
         self.assertEqual(registry["agency"]["depends_on"], [])
         self.assertEqual(registry["routes"]["depends_on"], ["agency"])
@@ -95,6 +95,14 @@ class SilverConfigurationTests(unittest.TestCase):
         self.assertEqual(routes["depends_on"], [{"task_key": "publish_snapshots"}])
         self.assertEqual(routes["for_each_task"]["concurrency"], 1)
         self.assertEqual(routes["for_each_task"]["inputs"], "{{job.parameters.routes_work_items}}")
+        self.assertEqual(registry["stops"]["depends_on"], [])
+        self.assertEqual(registry["stops"]["validator"], "stops_v1")
+        stops = job["tasks"][2]
+        self.assertEqual(stops["depends_on"], [{"task_key": "publish_routes"}])
+        self.assertEqual(stops["for_each_task"]["inputs"], "{{job.parameters.stops_work_items}}")
+        parameters = {p["name"]: p["default"] for p in job["parameters"]}
+        self.assertEqual([i["entity"] for i in json.loads(parameters["stops_work_items"])], ["stops", "stops"])
+
 
     def test_false_reconciliation_is_rejected_before_any_write(self):
         result = validate_snapshot(data(spec()), COLUMNS, spec())
@@ -304,6 +312,59 @@ class SilverPublicationDeltaTests(unittest.TestCase):
         self.assertEqual(retry["candidate_rows"], 1)
         self.assertEqual(self.spark.table(f"spark_catalog.{self.namespace}.silver_gtfs_routes").count(), 1)
         self.assertEqual(self.spark.table(self.tables.name("silver")).count(), 7)
+
+    def test_stops_pipeline_publication_retry_history_and_quarantine_with_real_delta(self):
+        from gtfs_silver import pipeline
+        from test_stops_validation import COLUMNS as stop_columns, fixture as stop_fixture
+        from pyspark.sql.types import StringType, StructField, StructType, TimestampType
+        tables = PublicationTables("spark_catalog", self.namespace, "stops")
+        bronze = f"spark_catalog.{self.namespace}.bronze_gtfs_stops"
+        schema = StructType([
+            *[StructField(c, StringType()) for c in (*stop_columns, "source_feed_version", "source_sha256", "source_file_path")],
+            StructField("bronze_loaded_at_utc", TimestampType()),
+        ])
+        for index, version in enumerate(("2025-10-28", "2026-09-29")):
+            content_hash = ("a" if index == 0 else "b") * 64
+            parameters = dict(catalog="spark_catalog", schema=self.namespace, staging_volume="staging",
+                              entity="stops", feed_version=version, snapshot_sha256=content_hash)
+            path = (f"/Volumes/spark_catalog/{self.namespace}/staging/gtfs_static/"
+                    f"feed_version={version}/sha256={content_hash}/stops.txt")
+            origin = dict(source_feed_version=version, source_sha256=content_hash, source_file_path=path)
+            rows = [stop_fixture("S", location_type="1", stop_name=f" {version} Estación ", **origin),
+                    stop_fixture("P", parent_station="S", **origin)]
+            source = self.spark.createDataFrame(rows, schema)
+            source.write.format("delta").mode("append").saveAsTable(bronze)
+            with patch.object(pipeline.stops_spark, "read_source_header", return_value=stop_columns):
+                preview = pipeline.run_entity(self.spark, **parameters, mode="validate")
+                self.assertFalse(preview["persisted"])
+                self.assertEqual(preview["name_trimmed_rows"], 1)
+                published = pipeline.run_entity(self.spark, **parameters)
+            self.assertEqual(published["status"], "SUCCEEDED")
+            self.assertEqual(published["candidate_rows"], 2)
+        with patch.object(pipeline.stops_spark, "read_source_header", return_value=stop_columns):
+            retry = pipeline.run_entity(self.spark, **parameters)
+        output = self.spark.table(tables.name("silver"))
+        self.assertEqual(retry["status"], "SUCCEEDED")
+        self.assertEqual(output.count(), 4)
+        self.assertEqual(output.schema["stop_lat"].dataType.simpleString(), "double")
+        self.assertEqual(output.schema["location_type"].dataType.simpleString(), "int")
+        self.assertEqual(len(output.schema.fields), 17)
+        old = output.filter("source_feed_version = '2025-10-28' and stop_id = 'S'").first()
+        self.assertEqual(old.stop_name, "2025-10-28 Estación")
+        bad_rows = [stop_fixture("bad", stop_lat="bad", **origin)] * 2
+        self.spark.createDataFrame(bad_rows, schema).write.format("delta").mode("append").saveAsTable(bronze)
+        with patch.object(pipeline.stops_spark, "read_source_header", return_value=stop_columns):
+            rejected = pipeline.run_entity(self.spark, **parameters, mode="validate")
+            self.assertEqual(rejected["status"], "REJECTED")
+            with self.assertRaises(SnapshotRejectedError):
+                pipeline.run_entity(self.spark, **parameters)
+        self.assertEqual(self.spark.table(tables.name("silver")).count(), 4)
+        quarantine = self.spark.table(tables.name("quarantine")).first()
+        self.assertEqual(quarantine.stop_id, "bad")
+        self.assertEqual(quarantine.input_copies, 2)
+        self.assertIn("STOP_LAT_INVALID", quarantine.error_codes)
+        statuses = {r.status for r in self.spark.table(tables.name("audit")).filter("entity = 'stops'").collect()}
+        self.assertEqual(statuses, {"SUCCEEDED", "REJECTED"})
 
     def test_failure_after_commit_is_explicit_in_audit_and_requires_review(self):
         selected = spec()

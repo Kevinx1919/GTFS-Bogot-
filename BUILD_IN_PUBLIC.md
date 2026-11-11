@@ -340,6 +340,28 @@ Al ejecutar el Job ampliado encontré un doble entrecomillado de identificadores
 
 Las pruebas previas de despacho sustituían el lector, por lo que no detectaron esa incompatibilidad. Cambié esas pruebas para ejecutar la función real y reproduje el mismo ValueError antes de corregirlo. Añadí un recorrido con tablas Delta de prueba para agency, routes y reintento. Pasaron las tres pruebas de despacho corregidas y la nueva prueba de integración con Spark y Delta reales, incluido el reintento de routes sin duplicados. La recuperación del Job en el workspace requiere sincronizar la corrección y reparar el run; no presento las pruebas locales como esa recuperación.
 
+### Hito 21 — Cerrar la ejecución de routes y comenzar stops con evidencia
+
+**Actualización al 10 de noviembre de 2026:** después de sincronizar el fix del lector ejecuté el Job ampliado agency → routes y comprobé que existen las tablas Silver. Actualicé las guías que todavía mostraban esa ejecución como pendiente. La confirmación corresponde al resultado que revisé durante el desarrollo; hoy no hice una nueva consulta de Silver para volver a demostrarlo.
+
+Completé el [perfil de stops](docs/stops_profile_2025_2026.md) mediante Genie en modo lectura, recuperando seis resultados estructurados sin truncamiento. En 2025 encontré 6.530 ubicaciones de tipo parada/plataforma; en 2026, 8.159 de ese tipo y 155 estaciones. Los IDs son únicos en ambos snapshots y las 750 referencias a padres de 2026 resuelven hacia estaciones del mismo snapshot. Las comprobaciones ejecutadas de conversión, rangos y jerarquía no encontraron errores.
+
+Hay decisiones reales que revisar: 4 / 159 códigos opcionales nulos, 27 / 1 nombres con espacios extremos y wheelchair_boarding ausente en 2025. No relleno la accesibilidad histórica con la de otra versión ni deduplico por nombres o códigos repetidos.
+
+Conservé las consultas en [un solo notebook de lectura](databricks/notebooks/silver/11_profile_gtfs_stops.ipynb), sin duplicar un archivo SQL ni añadir otro paso al Job. Sustituí una consulta inicial de nueve CTEs por una agregación compacta por campo con regex Unicode, y comprobé su resultado mediante Genie. El contenedor del notebook está preparado, no ejecutado de principio a fin. Stops sigue pendiente de contrato implementado y publicación; el próximo paso es entender este perfil y cerrar sus reglas.
+
+### Hito 22 — Implementar stops y definir cómo explicaré cada tabla Gold
+
+**Fecha:** 10 de noviembre de 2026. Cerré [stops_v1](docs/contracts/stops.md) e implementé sus reglas con Spark nativo: coordenadas double, tipos de ubicación y accesibilidad int, identificadores string y limpieza Unicode solo en los bordes del nombre. Conservé las ausencias y la identidad por versión + hash + ID. Compruebo la jerarquía dentro del mismo snapshot, agrupo padres antes de unir para no multiplicar hijos y mantengo visibles los conflictos fuente antes de normalizar. Una estación sin hijos referenciados genera advertencia; no invento sus plataformas.
+
+Reutilicé el notebook 10, la escritura Delta, auditoría y cuarentena. Extraje la preparación y reconciliación que compartían routes y stops a spark_validation.py, conservando las reglas propias de cada tabla. Es como usar el mismo control de entrada para dos salas: cada una sigue teniendo sus condiciones, pero no necesito construir dos puertas idénticas. La plantilla añade publish_stops después de routes para serializar escrituras, sin declarar una dependencia de datos entre ambas.
+
+**Verificación local:** pasaron las 91 pruebas completas, sin omisiones, con Spark 4.0.1 y Delta 4.0.0. Incluyen los contratos anteriores, las reglas de stops y un recorrido con Delta real: dos snapshots, reintento sin duplicados y rechazo con cuarentena sin alterar Silver. Usé datos sintéticos y un encabezado Staging de prueba; no ejecuté stops en mi workspace durante esta comprobación. No afirmo una mejora de tiempo del Job hasta medirla allí.
+
+Añadí al [plan](docs/silver_design.md#definición-de-negocio-obligatoria-para-cada-futura-tabla-gold) una ficha obligatoria para cada futura tabla Gold: qué pregunta responde, qué representa una fila, qué ubicaciones incluye, cómo trata ausencias, qué claves usa y qué limitaciones debe mostrar Power BI. Así un conteo de ubicaciones no se presentará como crecimiento físico demostrado, ni un campo de accesibilidad ausente como falta de accesibilidad.
+
+**Lo que sigue:** sincronizar el repositorio, validar stops de ambos snapshots con el notebook 10 y revisar los resúmenes antes de publicar. Después ampliaré el Job manual y comprobaré su reejecución. No necesito repetir Bronze ni añadir el notebook de perfilado al Job. La [guía de ejecución](docs/silver_execution.md#mi-siguiente-despliegue-stops_v1) conserva los parámetros y resultados esperados; todavía no hay una publicación de stops comprobada en Databricks.
+
 ## Qué no publicar
 
 - Access tokens, secretos, archivos `.env`, cookies, hostnames privados o identificadores de cuenta.

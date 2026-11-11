@@ -27,6 +27,16 @@ El bloque 0 crea widgets; las consultas siguientes son de lectura. Las consultas
 | [Contrato v1 de agency](../../../docs/contracts/agency.md) | Tipos, obligatoriedad, errores y protección del histórico antes de transformar. |
 | [Plan Silver](../../../docs/silver_design.md) | Orden completo de entidades y criterios para avanzar. |
 
-Ya revisé y publiqué agency para ambos snapshots, y su Job manual terminó con éxito. El perfil real de [routes](../../../docs/routes_profile_2025_2026.md) y su [contrato v1](../../../docs/contracts/routes.md) están documentados. Su implementación Spark reutiliza el notebook 10 y la publicación común; todavía debo ejecutarla en Workspace.
+Ya revisé y publiqué agency para ambos snapshots, y su Job manual terminó con éxito. El perfil real de [routes](../../../docs/routes_profile_2025_2026.md) y su [contrato v1](../../../docs/contracts/routes.md) están documentados. Su implementación Spark reutiliza el notebook 10 y la publicación común; ya ejecuté el Job ampliado en Workspace y comprobé las tablas Silver.
 
 Para las corridas habituales uso solo el notebook 10: bloque 1 de parámetros/imports y bloque 2 de ejecución. Los notebooks 08 y 09 conservan su valor de aprendizaje y diagnóstico; no son requisitos por corrida ni necesito duplicarlos para routes. Configuro dependencias en el entorno antes de ejecutar.
+
+
+## Stops: lectura de ubicaciones y jerarquía
+
+Continúo con [11_profile_gtfs_stops.ipynb](11_profile_gtfs_stops.ipynb). Conserva seis consultas SQL ejecutadas mediante Genie para los dos snapshots: esquema, conteos, encabezados, distribución, ausencias y controles de identidad/coordenadas/padres. No necesita módulos, instalaciones ni variables Python de otra celda. Cada consulta puede leerse por separado; el bloque de controles es el detalle avanzado.
+
+Es una guía fijada a los valores del proyecto y a los dos hashes comprobados. El SQL fue ejecutado mediante Genie; el archivo nuevo no tiene todavía una ejecución completa documentada como notebook. No necesito repetir las consultas para estudiar el [informe de stops](../../../docs/stops_profile_2025_2026.md). Después de revisar el perfil implementé stops_v1 en el pipeline compartido. No añadí un notebook de validación separado: uso el 10 con entity=stops y mode=validate/publish. La plantilla del Job incorpora una tarea stops serial; su actualización en Workspace sigue pendiente.
+
+
+El [contrato stops_v1](../../../docs/contracts/stops.md) y la [guía de despliegue](../../../docs/silver_execution.md#mi-siguiente-despliegue-stops_v1) explican la implementación local y lo que falta comprobar en Databricks. Las pruebas de reglas, publicación y preservación son independientes del perfil real guardado en el notebook 11.

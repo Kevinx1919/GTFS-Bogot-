@@ -2,7 +2,7 @@
 
 ## 1. Estado y propósito
 
-**Estado de este documento:** este es mi plan para construir Silver por etapas. La carpeta Silver contiene una guía SQL de agency como punto de entrada y un perfilador PySpark como alternativa. Revisé las salidas del perfilador PySpark de agency para 2025 y 2026 y las contrasté con consultas SQL mediante Genie. La guía SQL con widgets no tiene una comprobación de ejecución completa documentada. El [contrato v1 de agency](contracts/agency.md) define el primer incremento. Su núcleo Python de validación ya fue implementado y contrastado; el notebook 09 de lectura fue ejecutado y revisado en Databricks para ambos snapshots. La [publicación y el Job manual](silver_execution.md) ya están preparados y probados localmente con Delta real. Agency ya fue publicada para ambos snapshots y su Job manual terminó con éxito. Preparé el [contrato routes_v1](contracts/routes.md), con perfil inicial real y procesamiento Spark; su publicación sigue pendiente. Para las demás entidades, los tipos y reglas continúan como propuestas.
+**Estado de este documento:** este es mi plan para construir Silver por etapas. La carpeta Silver contiene una guía SQL de agency como punto de entrada y un perfilador PySpark como alternativa. Revisé las salidas del perfilador PySpark de agency para 2025 y 2026 y las contrasté con consultas SQL mediante Genie. La guía SQL con widgets no tiene una comprobación de ejecución completa documentada. El [contrato v1 de agency](contracts/agency.md) define el primer incremento. Su núcleo Python de validación ya fue implementado y contrastado; el notebook 09 de lectura fue ejecutado y revisado en Databricks para ambos snapshots. La [publicación y el Job manual](silver_execution.md) ya están preparados y probados localmente con Delta real. Agency ya fue publicada para ambos snapshots y su Job manual terminó con éxito. Implementé y publiqué [routes_v1](contracts/routes.md) con Spark y el Job compartido. Al 10 de noviembre completé el [perfil de stops](stops_profile_2025_2026.md) en lectura. El contrato stops_v1 ya está implementado localmente; su validación/publicación en Databricks siguen pendientes. Las demás entidades continúan como propuestas.
 
 **Punto de partida:** al reejecutar 04 comprobé que reconoció los hashes ya cargados de las ocho entidades de referencia de cada versión. La auditoría 07 de 2025 terminó en PASSED, sin fallos ni advertencias; la de 2026 en WARNING, sin fallos bloqueantes y con cinco advertencias de esquema conocidas. Esto no significa que ya estén probados los tipos, la unicidad o todas las reglas GTFS que necesitará Silver.
 
@@ -63,7 +63,7 @@ Los conteos pueden incluir categorías derivadas del mismo valor; no los sumaré
 
 Llamaré **S** a la pareja (source_feed_version, source_sha256). Todas las claves y relaciones se evaluarán dentro de S. No mezclaré filas de 2025 y 2026 en un join por ID aislado. Una fecha de publicación no es una fecha de servicio. run_id identifica una ejecución, no una ruta o parada.
 
-Los nombres silver_gtfs_* son propuestos y aún no existen como resultado de este plan. Los archivos opcionales se procesarán solo si están publicados; su ausencia se documentará sin inventar registros.
+Agency y routes ya tienen sus tablas silver_gtfs_* publicadas. Stops tiene un contrato implementado localmente y despliegue pendiente; los nombres y tipos de las demás entidades continúan como propuestas. Los archivos opcionales se procesarán solo si están publicados; su ausencia se documentará sin inventar registros.
 
 | Orden | Entidad Silver | Qué representa una fila / clave dentro de S | Tipos principales propuestos | Qué revisaré y qué permite analizar |
 | --- | --- | --- | --- | --- |
@@ -84,7 +84,7 @@ La referencia de servicios usa los IDs declarados por los calendarios disponible
 
 ### Decisión acordada: conservar la identidad de cada snapshot
 
-**Fecha: 6 de noviembre de 2026. Decisión de diseño, pendiente de implementar en la transformación Silver.** Elijo preservar el histórico con la clave `(source_feed_version, source_sha256, agency_id)`. Mantendré los nombres, IDs y URLs publicados en cada versión. La URL será un atributo, no una clave.
+**Decisión inicial: 6 de noviembre de 2026. Estado al 10 de noviembre: implementada para agency y routes.** Elijo preservar el histórico con la clave `(source_feed_version, source_sha256, agency_id)`. Mantendré los nombres, IDs y URLs publicados en cada versión. La URL será un atributo, no una clave.
 
 Encontré el ID `2` asociado a `TRANSMILENIO-DUAL` en 2025 y a `Transmilenio-Alimentadores` en 2026. No tengo evidencia del motivo de ese cambio. Una regeneración de códigos o una reorganización son posibilidades, no causas confirmadas. Es como guardar dos listas de un curso: el mismo número de lista en años distintos no garantiza que represente a la misma persona.
 
@@ -141,7 +141,7 @@ Estas condiciones proceden de la [referencia GTFS](https://gtfs.org/documentatio
 
 ## 6. Persistencia, trazabilidad y configuración
 
-**Implementado y probado localmente para agency:** reconstruir de forma determinista una entidad para S y reemplazar solo su ámbito después de validar, manteniendo las demás versiones. La publicación en el workspace sigue pendiente. Antes de escribir comprobaré la selección y el comportamiento ante salida vacía. No se hará overwrite de toda la historia ni append indiscriminado en cada reejecución.
+**Implementado para agency y routes, con publicaciones confirmadas en el workspace:** reconstruir de forma determinista una entidad para S y reemplazar solo su ámbito después de validar, manteniendo las demás versiones. Antes de escribir comprobaré la selección y el comportamiento ante salida vacía. No se hará overwrite de toda la historia ni append indiscriminado en cada reejecución.
 
 Cada resultado conservará source_feed_version, source_sha256 y source_file_path, y se asociará a silver_run_id, timestamp UTC, versión de reglas/código y manifiesto Raw. Cuando sea necesario fijaré la versión Delta leída de Bronze. Los campos técnicos de ejecución pueden cambiar entre reintentos; las claves y valores de negocio no deberían cambiar con la misma entrada y reglas.
 
@@ -155,7 +155,7 @@ Antes del primer notebook de transformaciones confirmaré el runtime y el cómpu
 
 Carpeta creada: databricks/notebooks/silver/. Mantendré los notebooks anteriores en sus rutas para no afectar el Job Bronze. La carpeta organiza código, no almacena las tablas Delta ni necesita un Volume nuevo.
 
-**Estado de notebooks:** empezar por [08_agency_sql_guiado.ipynb](../databricks/notebooks/silver/08_agency_sql_guiado.ipynb), que explica una pregunta por bloque y conserva el SQL completo en apéndices opcionales. 08_profile_gtfs_reference_entities.ipynb es la alternativa PySpark para automatizar después esas preguntas. No son dos pasos obligatorios. Routes se revisará después de agency; [09_validate_gtfs_agency.ipynb](../databricks/notebooks/silver/09_validate_gtfs_agency.ipynb) aplica ahora las reglas de lectura, sin escritura. [10_publish_gtfs_entity.ipynb](../databricks/notebooks/silver/10_publish_gtfs_entity.ipynb) ya prepara la publicación y es la entrada del Job manual. Su ejecución en el workspace sigue pendiente. La separación permite revisar resultados antes de introducir escrituras. Los bloques se documentarán en el runbook antes o al implementarlos.
+**Estado de notebooks:** empezar por [08_agency_sql_guiado.ipynb](../databricks/notebooks/silver/08_agency_sql_guiado.ipynb), que explica una pregunta por bloque y conserva el SQL completo en apéndices opcionales. 08_profile_gtfs_reference_entities.ipynb es la alternativa PySpark para automatizar después esas preguntas. No son dos pasos obligatorios. Agency y routes ya están revisadas y publicadas; [09_validate_gtfs_agency.ipynb](../databricks/notebooks/silver/09_validate_gtfs_agency.ipynb) aplica ahora las reglas de lectura, sin escritura. [10_publish_gtfs_entity.ipynb](../databricks/notebooks/silver/10_publish_gtfs_entity.ipynb) ya prepara la publicación y es la entrada del Job manual. El notebook 10 ya ejecutó las publicaciones de agency y routes en el workspace. El [notebook 11](../databricks/notebooks/silver/11_profile_gtfs_stops.ipynb) conserva el perfil inicial de stops como guía de lectura, con seis consultas comprobadas mediante Genie; su ejecución completa como notebook aún no está documentada. La separación permite revisar resultados antes de introducir escrituras. Los bloques se documentarán en el runbook antes o al implementarlos.
 
 Seguiré usando Python/PySpark dentro de notebooks para ejecutar y observar resultados. Las reglas se escribirán como funciones pequeñas; cuando necesite compartirlas y probarlas fuera del notebook, se extraerán a módulos versionados bajo databricks/. Las pruebas y fixtures pequeños se mantendrán en tests/. No se introduce ahora una nueva dependencia ni un framework de ejecución.
 
@@ -194,13 +194,33 @@ Otros campos publicados quedarían con tipo propuesto pendiente; no se convierte
 
 El bloque 4 separa grupos de filas de negocio idénticas de IDs repetidos con atributos diferentes. Excluye columnas técnicas de la comparación y muestra potenciales colisiones de IDs al quitar espacios, sin aplicar esa limpieza. Las muestras se limitan a 20 filas; las métricas se calculan sobre todo el snapshot seleccionado. Solo se trae al driver una fila agregada por conjunto de métricas.
 
-**Validación local:** pasaron seis pruebas nuevas de parámetros y encabezados y las 16 existentes de Raw/Bronze. Tres pruebas adicionales con fixtures de Spark quedaron omitidas porque no están instalados PySpark y Java como entorno de pruebas local completo. Después revisé las salidas de ejecución manual del notebook en Databricks para ambos snapshots: siete filas e IDs distintos, sin ausencias en los campos publicados ni duplicados. Eso no ejecuta las tres pruebas de fixtures omitidas ni demuestra todavía validación de formatos o escrituras Silver.
+**Validación inicial del perfilador:** pasaron seis pruebas nuevas de parámetros y encabezados y las 16 existentes de Raw/Bronze. Tres pruebas adicionales con fixtures de Spark quedaron omitidas porque no están instalados PySpark y Java como entorno de pruebas local completo. Después revisé las salidas de ejecución manual del notebook en Databricks para ambos snapshots: siete filas e IDs distintos, sin ausencias en los campos publicados ni duplicados. Eso no ejecuta las tres pruebas de fixtures omitidas ni demuestra todavía validación de formatos o escrituras Silver.
 
-El primer [informe real de agency 2025](agency_profile_2025.md) conserva la evidencia de esa revisión. El [contrato v1 de agency](contracts/agency.md) documenta las reglas del siguiente paso; la escritura ya está implementada y probada localmente, pero no la he ejecutado en el workspace.
+El primer [informe real de agency 2025](agency_profile_2025.md) conserva la evidencia de esa revisión. El [contrato v1 de agency](contracts/agency.md) documenta las reglas que implementé y publiqué posteriormente en el workspace. El informe conserva el estado y los resultados de la revisión inicial.
 
 
 ## Incremento routes y ciclo simplificado
 
 Apliqué el mismo ciclo de agency a routes, conservando el perfil inicial y el contrato sin copiar notebooks intermedios. El [perfil](routes_profile_2025_2026.md) registra presencia, nulos, duplicados, tipos, colores y referencias; el pipeline evalúa las reglas en cada corrida. Route_type y route_sort_order son int; los demás campos admitidos son string.
 
-No convierto el límite de 1.000 filas de agency en una regla para todas las tablas: routes ya tiene 1.045 filas en 2026 y se procesa en Spark. El Job preparado ordena agency antes de routes y el pipeline exige la dependencia del mismo snapshot. La [guía operativa](silver_execution.md) detalla las simplificaciones y lo que todavía debo ejecutar en Databricks.
+No convierto el límite de 1.000 filas de agency en una regla para todas las tablas: routes ya tiene 1.045 filas en 2026 y se procesa en Spark. El Job ampliado y ejecutado ordena agency antes de routes; el pipeline exige la dependencia del mismo snapshot. La [guía operativa](silver_execution.md) detalla las simplificaciones y el procedimiento para ampliar el flujo tras cerrar los próximos contratos.
+
+
+## Definición de negocio obligatoria para cada futura tabla Gold
+
+Antes de implementar una tabla Gold completaré una ficha breve con estas seis respuestas. La conservaré junto a su SQL y la revisaré cuando cambien las reglas del indicador.
+
+| Punto | Qué dejaré definido |
+| --- | --- |
+| 1. Qué pregunta responde | La pregunta de negocio concreta y el nombre del indicador. |
+| 2. Qué representa una fila | El grano exacto: por snapshot, estación, fecha de servicio, franja u otra combinación explícita. |
+| 3. Qué ubicaciones incluye | Tipos de stops incluidos, tratamiento de estaciones/plataformas y filtros aplicados. |
+| 4. Cómo trata los valores ausentes | Qué ausencias se conservan como desconocidas, defaults normativos explícitos y cobertura disponible. No convertiré ausencia de accesibilidad en falta de accesibilidad. |
+| 5. Qué claves usa para relacionar datos | Claves completas, versión/hash y cardinalidad esperada; cómo evitaré multiplicar filas al unir. |
+| 6. Qué limitaciones debe mostrar Power BI | Alcance temporal, fuentes, cobertura y advertencias que cambian la lectura del indicador. |
+
+Por ejemplo, un futuro conteo de ubicaciones publicadas por tipo tendría una fila por versión + hash + tipo de ubicación. Incluiría las ubicaciones Silver válidas del snapshot y distinguiría paradas/plataformas de estaciones. Un location_type no informado se interpretaría como tipo 0 únicamente mediante la semántica GTFS documentada; conservaría la evidencia fuente de ausencia. Códigos, zonas o accesibilidad opcionales ausentes no eliminarían lugares del conteo. El modelo relacionaría entidades mediante sus claves completas, sin duplicar ubicaciones por sus viajes u horarios.
+
+En Power BI lo presentaría como catálogo publicado; la diferencia entre versiones no demostraría por sí sola expansión física o servicio efectivamente operado. Un análisis de accesibilidad explicaría que el archivo de 2025 no publicó ese campo. Este ejemplo es una propuesta de diseño: todavía no implementé una tabla Gold.
+
+Las métricas de GTFS estático no tienen obligatoriamente grano de cinco minutos. Cada ficha define su grano; las futuras métricas operativas podrán usar esas franjas cuando la fuente y la pregunta lo permitan.

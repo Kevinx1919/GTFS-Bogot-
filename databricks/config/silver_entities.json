@@ -13,5 +13,11 @@
     "depends_on": [
       "agency"
     ]
+  },
+  "stops": {
+    "enabled": true,
+    "validator": "stops_v1",
+    "bronze_table": "bronze_gtfs_stops",
+    "depends_on": []
   }
 }

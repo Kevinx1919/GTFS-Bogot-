@@ -5,7 +5,8 @@ from __future__ import annotations
 import csv
 from typing import TYPE_CHECKING, Sequence
 
-from .models import PreparedSnapshot, SnapshotSpec, TECHNICAL_FIELDS
+from .models import PreparedSnapshot, SnapshotSpec
+from .spark_validation import prepare_source, finish_validation
 
 if TYPE_CHECKING:
     from pyspark.sql import DataFrame
@@ -45,22 +46,12 @@ def read_source_header(path: str) -> tuple[str, ...]:
 def read_and_validate(bronze_df: "DataFrame", published_columns: Sequence[str], spec: SnapshotSpec,
                       agency_df: "DataFrame") -> PreparedSnapshot:
     """Valida referencias del mismo snapshot y devuelve frames tipados más un resumen."""
-    from pyspark.sql import functions as F, Window
-    from pyspark.sql.types import StringType, TimestampType
+    from pyspark.sql import functions as F
 
     if spec.entity != "routes":
         raise ValueError("El contrato routes requiere un SnapshotSpec de routes.")
     columns = validate_header(published_columns)
-    missing = (set(columns) | set(TECHNICAL_FIELDS)) - set(bronze_df.columns)
-    if missing:
-        raise ValueError(f"Faltan columnas en Bronze routes: {sorted(missing)}")
-    types = {field.name: field.dataType for field in bronze_df.schema.fields}
-    if any(not isinstance(types[name], StringType) for name in (*columns, *TECHNICAL_FIELDS[:3])):
-        raise ValueError("Bronze routes debe conservar campos publicados y procedencia como string.")
-    if not isinstance(types["bronze_loaded_at_utc"], TimestampType):
-        raise ValueError("bronze_loaded_at_utc debe ser timestamp.")
-    if bronze_df.sparkSession.conf.get("spark.sql.session.timeZone") != "UTC":
-        raise ValueError("Configura spark.sql.session.timeZone=UTC.")
+    selected = prepare_source(bronze_df, columns, BUSINESS_TYPES, "route_id", spec)
 
     # La dependencia se filtra por versión Y hash antes de comprobar unicidad y unir.
     required_agency = {"agency_id", "source_feed_version", "source_sha256", "silver_rule_version"}
@@ -77,18 +68,6 @@ def read_and_validate(bronze_df: "DataFrame", published_columns: Sequence[str], 
     if not dependency["rows"] or dependency["rows"] != dependency["ids"] or dependency["invalid"]:
         raise ValueError("Publica primero agency_v1 del mismo snapshot, con IDs válidos y únicos.")
 
-    # La fuente queda como strings para detectar errores antes de convertirlos.
-    selected = bronze_df.filter(F.col("source_sha256") == spec.sha256).select(
-        *[F.col(name) if name in columns else F.lit(None).cast("string").alias(name)
-          for name in BUSINESS_TYPES], *TECHNICAL_FIELDS,
-    )
-    business_json = F.to_json(F.struct(*[F.col(name) for name in columns]), {"ignoreNullFields": "false"})
-    original_json = F.to_json(F.struct(*[F.col(name) for name in (*columns, *TECHNICAL_FIELDS)]),
-                              {"ignoreNullFields": "false"})
-    selected = selected.withColumn("_business_json", business_json).withColumn("original_row_json", original_json)
-    by_id = Window.partitionBy("route_id")
-    selected = (selected.withColumn("_variant_min", F.min("_business_json").over(by_id))
-                .withColumn("_variant_max", F.max("_business_json").over(by_id)))
     matched_agencies = agencies.select(F.col("agency_id").alias("_matched_agency_id"))
     selected = selected.join(F.broadcast(matched_agencies),
                              selected.agency_id == matched_agencies._matched_agency_id, "left")
@@ -130,45 +109,10 @@ def read_and_validate(bronze_df: "DataFrame", published_columns: Sequence[str], 
                                   | (F.col("route_desc") == F.col("route_long_name"))),
           "ROUTE_DESC_REPEATS_NAME", warning=True)
 
-    def codes(expressions):
-        return F.sort_array(F.filter(F.array(*expressions), lambda value: value.isNotNull()))
-
-    checked = selected.withColumn("error_codes", codes(errors)).withColumn("warning_codes", codes(warnings))
-    checked = checked.withColumn("_is_valid", F.size("error_codes") == 0)
-    copies = Window.partitionBy("_business_json", "_is_valid").orderBy(
-        F.col("bronze_loaded_at_utc").asc_nulls_first(), "original_row_json",
-    )
-    checked = checked.withColumn("_copy_rank", F.row_number().over(copies))
-    candidate = F.col("_is_valid") & (F.col("_copy_rank") == 1)
-    metrics = checked.agg(
-        F.count("*").alias("input_rows"),
-        F.sum(F.when(candidate, 1).otherwise(0)).alias("candidate_rows"),
-        F.sum(F.when(~F.col("_is_valid"), 1).otherwise(0)).alias("rejected_rows"),
-        F.sum(F.when(F.col("_is_valid") & (F.col("_copy_rank") > 1), 1).otherwise(0))
-         .alias("identical_copies_consolidated"),
-        F.sum(F.when(F.size("warning_codes") > 0, 1).otherwise(0)).alias("warning_rows"),
-    ).first()
-    if not metrics["input_rows"]:
-        raise ValueError("El snapshot de routes está vacío; revisa versión y hash.")
-    summary = {key: int(value) for key, value in metrics.asDict().items()}
-    summary.update(
-        reconciled=summary["input_rows"] == summary["candidate_rows"] + summary["rejected_rows"]
-                   + summary["identical_copies_consolidated"],
-        ready_for_publication=summary["rejected_rows"] == 0, rule_version=RULE_VERSION,
-    )
     expressions = []
     for field, target_type in BUSINESS_TYPES.items():
         value = F.expr(f"try_cast(`{field}` as int)") if target_type == "int" else F.col(field)
         expressions.append(F.when(blank(field), F.lit(None)).otherwise(value).cast(target_type).alias(field))
-    candidates = checked.filter(candidate).select(
-        *expressions, *TECHNICAL_FIELDS,
-        F.array(*[F.lit(name) for name in columns]).alias("source_columns"),
-        F.lit(RULE_VERSION).alias("silver_rule_version"),
+    return finish_validation(
+        selected, columns, spec, "route_id", RULE_VERSION, errors, warnings, expressions,
     )
-    rejected = checked.filter(~F.col("_is_valid")).select(
-        "route_id", "source_feed_version", "source_sha256", "original_row_json", "error_codes",
-        F.lit(RULE_VERSION).alias("silver_rule_version"),
-    )
-    warnings_frame = checked.filter(F.size("warning_codes") > 0).select("route_id", "warning_codes")
-    return PreparedSnapshot({"candidates": candidates, "rejected": rejected, "warnings": warnings_frame},
-                            summary, {})
