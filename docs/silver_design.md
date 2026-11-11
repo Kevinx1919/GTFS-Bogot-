@@ -2,7 +2,7 @@
 
 ## 1. Estado y propósito
 
-**Estado de este documento:** este es mi plan para construir Silver por etapas. La carpeta Silver contiene una guía SQL de agency como punto de entrada y un perfilador PySpark como alternativa. Revisé las salidas del perfilador PySpark de agency para 2025 y 2026 y las contrasté con consultas SQL mediante Genie. La guía SQL con widgets no tiene una comprobación de ejecución completa documentada. El [contrato v1 de agency](contracts/agency.md) define el primer incremento. Su núcleo Python de validación ya fue implementado y contrastado; el notebook 09 de lectura fue ejecutado y revisado en Databricks para ambos snapshots. La [publicación y el Job manual](silver_execution.md) ya están preparados y probados localmente con Delta real. Agency ya fue publicada para ambos snapshots y su Job manual terminó con éxito. Implementé y publiqué [routes_v1](contracts/routes.md) con Spark y el Job compartido. Al 10 de noviembre completé el [perfil de stops](stops_profile_2025_2026.md) en lectura. El contrato stops_v1 ya está implementado localmente; su validación/publicación en Databricks siguen pendientes. Las demás entidades continúan como propuestas.
+**Estado de este documento:** este es mi plan para construir Silver por etapas. La carpeta Silver contiene una guía SQL de agency como punto de entrada y un perfilador PySpark como alternativa. Revisé las salidas del perfilador PySpark de agency para 2025 y 2026 y las contrasté con consultas SQL mediante Genie. La guía SQL con widgets no tiene una comprobación de ejecución completa documentada. El [contrato v1 de agency](contracts/agency.md) define el primer incremento. Su núcleo Python de validación ya fue implementado y contrastado; el notebook 09 de lectura fue ejecutado y revisado en Databricks para ambos snapshots. La [publicación y el Job manual](silver_execution.md) ya están preparados y probados localmente con Delta real. Agency ya fue publicada para ambos snapshots y su Job manual terminó con éxito. Implementé y publiqué [routes_v1](contracts/routes.md) con Spark y el Job compartido. Al 10 de noviembre completé el [perfil de stops](stops_profile_2025_2026.md) en lectura. El contrato stops_v1 ya está implementado y ejecutado en Databricks: comprobé el Job, la tabla Silver y sus datos con una consulta breve. El siguiente bloque del plan es calendar y calendar_dates; después derivaré service_dates. Las demás entidades continúan como propuestas. El [cierre de stops](silver_execution.md#cierre-de-la-ejecución-de-stops) distingue esta comprobación de los conteos del perfil y de las pruebas locales.
 
 **Punto de partida:** al reejecutar 04 comprobé que reconoció los hashes ya cargados de las ocho entidades de referencia de cada versión. La auditoría 07 de 2025 terminó en PASSED, sin fallos ni advertencias; la de 2026 en WARNING, sin fallos bloqueantes y con cinco advertencias de esquema conocidas. Esto no significa que ya estén probados los tipos, la unicidad o todas las reglas GTFS que necesitará Silver.
 
@@ -63,7 +63,7 @@ Los conteos pueden incluir categorías derivadas del mismo valor; no los sumaré
 
 Llamaré **S** a la pareja (source_feed_version, source_sha256). Todas las claves y relaciones se evaluarán dentro de S. No mezclaré filas de 2025 y 2026 en un join por ID aislado. Una fecha de publicación no es una fecha de servicio. run_id identifica una ejecución, no una ruta o parada.
 
-Agency y routes ya tienen sus tablas silver_gtfs_* publicadas. Stops tiene un contrato implementado localmente y despliegue pendiente; los nombres y tipos de las demás entidades continúan como propuestas. Los archivos opcionales se procesarán solo si están publicados; su ausencia se documentará sin inventar registros.
+Agency, routes y stops ya tienen sus tablas silver_gtfs_* publicadas y su ejecución revisada en Workspace. El siguiente trabajo es perfilar conjuntamente calendar y calendar_dates, en el orden 4a; después construiré service_dates, en el 4b. Los nombres y tipos de las demás entidades continúan como propuestas. Los archivos opcionales se procesarán solo si están publicados; su ausencia se documentará sin inventar registros.
 
 | Orden | Entidad Silver | Qué representa una fila / clave dentro de S | Tipos principales propuestos | Qué revisaré y qué permite analizar |
 | --- | --- | --- | --- | --- |
@@ -96,7 +96,7 @@ Aplicaré estas reglas en el primer incremento:
 - No crearé por ahora una identidad común ni una categoría homologada entre años. Una eventual correspondencia será independiente, explícita y respaldada por evidencia.
 - Un cambio de atributos entre snapshots se registrará como hallazgo histórico. Un ID repetido con atributos contradictorios dentro del mismo snapshot seguirá siendo un conflicto de calidad.
 
-Esta decisión protege el histórico; no demuestra continuidad de agencias, rutas ni operación entre versiones. Todavía no he escrito tablas Silver ni aplicado estas reglas a una carga.
+Esta decisión protege el histórico; no demuestra continuidad de agencias, rutas ni operación entre versiones. Posteriormente apliqué la identidad por snapshot en las publicaciones de agency, routes y stops.
 
 ### Primer incremento: agencias y rutas
 
@@ -155,13 +155,13 @@ Antes del primer notebook de transformaciones confirmaré el runtime y el cómpu
 
 Carpeta creada: databricks/notebooks/silver/. Mantendré los notebooks anteriores en sus rutas para no afectar el Job Bronze. La carpeta organiza código, no almacena las tablas Delta ni necesita un Volume nuevo.
 
-**Estado de notebooks:** empezar por [08_agency_sql_guiado.ipynb](../databricks/notebooks/silver/08_agency_sql_guiado.ipynb), que explica una pregunta por bloque y conserva el SQL completo en apéndices opcionales. 08_profile_gtfs_reference_entities.ipynb es la alternativa PySpark para automatizar después esas preguntas. No son dos pasos obligatorios. Agency y routes ya están revisadas y publicadas; [09_validate_gtfs_agency.ipynb](../databricks/notebooks/silver/09_validate_gtfs_agency.ipynb) aplica ahora las reglas de lectura, sin escritura. [10_publish_gtfs_entity.ipynb](../databricks/notebooks/silver/10_publish_gtfs_entity.ipynb) ya prepara la publicación y es la entrada del Job manual. El notebook 10 ya ejecutó las publicaciones de agency y routes en el workspace. El [notebook 11](../databricks/notebooks/silver/11_profile_gtfs_stops.ipynb) conserva el perfil inicial de stops como guía de lectura, con seis consultas comprobadas mediante Genie; su ejecución completa como notebook aún no está documentada. La separación permite revisar resultados antes de introducir escrituras. Los bloques se documentarán en el runbook antes o al implementarlos.
+**Estado de notebooks:** empezar por [08_agency_sql_guiado.ipynb](../databricks/notebooks/silver/08_agency_sql_guiado.ipynb), que explica una pregunta por bloque y conserva el SQL completo en apéndices opcionales. 08_profile_gtfs_reference_entities.ipynb es la alternativa PySpark para automatizar después esas preguntas. No son dos pasos obligatorios. Agency y routes ya están revisadas y publicadas; [09_validate_gtfs_agency.ipynb](../databricks/notebooks/silver/09_validate_gtfs_agency.ipynb) aplica ahora las reglas de lectura, sin escritura. [10_publish_gtfs_entity.ipynb](../databricks/notebooks/silver/10_publish_gtfs_entity.ipynb) ya prepara la publicación y es la entrada del Job manual. El notebook 10 ya ejecutó las publicaciones de agency, routes y stops en el workspace. El [notebook 11](../databricks/notebooks/silver/11_profile_gtfs_stops.ipynb) conserva el perfil inicial de stops como guía de lectura, con seis consultas comprobadas mediante Genie; su ejecución completa como notebook aún no está documentada. La separación permite revisar resultados antes de introducir escrituras. Los bloques se documentarán en el runbook antes o al implementarlos.
 
 Seguiré usando Python/PySpark dentro de notebooks para ejecutar y observar resultados. Las reglas se escribirán como funciones pequeñas; cuando necesite compartirlas y probarlas fuera del notebook, se extraerán a módulos versionados bajo databricks/. Las pruebas y fixtures pequeños se mantendrán en tests/. No se introduce ahora una nueva dependencia ni un framework de ejecución.
 
 Casos mínimos por entidad: datos válidos, ID con ceros iniciales, null, vacío, espacios, columna opcional ausente, conversión inválida, duplicado idéntico, conflicto de clave, referencia rota y segunda ejecución sin duplicación. Se añadirán casos específicos: fechas inválidas y excepciones; horas mayores a 24; secuencias con saltos; parada repetida; frecuencias y opcionales ausentes.
 
-Las pruebas por implementar tendrán dos niveles: fixtures locales para reglas deterministas y comprobación en Databricks para lectura/escritura Delta, métricas y reintento. Las 16 pruebas que existen hoy validan las correcciones Raw/Bronze; no son pruebas de Silver. No usaré llamadas reales a las fuentes como única prueba automática.
+Las pruebas por implementar tendrán dos niveles: fixtures locales para reglas deterministas y comprobación en Databricks para lectura/escritura Delta, métricas y reintento. Las 16 pruebas iniciales validaban las correcciones Raw/Bronze. La suite local ampliada ya pasó 91 pruebas sin omisiones e incluye Silver; el detalle de ejecución real se conserva por separado en la guía operativa. No usaré llamadas reales a las fuentes como única prueba automática.
 
 ## 8. Rendimiento y criterio de terminado
 
@@ -171,7 +171,7 @@ No expandiré todo stop_times por todas las fechas al comenzar. Elegiré partici
 
 Una entidad estará terminada cuando su grano y contrato estén documentados; las métricas expliquen la entrada; las filas publicadas cumplan claves, tipos y relaciones; los rechazos preserven evidencia; las pruebas pasen; la reejecución mantenga resultados de negocio; otras versiones sigan intactas; y yo pueda explicar qué obtuve y por qué lo considero válido. Solo entonces pasaré a la siguiente.
 
-**Estado actual del primer paso:** revisé las salidas del perfilador PySpark de agency de ambos snapshots y los resultados SQL. Definí el [contrato v1](contracts/agency.md): tipos string, identidad por snapshot y política de ausencias y errores. El [núcleo de validación](agency_validation_2025_2026.md) ya pasó las pruebas locales y el contraste con ambos snapshots. El notebook 09 ya fue ejecutado para ambos snapshots en Databricks. Implementé cuarentena, auditoría y publicación, con pruebas Delta de reejecución aprobadas localmente; falta crear el Job y publicar en el workspace.
+**Estado actual del primer paso:** revisé las salidas del perfilador PySpark de agency de ambos snapshots y los resultados SQL. Definí el [contrato v1](contracts/agency.md): tipos string, identidad por snapshot y política de ausencias y errores. El [núcleo de validación](agency_validation_2025_2026.md) ya pasó las pruebas locales y el contraste con ambos snapshots. El notebook 09 ya fue ejecutado para ambos snapshots en Databricks. Implementé cuarentena, auditoría y publicación, con pruebas Delta de reejecución aprobadas localmente. El Job ya ejecutó agency, routes y stops en Workspace; comprobé sus tablas y, al cerrar stops, consulté sus datos. La siguiente entidad fuente se revisará en el bloque conjunto calendar/calendar_dates.
 
 ## 9. Cómo empieza la revisión de agency
 
@@ -205,6 +205,20 @@ Apliqué el mismo ciclo de agency a routes, conservando el perfil inicial y el c
 
 No convierto el límite de 1.000 filas de agency en una regla para todas las tablas: routes ya tiene 1.045 filas en 2026 y se procesa en Spark. El Job ampliado y ejecutado ordena agency antes de routes; el pipeline exige la dependencia del mismo snapshot. La [guía operativa](silver_execution.md) detalla las simplificaciones y el procedimiento para ampliar el flujo tras cerrar los próximos contratos.
 
+
+## Siguiente bloque: calendar y calendar_dates
+
+**Estado al 10 de noviembre de 2026:** cerré la ejecución de stops y comienzo el orden 4a del plan. Todavía no implementé ni habilité estos procesadores Silver.
+
+Calendar describe el patrón semanal de un servicio dentro de un intervalo de fechas. Calendar_dates registra excepciones para fechas concretas. Es como tener el horario habitual de una tienda y una lista de festivos en los que abre o cierra: necesito interpretar ambas fuentes juntas cuando estén publicadas.
+
+1. Revisaré los encabezados y filas de ambos snapshots en Bronze, distinguiendo ausencia de archivo de una columna o celda vacía. No volveré a ingerir Raw/Bronze.
+2. Perfilaré claves, nulos, vacíos, duplicados idénticos y conflictos. La clave propuesta dentro del snapshot es service_id para calendar y service_id + date para calendar_dates.
+3. Revisaré conversiones de fechas, intervalos, indicadores semanales y códigos de excepción. Los IDs seguirán como string; los tipos date e int siguen siendo propuestas hasta cerrar el contrato con evidencia.
+4. Acordaré reglas para las combinaciones de fuentes disponibles; no exigiré que ambas existan ni trataré automáticamente un servicio declarado solo mediante excepciones como huérfano.
+5. Después de cerrar los contratos, reutilizaré el pipeline y el notebook 10 para validar/publicar. Primero trabajaré con fixtures; no crearé otro entorno de pruebas por entidad.
+
+El orden 4b será service_dates: una fila por servicio activo y fecha, dentro de versión + hash, derivada del patrón y sus excepciones. No es otro TXT que deba descargar. No expandiré todavía los millones de horarios por todas las fechas ni confundiré fecha de publicación con fecha de servicio. La referencia de existencia de un servicio no dependerá de que tenga días activos dentro de un horizonte arbitrario de consulta.
 
 ## Definición de negocio obligatoria para cada futura tabla Gold
 

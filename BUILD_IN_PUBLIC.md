@@ -360,7 +360,15 @@ Reutilicé el notebook 10, la escritura Delta, auditoría y cuarentena. Extraje 
 
 Añadí al [plan](docs/silver_design.md#definición-de-negocio-obligatoria-para-cada-futura-tabla-gold) una ficha obligatoria para cada futura tabla Gold: qué pregunta responde, qué representa una fila, qué ubicaciones incluye, cómo trata ausencias, qué claves usa y qué limitaciones debe mostrar Power BI. Así un conteo de ubicaciones no se presentará como crecimiento físico demostrado, ni un campo de accesibilidad ausente como falta de accesibilidad.
 
-**Lo que sigue:** sincronizar el repositorio, validar stops de ambos snapshots con el notebook 10 y revisar los resúmenes antes de publicar. Después ampliaré el Job manual y comprobaré su reejecución. No necesito repetir Bronze ni añadir el notebook de perfilado al Job. La [guía de ejecución](docs/silver_execution.md#mi-siguiente-despliegue-stops_v1) conserva los parámetros y resultados esperados; todavía no hay una publicación de stops comprobada en Databricks.
+**Lo que sigue:** sincronizar el repositorio, validar stops de ambos snapshots con el notebook 10 y revisar los resúmenes antes de publicar. Después ampliaré el Job manual y comprobaré su reejecución. No necesito repetir Bronze ni añadir el notebook de perfilado al Job. La [guía de ejecución](docs/silver_execution.md#despliegue-de-stops_v1) conserva los parámetros y resultados esperados; todavía no hay una publicación de stops comprobada en Databricks.
+
+### Hito 23 — Stops ejecutada en Databricks y siguiente bloque de calendarios
+
+**Fecha:** 10 de noviembre de 2026. Tras sincronizar el commit eafbbe6 ejecuté el Job ampliado, comprobé que la tabla Silver de stops está disponible y consulté sus datos. Cierro el despliegue funcional de stops_v1 y actualizo las guías que todavía lo marcaban como pendiente. El [cierre de ejecución](docs/silver_execution.md#cierre-de-la-ejecución-de-stops) conserva el alcance de la comprobación; no atribuyo nuevos conteos a una consulta breve ni confundo el perfil fuente con una auditoría adicional de Silver.
+
+Resolví la referencia a stops_work_items creando el parámetro en Job parameters, dentro de la configuración general del Job. Separé ese nivel de los parámetros de cada tarea Notebook y configuré las referencias de agency, routes y stops. Guardo primero la lista general y luego la uso como Inputs del For each; cada iteración pasa entidad, versión y hash al notebook 10. Las dos entradas de una lista corresponden a la misma entidad.
+
+El siguiente bloque del [plan](docs/silver_design.md#siguiente-bloque-calendar-y-calendar_dates) es calendar y calendar_dates: entender y validar patrón semanal y excepciones antes de derivar service_dates. Todavía no implementé esos procesadores ni expandí los horarios por fecha. Primero revisaré sus datos y cerraré las reglas con evidencia.
 
 ## Qué no publicar
 

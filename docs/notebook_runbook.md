@@ -277,7 +277,7 @@ El pipeline mantiene la excepción acotada de agency (1.000 filas) y procesa rou
 | 5 / campos | Medir null, vacío, espacios, contenido y variedad. | Nueve campos de negocio. | 18 filas agregadas con regex Unicode. | Las cuatro categorías básicas reconcilian el total; evita nueve CTEs de agregación repetidos. |
 | 6 / controles | Revisar identidad, conversiones, rangos y padres. | Bronze stops; cruce consigo misma por versión/hash/parent_station. | Dos filas de controles; errores observados cero. | Casteos y valor efectivo de tipo solo en consulta. Requiere interpretar antes la unicidad de IDs para no multiplicar hijos en el join. |
 
-Los [resultados y límites](stops_profile_2025_2026.md) explican los opcionales ausentes, 27 / 1 nombres con espacios y las 750 referencias válidas de 2026. Estos controles no implementan stops_v1 ni equivalen a publicar Silver. Primero revisaré esa evidencia y cerraré las reglas.
+Los [resultados y límites](stops_profile_2025_2026.md) explican los opcionales ausentes, 27 / 1 nombres con espacios y las 750 referencias válidas de 2026. Estos controles son el perfil fuente y no equivalen a publicar Silver. Posteriormente cerré e implementé stops_v1 y ejecuté el Job compartido; el estado de publicación se registra en la guía Silver.
 
 
 ## Ampliación del notebook 10 a stops_v1 — 10 de noviembre de 2026
@@ -291,4 +291,4 @@ Mantengo los mismos dos bloques de código y los mismos widgets. La implementaci
 
 Los casts de stops convierten coordenadas a double y categorías a int. Conservo las ausencias de opcionales y uso el default semántico de location_type solo durante validación. Quito espacios Unicode de los bordes de nombres; no normalizo IDs. Los padres se agrupan antes del join, de modo que copias o conflictos no multipliquen filas. Un conflicto bloquea publicación, aunque el nombre normalizado coincida.
 
-La plantilla añade una tercera etapa serial para stops, que no depende de routes como dato. La serialización limita escritores sobre la auditoría compartida. La [guía de despliegue](silver_execution.md#mi-siguiente-despliegue-stops_v1) separa validate, publish y reintento; todavía no hay ejecución remota de stops documentada.
+La plantilla añade una tercera etapa serial para stops, que no depende de routes como dato. La serialización limita escritores sobre la auditoría compartida. La [guía de despliegue](silver_execution.md#despliegue-de-stops_v1) separa validate, publish y reintento; ya ejecuté el Job de stops en Workspace y comprobé la tabla y sus datos. El [cierre](silver_execution.md#cierre-de-la-ejecución-de-stops) registra el alcance de esta comprobación sin sustituir los conteos del perfil por conteos nuevos no recuperados.

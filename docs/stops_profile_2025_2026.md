@@ -2,7 +2,7 @@
 
 **Fecha de revisión:** 10 de noviembre de 2026. Consulté Bronze y la auditoría de encabezados mediante Genie, en modo lectura, y recuperé los seis resultados estructurados sin truncamiento. Las consultas verificadas quedan en un único [notebook de lectura](../databricks/notebooks/silver/11_profile_gtfs_stops.ipynb); no duplico un archivo SQL ni creo otro paso del Job.
 
-**Estado:** perfilado completado. El contenedor del notebook está preparado y comprobado estructuralmente; no tiene todavía una ejecución completa documentada en Databricks. Después de revisar este perfil definí e implementé localmente el [contrato stops_v1](contracts/stops.md); su ejecución y publicación en Databricks siguen pendientes. No modifiqué Bronze, Silver ni el Job durante este perfilado.
+**Estado:** perfilado completado. El contenedor del notebook está preparado y comprobado estructuralmente; no tiene todavía una ejecución completa documentada en Databricks. Después de revisar este perfil definí e implementé el [contrato stops_v1](contracts/stops.md), ejecuté el Job en Databricks y comprobé los datos publicados en Silver. No modifiqué Bronze, Silver ni el Job durante este perfilado.
 
 ## Alcance y selección
 
@@ -101,11 +101,11 @@ Convertir y comprobar rangos globales no demuestra que cada punto esté dentro d
 
 ## Reglas de referencia y siguiente decisión
 
-Contrasto la jerarquía con [GTFS stops.txt](https://gtfs.org/documentation/schedule/reference/#stopstxt): el padre de una parada/plataforma es una estación; una estación no lleva padre. Los tipos 2 y 3 exigen una estación padre; el tipo 4 exige una plataforma padre. Nombre y coordenadas son obligatorios para tipos 0, 1 y 2. Las reglas que no aparecen en los datos observados necesitarán casos de prueba sintéticos al implementar el contrato.
+Contrasto la jerarquía con [GTFS stops.txt](https://gtfs.org/documentation/schedule/reference/#stopstxt): el padre de una parada/plataforma es una estación; una estación no lleva padre. Los tipos 2 y 3 exigen una estación padre; el tipo 4 exige una plataforma padre. Nombre y coordenadas son obligatorios para tipos 0, 1 y 2. Las reglas que no aparecen en los datos observados se comprobaron mediante casos sintéticos al implementar el contrato.
 
 Conservo como clave candidata `(source_feed_version, source_sha256, stop_id)`. La relación de padre usará la misma versión y hash. No unifico IDs entre años por parecido de nombres o coordenadas. Stops no depende directamente de routes: las futuras relaciones de viajes y horarios darán ese contexto.
 
-Después de revisar este perfil implementé stops_v1 con tipos, motivos de rechazo y limpieza de los 28 nombres con espacios extremos. El registro local y el pipeline admiten stops, y la plantilla incorpora su tarea; aún debo sincronizar y ejecutar validate/publicación en Databricks. El notebook 10 conserva sus dos bloques. El resultado de este informe sigue siendo el perfil fuente, no la salida de esa futura publicación.
+Después de revisar este perfil implementé stops_v1 con tipos, motivos de rechazo y limpieza de los 28 nombres con espacios extremos. El registro y el pipeline admiten stops, y el Job ampliado ya se ejecutó en Databricks. Comprobé la tabla y consulté sus datos. El notebook 10 conserva sus dos bloques. Este informe sigue describiendo el perfil fuente; el [cierre de ejecución](silver_execution.md#cierre-de-la-ejecución-de-stops) registra por separado la publicación y su alcance.
 
 ## Evidencia y alcance de la comprobación
 

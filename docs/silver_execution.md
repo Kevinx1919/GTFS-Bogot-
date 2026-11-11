@@ -1,6 +1,6 @@
 # Mi ejecución Silver por entidad y snapshot
 
-**Estado actualizado al 10 de noviembre de 2026:** agency y routes están publicadas en Silver. Tras sincronizar el fix del lector ejecuté el Job ampliado y comprobé la existencia de las tablas. Esta confirmación corresponde a la ejecución que revisé durante el desarrollo; no es una nueva consulta de Silver hecha en el perfil de stops. Hoy completé el [perfil de stops](stops_profile_2025_2026.md) en lectura; su contrato implementado y publicación siguen pendientes.
+**Estado actualizado al 10 de noviembre de 2026:** agency, routes y stops están publicadas en Silver. Ejecuté el Job ampliado y comprobé las tablas; para stops también consulté sus datos. El [cierre de ejecución](#cierre-de-la-ejecución-de-stops) distingue esta comprobación de los conteos del perfil fuente y de las pruebas locales. El siguiente bloque del plan es calendar y calendar_dates, todavía sin procesadores Silver implementados.
 
 ## Mi recorrido habitual
 
@@ -113,7 +113,7 @@ from workspace.gtfs_bogota.silver_gtfs_routes
 
 ## Cómo reduciré el trabajo para las demás tablas
 
-El [registro de entidades](../databricks/config/silver_entities.json) habilita agency y routes. Routes depende de agency; el Job aplica esa dependencia y el pipeline comprueba su snapshot incluso si ejecuto routes manualmente. Reutilizaré parámetros, ejecución por snapshot, escritura por ámbito y auditoría. Añadiré cada entidad con su contrato y procesador específico antes de habilitarla; cambiar un nombre de tabla no crea automáticamente sus reglas.
+El [registro de entidades](../databricks/config/silver_entities.json) habilita agency, routes y stops. Routes depende de agency; el Job aplica esa dependencia y el pipeline comprueba su snapshot incluso si ejecuto routes manualmente. Reutilizaré parámetros, ejecución por snapshot, escritura por ámbito y auditoría. Añadiré cada entidad con su contrato y procesador específico antes de habilitarla; cambiar un nombre de tabla no crea automáticamente sus reglas.
 
 Con nueve o cien tablas, separaré el trabajo que se hace una vez de lo que corre siempre:
 
@@ -156,9 +156,9 @@ Para desplegar sincronizo la corrección con Pull y reparo la ejecución fallida
 **Validación de este fix:** las tres pruebas de despacho pasaron después de reproducir el fallo anterior. También pasó la nueva prueba de integración con Spark 4.0.1 y Delta 4.0.0: ejecuté run_entity para agency y routes sobre tablas Delta sintéticas y repetí routes sin duplicar registros. Simulé únicamente los encabezados Staging. Después confirmé la ejecución del Job real y la existencia de las tablas Silver. No confundo esa evidencia de ejecución con la prueba de integración sintética.
 
 
-## Mi siguiente despliegue: stops_v1
+## Despliegue de stops_v1
 
-Implementé stops con Spark nativo y el mismo escritor de agency/routes. El procesador está habilitado en el registro local, pero todavía no ejecuté su validación o publicación en Databricks. Primero comprobaré los resultados de las pruebas; después sincronizaré el repositorio y seguiré estos pasos con el Job detenido:
+Implementé stops con Spark nativo y el mismo escritor de agency/routes. Después de sincronizar el commit eafbbe6 ejecuté el flujo en Databricks y comprobé que el Job funciona, la tabla Silver existe y puedo consultar sus datos. El despliegue ya está completado; conservo abajo el procedimiento para futuras ejecuciones y recuperación. Los números precedidos por «espero» son referencias del perfil previo, no un nuevo resumen de esta ejecución.
 
 1. En el notebook 10 configuro entity=stops, mode=validate y el par versión/hash de 2025. Ejecuto desde el bloque 1. Espero 6.530 candidatos, cero rechazos y 27 nombres normalizados si el origen sigue coincidiendo con el perfil. No espero que las cuatro ausencias de stop_code causen rechazos.
 2. Repito con el par de 2026. Espero 8.314 candidatos, cero rechazos, un nombre normalizado y 12 estaciones sin hijos referenciados. Las advertencias pueden coexistir en una misma fila; warning_rows no es la suma de los dos motivos.
@@ -190,4 +190,25 @@ pipeline.py selecciona el procesador, publication.py conserva la escritura comú
 
 El 10 de noviembre de 2026 pasaron las **91 pruebas de la suite completa, sin omisiones**, en un entorno Linux aislado con Python 3.12, Java 17, Spark 4.0.1 y Delta 4.0.0. Incluyen las regresiones de agency/routes, los cuatro recorridos de despacho y las reglas de stops: tipos, ausencias, limpieza Unicode, conflictos, jerarquía y más de 1.000 ubicaciones.
 
-La integración de stops leyó tablas Delta de prueba mediante el pipeline real, publicó dos snapshots, reejecutó uno sin duplicados y rechazó una entrada inválida dejando Silver intacta y registrando sus dos filas fuente en cuarentena. Sustituí únicamente la lectura del encabezado Staging por un encabezado de fixture; los datos eran sintéticos. La compilación también pasó. Esta evidencia comprueba el código local; la validación y publicación de stops en Databricks siguen pendientes. No medí todavía el tiempo del Job ampliado en Free Edition.
+La integración de stops leyó tablas Delta de prueba mediante el pipeline real, publicó dos snapshots, reejecutó uno sin duplicados y rechazó una entrada inválida dejando Silver intacta y registrando sus dos filas fuente en cuarentena. Sustituí únicamente la lectura del encabezado Staging por un encabezado de fixture; los datos eran sintéticos. La compilación también pasó. Esta evidencia comprueba el código local. Posteriormente ejecuté stops en Databricks y comprobé sus datos, como registro en el cierre siguiente. No medí todavía el tiempo del Job ampliado en Free Edition.
+
+
+### Cierre de la ejecución de stops
+
+**Actualización: 10 de noviembre de 2026.** Ejecuté el Job de stops, revisé las consultas y comprobé físicamente la tabla workspace.gtfs_bogota.silver_gtfs_stops. Una consulta breve devolvió datos. Doy por completado el despliegue funcional de este incremento y continúo con el perfil de calendar y calendar_dates.
+
+Conservo un alcance preciso: en este cierre no adjunté IDs de runs ni nuevos resúmenes numéricos por snapshot, y no hice una nueva consulta mediante Genie. Los 6.530 / 8.314 registros y los diagnósticos de nombres/estaciones anteriores pertenecen al perfil fuente y a las expectativas de validación, no a una medición adicional inventada de Silver. La reejecución sin duplicados está probada localmente con Delta; una comprobación remota explícita de esa propiedad requiere conservar su resultado específico.
+
+### Parámetros generales del Job y parámetros de cada iteración
+
+Resolví el error Reference 'job.parameters.stops_work_items' refers to an undefined job parameter 'stops_work_items' al crear la clave en Job parameters, dentro de los detalles generales del Job. Los parámetros de una tarea Notebook son un apartado distinto: guardarlos allí no crea una clave de job.parameters.
+
+| Parámetro general | Contenido | Inputs del For each |
+| --- | --- | --- |
+| work_items | Dos snapshots de agency | {{job.parameters.work_items}} |
+| routes_work_items | Dos snapshots de routes | {{job.parameters.routes_work_items}} |
+| stops_work_items | Dos snapshots de stops | {{job.parameters.stops_work_items}} |
+
+Guardo primero los parámetros generales y después sus referencias en cada For each. Los dos objetos de cada lista deben llevar la misma entidad, con su fecha y hash correspondientes. En la tarea interna conservo entity={{input.entity}}, feed_version={{input.feed_version}} y snapshot_sha256={{input.snapshot_sha256}}. Si uso referencias job.parameters para otros valores, también debo definir sus claves generales; para valores estáticos puedo conservar los literales de la tarea.
+
+El Pull sincroniza el código, pero no modifica por sí mismo el Job creado en la interfaz. Amplié la configuración de Workspace para ejecutar stops con el mismo notebook 10; la plantilla versionada ya describe sus tres tareas seriales. La cadena agency → routes → stops serializa las escrituras; stops mantiene una jerarquía interna y no una dependencia de datos con routes.

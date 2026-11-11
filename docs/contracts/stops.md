@@ -1,6 +1,6 @@
 # Mi contrato Silver stops_v1
 
-**Fecha:** 10 de noviembre de 2026. Cerré estas reglas después de revisar el [perfil real](../stops_profile_2025_2026.md). Su implementación está en stops_spark.py y reutiliza preparación, reconciliación y publicación. El estado de las pruebas y de la ejecución real se registra en la guía Silver; implementar un procesador no demuestra su publicación en Databricks.
+**Fecha:** 10 de noviembre de 2026. Cerré estas reglas después de revisar el [perfil real](../stops_profile_2025_2026.md). Su implementación está en stops_spark.py y reutiliza preparación, reconciliación y publicación. Ya ejecuté el Job en Databricks y comprobé la tabla Silver y sus datos mediante una consulta breve. La [guía Silver](../silver_execution.md#cierre-de-la-ejecución-de-stops) conserva el alcance de esa comprobación y lo separa de las pruebas locales y del perfil fuente.
 
 ## Grano, origen e identidad
 
