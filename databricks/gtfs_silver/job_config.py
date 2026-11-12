@@ -95,6 +95,15 @@ def build_job(repo_root: str, *, environment_version: str = "4") -> dict:
     derived["for_each_task"]["task"]["notebook_task"]["base_parameters"].update({
         "window_start": "{{input.window_start}}", "window_end": "{{input.window_end}}"})
     job["tasks"].append(derived)
+    # Serializo shape_points después de service_dates; no depende de sus datos.
+    shape_items = [{**item, "entity": "shape_points"} for item in SNAPSHOTS]
+    job["parameters"].append({"name": "shape_points_work_items", "default": json.dumps(shape_items, separators=(",", ":"))})
+    shape_task = deepcopy(job["tasks"][0])
+    shape_task["task_key"] = "publish_shape_points"
+    shape_task["depends_on"] = [{"task_key": "publish_service_dates"}]
+    shape_task["for_each_task"]["inputs"] = "{{job.parameters.shape_points_work_items}}"
+    shape_task["for_each_task"]["task"]["task_key"] = "process_shape_points_snapshot"
+    job["tasks"].append(shape_task)
     return job
 
 

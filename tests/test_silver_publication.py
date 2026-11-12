@@ -85,7 +85,7 @@ class SilverConfigurationTests(unittest.TestCase):
 
     def test_only_implemented_entity_is_enabled(self):
         registry = load_registry()
-        self.assertEqual(list(registry), ["agency", "routes", "stops", "calendar", "calendar_dates", "service_dates"])
+        self.assertEqual(list(registry), ["agency", "routes", "stops", "calendar", "calendar_dates", "service_dates", "shape_points"])
         self.assertTrue(registry["agency"]["enabled"])
         self.assertEqual(registry["agency"]["depends_on"], [])
         self.assertEqual(registry["routes"]["depends_on"], ["agency"])
@@ -109,7 +109,7 @@ class SilverConfigurationTests(unittest.TestCase):
         self.assertEqual(registry["calendar"]["depends_on"],[])
         self.assertEqual(registry["calendar_dates"]["depends_on"],[])
         self.assertEqual(registry["calendar_dates"]["depends_on_if_published"],["calendar"])
-        self.assertEqual(len(job["tasks"]),6)
+        self.assertEqual(len(job["tasks"]),7)
         parameters={p["name"]:p["default"] for p in job["parameters"]}
         for entity,position,parent in (("calendar",3,"publish_stops"),("calendar_dates",4,"publish_calendar")):
             task=job["tasks"][position]
@@ -432,6 +432,54 @@ class SilverPublicationDeltaTests(unittest.TestCase):
         self.assertTrue(all(r.date=="20230101" for r in rejected))
         self.assertTrue(all("SERVICE_KEY_CONFLICT" in r.error_codes for r in rejected))
         self.assertEqual(len(self.spark.table(f"spark_catalog.{self.namespace}.silver_gtfs_calendar").columns),18)
+
+    def test_shape_points_pipeline_publishes_two_snapshots_retries_and_quarantines_conflicts(self):
+        from gtfs_silver import pipeline
+        from test_shape_points import COLUMNS as shape_columns, fixture, shape_frame, shape_spec
+        table=f"spark_catalog.{self.namespace}.bronze_gtfs_shapes"
+        common=dict(catalog="spark_catalog",schema=self.namespace,staging_volume="staging",entity="shape_points")
+        old_rows=None
+        for version,content_hash in [("2025-10-28","a"*64),("2026-09-29","b"*64)]:
+            path=(f"/Volumes/spark_catalog/{self.namespace}/staging/gtfs_static/"
+                  f"feed_version={version}/sha256={content_hash}/shapes.txt")
+            selected=shape_spec(version,content_hash,path)
+            rows=[fixture(selected,shape_pt_sequence=str(seq),shape_pt_lat=str(lat))
+                  for seq,lat in [(1,4.6),(3,4.7),(7,4.7)]]
+            rows.append(dict(rows[1]))
+            shape_frame(self.spark,selected,rows).write.format("delta").mode("append").saveAsTable(table)
+            args={**common,"feed_version":version,"snapshot_sha256":content_hash}
+            with patch.object(pipeline.shape_points_spark,"read_source_header",return_value=shape_columns):
+                preview=pipeline.run_entity(self.spark,**args,mode="validate")
+                self.assertFalse(preview["persisted"])
+                if old_rows is None:
+                    self.assertFalse(self.spark.catalog.tableExists(f"spark_catalog.{self.namespace}.silver_gtfs_shape_points"))
+                published=pipeline.run_entity(self.spark,**args)
+            self.assertEqual(published["candidate_rows"],3)
+            self.assertEqual(published["identical_copies_consolidated"],1)
+            self.assertEqual(published["warning_rows"],1)
+            if old_rows is None:
+                old_rows=self.spark.table(f"spark_catalog.{self.namespace}.silver_gtfs_shape_points").orderBy("shape_id","shape_pt_sequence").collect()
+        target=f"spark_catalog.{self.namespace}.silver_gtfs_shape_points"
+        with patch.object(pipeline.shape_points_spark,"read_source_header",return_value=shape_columns):
+            retry=pipeline.run_entity(self.spark,**args)
+            self.assertEqual(retry["status"],"SUCCEEDED")
+            output=self.spark.table(target)
+            self.assertEqual(output.count(),6)
+            self.assertEqual(len(output.columns),13)
+            self.assertEqual(output.schema["shape_pt_sequence"].dataType.simpleString(),"int")
+            self.assertEqual(output.filter("source_feed_version='2025-10-28'").orderBy("shape_id","shape_pt_sequence").collect(),old_rows)
+            self.assertTrue(all(r.shape_dist_traveled is None for r in output.collect()))
+            self.assertTrue(all(r.source_file_path.endswith("/shapes.txt") for r in output.collect()))
+            # El conflicto conserva las dos copias originales y la variante nueva.
+            shape_frame(self.spark,selected,[fixture(selected,shape_pt_sequence="3",shape_pt_lat="4.9")]).write.format("delta").mode("append").saveAsTable(table)
+            with self.assertRaises(SnapshotRejectedError):
+                pipeline.run_entity(self.spark,**args)
+        self.assertEqual(self.spark.table(target).count(),6)
+        rejected=self.spark.table(f"spark_catalog.{self.namespace}.quarantine_gtfs_shape_points").collect()
+        self.assertEqual(sum(r.input_copies for r in rejected),3)
+        self.assertTrue(all(r.shape_pt_sequence=="3" and "SHAPE_POINT_KEY_CONFLICT" in r.error_codes for r in rejected))
+        audit=self.spark.table(f"spark_catalog.{self.namespace}.audit_gtfs_silver_runs").collect()
+        self.assertTrue(any(r.status=="REJECTED" and not r.silver_committed for r in audit))
 
     def test_service_dates_pipeline_reads_curated_versions_and_preserves_horizon(self):
         from gtfs_silver import pipeline

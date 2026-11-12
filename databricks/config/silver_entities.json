@@ -44,5 +44,11 @@
       "calendar",
       "calendar_dates"
     ]
+  },
+  "shape_points": {
+    "enabled": true,
+    "validator": "shape_points_v1",
+    "bronze_table": "bronze_gtfs_shapes",
+    "depends_on": []
   }
 }

@@ -164,7 +164,8 @@ def publish_snapshot(
 
     identifiers = {"agency": ("agency_id",), "routes": ("route_id",), "stops": ("stop_id",),
                    "calendar": ("service_id",), "calendar_dates": ("service_id", "date"),
-                   "service_dates": ("service_id", "service_date")}
+                   "service_dates": ("service_id", "service_date"),
+                   "shape_points": ("shape_id", "shape_pt_sequence")}
     if tables.entity not in identifiers or spec.entity != tables.entity:
         raise ValueError("La entidad publicada debe coincidir con su contrato y snapshot.")
     keys = identifiers[tables.entity]

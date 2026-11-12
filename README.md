@@ -183,3 +183,16 @@ La [vista previa consultada con Genie](docs/service_dates_preview.md) produce 1.
 
 
 La verificación de service_dates terminó con 24 pruebas seleccionadas aprobadas sin omisiones, incluidas ocho nuevas y tres integraciones Delta en total. La derivación ya está publicada en Databricks: comprobé 1.403 filas y claves distintas, siete servicios y fechas de 2026-01-01 a 2026-12-31. Las cinco entidades fuente anteriores también están publicadas. Continúo con shape_points, los puntos ordenados de cada trazado.
+
+
+### Shape_points: entender el trazado antes de publicarlo
+
+Completé el [perfil de shapes de ambos snapshots](docs/shape_points_profile_2025_2026.md): 909.878 / 926.501 puntos para 676 / 1.045 trazados. Conservé nueve consultas definitivas en el [notebook 14](databricks/notebooks/silver/14_profile_gtfs_shape_points.ipynb). Las claves y conversiones revisadas no presentan errores; sí hay puntos consecutivos de igual coordenada y cuatro trazados sin referencias desde trips en 2025, que no elimino como si fueran filas duplicadas.
+
+El [contrato shape_points_v1](docs/contracts/shape_points.md) distingue reglas, advertencias y limitaciones; el [plan](docs/shape_points_plan.md) conserva el estado de cada etapa. La implementación posterior habilita el procesador y amplía la plantilla del Job. Su publicación en Workspace sigue pendiente.
+
+
+Implementé shape_points_v1 con Spark nativo. Conserva puntos repetidos y genera advertencias. Los errores obligatorios bloquean el snapshot completo. Reutiliza notebook 10 y el escritor existente. La plantilla incorpora una séptima tarea para ambos snapshots. La [guía](docs/silver_execution.md#despliegue-de-shape_points_v1) distingue implementación local y publicación pendiente.
+
+
+La implementación de shape_points pasó 36 pruebas seleccionadas sin omisiones. Incluyen trece nuevas y tres integraciones Delta en total. La primera publicación en Databricks sigue pendiente.

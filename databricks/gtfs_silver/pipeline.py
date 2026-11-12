@@ -11,8 +11,8 @@ from .agency_spark import read_and_validate
 from .publication import (
     PublicationTables, _versioned_table, publish_agency, publish_snapshot, quoted_table, simple_identifier,
 )
-from . import routes_spark, stops_spark, calendars_spark, service_dates_spark
-from .models import DerivedSnapshotSpec
+from . import routes_spark, stops_spark, calendars_spark, service_dates_spark, shape_points_spark
+from .models import DerivedSnapshotSpec, SOURCE_ENTITY_NAMES
 
 REGISTRY_PATH = Path(__file__).resolve().parents[1] / "config" / "silver_entities.json"
 
@@ -43,10 +43,12 @@ def run_entity(spark, *, catalog: str, schema: str, staging_volume: str,
         spark.conf.set("spark.sql.session.timeZone", "UTC")
         return _run_service_dates(spark, catalog, schema, spec, mode, verify_history, run_id)
     validators = {"agency": "agency_v1", "routes": "routes_v1", "stops": "stops_v1",
-                  "calendar": "calendar_v1", "calendar_dates": "calendar_dates_v1"}
+                  "calendar": "calendar_v1", "calendar_dates": "calendar_dates_v1",
+                  "shape_points": "shape_points_v1"}
     if entity not in validators or configuration["validator"] != validators[entity]:
         raise ValueError("La entidad todavía no tiene procesador implementado.")
-    if configuration["bronze_table"] != f"bronze_gtfs_{entity}":
+    source_entity = SOURCE_ENTITY_NAMES.get(entity, entity)
+    if configuration["bronze_table"] != f"bronze_gtfs_{source_entity}":
         raise ValueError("El registro no corresponde a la tabla Bronze de la entidad.")
     if mode not in {"validate", "publish"}:
         raise ValueError("mode debe ser validate o publish.")
@@ -56,11 +58,12 @@ def run_entity(spark, *, catalog: str, schema: str, staging_volume: str,
     spark.conf.set("spark.sql.session.timeZone", "UTC")
     source_path = (
         f"/Volumes/{catalog}/{schema}/{staging_volume}/gtfs_static/"
-        f"feed_version={feed_version}/sha256={snapshot_sha256}/{entity}.txt"
+        f"feed_version={feed_version}/sha256={snapshot_sha256}/{source_entity}.txt"
     )
     spec = SnapshotSpec(feed_version, snapshot_sha256, source_path, entity)
     processors = {"routes": routes_spark, "stops": stops_spark,
-                  "calendar": calendars_spark, "calendar_dates": calendars_spark}
+                  "calendar": calendars_spark, "calendar_dates": calendars_spark,
+                  "shape_points": shape_points_spark}
     header_reader = read_source_header if entity == "agency" else processors[entity].read_source_header
     columns = header_reader(source_path)
     bronze = f"{catalog}.{schema}.{configuration['bronze_table']}"

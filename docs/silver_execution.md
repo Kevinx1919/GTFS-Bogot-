@@ -333,3 +333,101 @@ También revisé los registros de la tabla. El total coincide con la vista previ
 Registro exactamente lo comprobado: no adjunto aquí IDs de ejecución, un nuevo resumen de advertencias, las versiones Delta concretas ni una segunda ejecución para demostrar idempotencia en Workspace. Las pruebas locales de reintento siguen siendo evidencia separada. El alcance publicado continúa siendo solo 2026; no publiqué el escenario 2025 ni convierto estos pares servicio-fecha en viajes o pasajeros.
 
 Cierro la primera derivación Silver y continúo con shape_points, orden 5 del plan. No requiere volver a cargar Bronze ni expandir stop_times por fecha.
+
+
+## Despliegue de shape_points_v1
+
+**Fecha:** 11 de noviembre de 2026. **Estado:** implementación local preparada. Las 36 pruebas seleccionadas pasaron sin omisiones. La primera publicación de shape_points en Databricks sigue pendiente.
+
+El procesador conserva la identidad de cada punto. Usa versión + hash + shape_id + shape_pt_sequence. El alias shape_points resuelve shapes.txt y bronze_gtfs_shapes. No renombra Bronze ni requiere un archivo nuevo.
+
+### Reglas y resultados esperados
+
+El [contrato](contracts/shape_points.md) tipa la secuencia como int. Tipa coordenadas y distancia opcional como double. Conserva shape_id como string. La distancia ausente permanece null. El encabezado queda registrado en source_columns.
+
+El [perfil](shape_points_profile_2025_2026.md) respalda estos resultados esperados. Todavía no corresponden a ejecuciones del procesador en Workspace.
+
+| Snapshot | Candidatos esperados | Rechazos esperados | Advertencias esperadas |
+| --- | ---: | ---: | ---: |
+| 2025-10-28 | 909.878 | 0 | 439 |
+| 2026-09-29 | 926.501 | 0 | 30.208 |
+
+Las advertencias esperadas corresponden a puntos posteriores de segmentos con igual posición. Los cuatro trazados sin referencias desde trips permanecen. No consulto trips durante la transformación. Los errores obligatorios conservan evidencia en cuarentena y bloquean el snapshot completo.
+
+### Parámetros y séptima tarea
+
+Después de sincronizar el código, usaré notebook 10. Configuraré entity=shape_points con la versión y el hash correspondientes. Mantendré catalog, schema, staging_volume, repo_root y verify_history del Job actual. No necesita window_start ni window_end.
+
+Guardaré primero shape_points_work_items en Job parameters:
+
+```json
+[
+  {
+    "entity": "shape_points",
+    "feed_version": "2025-10-28",
+    "snapshot_sha256": "07ba2ba9bb3b5bc1e38357355956757ce84fc68e6d05b74577bf017e189ab952"
+  },
+  {
+    "entity": "shape_points",
+    "feed_version": "2026-09-29",
+    "snapshot_sha256": "08d14e0b3a5b9caa5451b722659871fd554e3273b94bdd770fdf81a26bf02097"
+  }
+]
+```
+
+La plantilla añade publish_shape_points después de publish_service_dates. Esa dependencia serializa escrituras en auditoría; no representa dependencia entre sus datos. El For each usa {{job.parameters.shape_points_work_items}} y concurrency=1. Su tarea interna process_shape_points_snapshot ejecuta notebook 10.
+
+| Parámetro interno | Valor |
+| --- | --- |
+| repo_root | La misma raíz Workspace de las tareas existentes. |
+| catalog | {{job.parameters.catalog}} |
+| schema | {{job.parameters.schema}} |
+| staging_volume | {{job.parameters.staging_volume}} |
+| mode | {{job.parameters.mode}} |
+| verify_history | {{job.parameters.verify_history}} |
+| entity | {{input.entity}} |
+| feed_version | {{input.feed_version}} |
+| snapshot_sha256 | {{input.snapshot_sha256}} |
+
+Para la primera ejecución seleccionaré únicamente publish_shape_points con Run now with different settings. Usaré mode=validate. Revisaré métricas y advertencias. Después ejecutaré mode=publish. No necesito repetir el perfil ni cargar Bronze nuevamente.
+
+### Comprobación de la publicación
+
+La salida tendrá 13 columnas. El escritor verificará claves únicas, lectura posterior e histórico. La cuarentena conservará la secuencia fuente como texto para registrar conversiones inválidas. El notebook 14 seguirá como exploración de lectura.
+
+Después de publicar consultaré:
+
+```sql
+select
+  source_feed_version,
+  source_sha256,
+  count(*) as filas,
+  count(distinct struct(shape_id, shape_pt_sequence)) as claves_distintas,
+  count(distinct shape_id) as trazados,
+  count(shape_dist_traveled) as distancias_informadas
+from workspace.gtfs_bogota.silver_gtfs_shape_points
+where (source_feed_version = '2025-10-28'
+       and source_sha256 = '07ba2ba9bb3b5bc1e38357355956757ce84fc68e6d05b74577bf017e189ab952')
+   or (source_feed_version = '2026-09-29'
+       and source_sha256 = '08d14e0b3a5b9caa5451b722659871fd554e3273b94bdd770fdf81a26bf02097')
+group by source_feed_version, source_sha256
+order by source_feed_version;
+```
+
+Espero igualdad entre filas y claves distintas. Espero 676 / 1.045 trazados y cero distancias informadas. Registraré la salida real después de ejecutarla. Esta documentación no demuestra una publicación ya realizada.
+
+### Verificación local de shape_points
+
+Pasaron **36 pruebas seleccionadas en 491,759 segundos, sin fallos ni omisiones**. Usé Python 3.10.12, Spark 4.0.1 y Delta 4.0.0 en Linux.
+
+Incluyen trece pruebas nuevas: cinco de contrato, siete de reglas Spark y una integración Delta. Las otras 23 cubren despacho, configuración, service_dates y lectura versionada. Ejecuté tres integraciones Delta en total. La suite completa define 126 casos; no afirmo haberlos repetido todos.
+
+La integración nueva publicó dos snapshots sintéticos. Consolidó copias sin eliminar posiciones repetidas. Verificó el reintento sin duplicados y la conservación exacta del snapshot anterior. Un conflicto conservó tres filas fuente en cuarentena. El destino mantuvo sus seis candidatos publicados.
+
+Las reglas cubren secuencias con saltos, revisitas y colisiones del cast. También cubren coordenadas inválidas, geometrías degeneradas y distancia opcional. Las distancias informadas deben crecer incluso cuando existan ausencias intermedias. Las advertencias no bloquean una publicación válida.
+
+Reutilicé la imagen y las librerías offline existentes. El contenedor mantuvo el código como lectura. Sus datos temporales quedaron fuera de OneDrive. No descargué Spark ni modifiqué los archivos recuperados. Las pruebas no escribieron en Databricks.
+
+También comprobé compilación, igualdad entre código local y probado, enlaces y plantilla regenerable. Las seis tareas previas permanecen idénticas. Los dos bloques ejecutables del notebook 10 permanecen intactos. El notebook 14 conserva sus nueve consultas verificadas.
+
+La primera ejecución del procesador en Workspace sigue pendiente. Los conteos esperados del perfil no sustituyen esa comprobación.

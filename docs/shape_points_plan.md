@@ -1,6 +1,6 @@
 # Mi plan para shape_points
 
-**Fecha:** 11 de noviembre de 2026. **Estado:** planificación del siguiente incremento, después de publicar y consultar service_dates de 2026. Todavía no tengo un perfil específico cerrado de shapes, un contrato aprobado, un procesador habilitado ni una tarea nueva del Job. No presento propuestas de tipos o reglas como hallazgos de los datos.
+**Fecha:** 11 de noviembre de 2026. **Estado:** perfil y revisión completados. Implementé shape_points_v1 localmente. Las 36 pruebas seleccionadas pasaron sin omisiones. La publicación en Databricks sigue pendiente. El [informe](shape_points_profile_2025_2026.md) conserva el perfil. El [contrato](contracts/shape_points.md) define las reglas implementadas. La [guía](silver_execution.md#despliegue-de-shape_points_v1) conserva los pasos de despliegue.
 
 ## Qué representa y por qué sigue ahora
 
@@ -8,25 +8,27 @@ Una fila representa un punto ordenado de un trazado GTFS. Al unir los puntos seg
 
 No es una parada de stops ni una posición GPS observada. Un trazado puede pasar dos veces por una zona y varios viajes pueden compartirlo. Más adelante trips usará shape_id para indicar su trazado; por eso preparo esta referencia antes de validar viajes. No depende de service_dates para calcular sus puntos: el orden del Job también serializa escrituras de auditoría.
 
-El archivo fuente conserva el nombre shapes.txt y la tabla Bronze bronze_gtfs_shapes. El nombre Silver propuesto es silver_gtfs_shape_points para hacer visible el grano. Resolveré ese mapeo explícitamente al implementar, sin renombrar Bronze ni inventar un archivo shape_points.txt.
+El archivo fuente conserva el nombre shapes.txt y la tabla Bronze bronze_gtfs_shapes. El nombre Silver implementado es silver_gtfs_shape_points para hacer visible el grano. Implementé ese mapeo explícitamente. Conservé Bronze y el nombre shapes.txt.
 
-## Alcance y tipos propuestos
+## Alcance y tipos implementados
 
 Revisaré por separado los snapshots 2025-10-28 y 2026-09-29, con los hashes ya documentados. Llamo S a la pareja versión + hash; las claves, ventanas y relaciones siempre quedan dentro de S.
 
-| Campo fuente | Tipo Silver propuesto | Qué revisaré |
+| Campo fuente | Tipo Silver | Qué revisaré |
 | --- | --- | --- |
 | shape_id | string | Requerido, no vacío, espacios extremos y conservación de identidad. Se repite entre puntos del mismo trazado. |
-| shape_pt_sequence | int, sujeto a rango observado | Requerido, entero no negativo y único por trazado. Si el rango no cabe, acordaré un tipo mayor antes de publicar. |
+| shape_pt_sequence | int, con rango comprobado | Requerido, entero no negativo y único por trazado. Si el rango no cabe, acordaré un tipo mayor antes de publicar. |
 | shape_pt_lat | double | Requerida, numérica finita y entre -90 y 90. |
 | shape_pt_lon | double | Requerida, numérica finita y entre -180 y 180. |
 | shape_dist_traveled | double, si está publicado | Opcional, numérica finita, no negativa y creciente según la secuencia; revisaré ausencias y unidades disponibles. |
 
-La clave propuesta es S + shape_id + shape_pt_sequence. Los tipos son decisiones del proyecto que cerraré con el perfil; la obligatoriedad y semántica se contrastan con la [referencia oficial de shapes.txt](https://gtfs.org/documentation/schedule/reference/#shapestxt).
+La clave implementada es S + shape_id + shape_pt_sequence. Cerré los tipos con el perfil; la obligatoriedad y semántica se contrastan con la [referencia oficial de shapes.txt](https://gtfs.org/documentation/schedule/reference/#shapestxt).
 
 GTFS admite saltos en la secuencia: 0, 6, 11 puede ser válido. No exigiré empezar en 1 ni números consecutivos. Si el orden físico del TXT es diferente, usaré la secuencia para interpretar el trazado. La distancia publicada debe crecer con esa secuencia; no asumiré metros o kilómetros ni la calcularé para rellenar un dato ausente.
 
-## Perfil que ejecutaré antes del contrato
+## Preguntas del perfil antes del contrato
+
+El primer pase de esta lista ya está ejecutado y documentado; la conservaré como guía para revisar nuevos snapshots. Encontré 676 / 1.045 trazados, sin errores de claves o conversiones en los controles ejecutados, pero con coordenadas consecutivas iguales y cuatro trazados sin referencias en 2025. Esos casos se conservan y su tratamiento se define en la propuesta, sin descartarlos automáticamente.
 
 1. Revisaré encabezados originales, auditoría de esquema, tipos Bronze, procedencia y presencia por snapshot. Separaré campo ausente de campo publicado con valores vacíos.
 2. Mediré filas, trazados distintos y completitud por campo: nulos, vacíos, solo espacios y espacios extremos. No traeré los puntos al driver para contar.
@@ -40,7 +42,7 @@ Conservaré las consultas definitivas en un único notebook de perfilado y docum
 
 ## Implementación después de revisar el perfil
 
-Cerraré el contrato y reutilizaré la preparación Spark, el escritor, auditoría, cuarentena y notebook 10. La resolución shapes → shape_points será explícita, porque la fuente y la entidad Silver tienen nombres distintos. Consolidaré solo copias idénticas según el contrato; los conflictos y conversiones inválidas conservarán evidencia y bloquearán la primera publicación según la política acordada.
+Cerré el contrato y reutilicé la preparación Spark, el escritor, auditoría, cuarentena y notebook 10. La resolución shapes → shape_points es explícita. La fuente y la entidad Silver tienen nombres distintos. Consolidaré solo copias idénticas según el contrato; los conflictos y conversiones inválidas conservarán evidencia y bloquearán la primera publicación según la política acordada.
 
 Aplicaré filtros de snapshot y selección de columnas al inicio. Las ventanas se particionarán por S + shape_id y se ordenarán por secuencia tipada; evitaré ordenamientos globales, UDF de Python y collect de puntos. No introduciré cache, particionado físico o una tabla de geometrías adicional sin medir y justificar su uso.
 
@@ -50,7 +52,7 @@ Para validar referencias de trips usaré un conjunto único de shape_id dentro d
 
 Usaré fixtures pequeñas para claves compuestas, casts, coordenadas inválidas, secuencias con saltos, bucles, copias y conflictos. Incluiré distancia ausente y, si está publicada, sus errores y orden. La integración Delta comprobará validación sin escritura, publicación, reintento sin duplicados, conservación de otro snapshot y rechazo sin alterar Silver.
 
-Reutilizaré el entorno local de Spark/Delta ya preparado. Después de cerrar las reglas y pasar las pruebas, sincronizaré el código y validaré/publicaré ambos snapshots en Databricks. Solo entonces ampliaré el Job con su tarea y comprobaré conteos y claves. Este documento no crea tablas ni modifica el Job actual.
+Reutilicé el entorno local de Spark/Delta. Las 36 pruebas seleccionadas pasaron sin omisiones. La plantilla ya incorpora la séptima tarea. Sigue pendiente sincronizar el código y validar/publicar ambos snapshots en Databricks. Después comprobaré conteos y claves reales. El Job de Workspace todavía necesita incorporar esta tarea.
 
 ## Qué sigue y qué podrá analizarse
 

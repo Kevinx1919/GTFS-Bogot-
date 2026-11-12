@@ -342,3 +342,36 @@ El [informe](service_dates_preview.md) explica por qué esos conteos no son viaj
 Mantengo dos bloques. El primero incorpora window_start y window_end, vacíos para las entidades fuente; solo service_dates los exige. El segundo llama al mismo run_entity.
 
 La derivación identifica archivos publicados desde auditoría, carga versiones Delta fijadas de las fuentes Silver, aplica el horizonte y produce días activos. Validate no escribe. Publish usa el escritor común con clave servicio + fecha, registra su ejecución y protege el horizonte publicado. Pasaron las 24 pruebas seleccionadas con Spark y Delta; su primera publicación en Databricks ya está comprobada: 1.403 pares únicos, siete servicios y fechas de todo 2026. El [cierre](silver_execution.md#cierre-de-la-ejecución-de-service_dates) documenta la consulta y sus límites.
+
+
+## Notebook 14 — silver/14_profile_gtfs_shape_points — 11 de noviembre de 2026
+
+**Propósito:** entender puntos de trazado de ambos snapshots antes de tipar y publicar. Conservo nueve consultas definitivas ejecutadas mediante Genie y 55 filas de resultados estructurados sin truncamiento. El cuaderno no tiene una ejecución completa documentada como notebook. Todas las celdas son de lectura; no se añade al Job.
+
+| Bloque | Pregunta y entradas | Salida comprobada | Validación, efectos y límites |
+| --- | --- | --- | --- |
+| 1 / esquema | Columnas y tipos de shapes/trips/auditoría. | 23 campos. | Metadata; no modifica esquemas. |
+| 2 / encabezados | Archivos publicados por versión/hash. | 4 observaciones; distancia ausente en shapes. | No confunde ausencia fuente con null. |
+| 3 / completitud | Cuatro campos Bronze por snapshot. | 8 filas; cero nulos, vacíos y espacios. | Agrega primero y expande solo el resumen por campo. |
+| 4 / tipos y procedencia | Filas por hash, versión, ruta, timestamp y conversiones. | 2 resúmenes, 909.878 / 926.501 puntos y cero errores en controles. | try_cast no transforma tablas; no valida polígono administrativo. |
+| 5 / duplicados | Negocio y claves antes/después del cast. | 2 resúmenes; cero copias/conflictos/colisiones. | No deduplica registros ni usa coordenadas como clave. |
+| 6 / trazados | Cantidades de puntos, secuencias y coordenadas distintas. | 2 resúmenes, 676 / 1.045 trazados; mínimo cuatro coordenadas distintas. | Versión final ampliada sustituye la preliminar. |
+| 7 / segmentos | Ventanas por snapshot y trazado. | 2 resúmenes; 439 / 30.208 segmentos de extremos iguales. | Solo valores válidos; diagnóstico recto, sin tiempo ni distancia vial real. |
+| 8 / referencias | trips Bronze contra IDs de shapes distintos. | 2 resúmenes; cero referencias no resueltas y 4 / 0 trazados sin uso. | No multiplica viajes ni valida trips íntegramente. |
+| 9 / contexto | Cinco segmentos más largos por snapshot y modo vía trips/routes Silver. | 10 filas; máximo en C_1, tipo 6. | Sin umbral automático de rechazo; muestra acotada para interpretar extremos. |
+
+Los [hallazgos](shape_points_profile_2025_2026.md) y la [propuesta de contrato](contracts/shape_points.md) separan datos medidos de políticas pendientes. Los hashes y nombres son valores actuales del proyecto. Estas consultas no fijan versiones Delta ni forman una transacción conjunta. La futura implementación fijará versiones de entrada, preservará procedencia y reutilizará notebook 10; todavía no existe procesador ni tarea habilitada de shape_points.
+
+
+## Notebook 10 — Entrada de shape_points_v1 — 11 de noviembre de 2026
+
+Mantengo los dos bloques ejecutables. El bloque 1 conserva los parámetros existentes. El bloque 2 llama al mismo run_entity. entity=shape_points resuelve shapes.txt y bronze_gtfs_shapes. No añado un widget source_entity ni un notebook de publicación nuevo.
+
+| Bloque | Entradas | Salidas y efectos | Controles |
+| --- | --- | --- | --- |
+| 1 / configuración | Repositorio completo y parámetros del snapshot. | Importa el procesador habilitado. No escribe tablas. | Mantiene dependencias del entorno actual. |
+| 2 / ejecución | Bronze Delta fijada y encabezado de shapes.txt. | Validate devuelve métricas sin escribir. Publish usa Silver, cuarentena y auditoría. | Clave compuesta, conversiones, procedencia y contexto geométrico. Un error obligatorio bloquea el snapshot completo. |
+
+La plantilla añade publish_shape_points como séptima tarea serial. shape_points_work_items contiene ambos snapshots. La tarea interna process_shape_points_snapshot usa notebook 10. Sus parámetros mantienen entidad, versión y hash; no requieren horizonte de fechas.
+
+El notebook 14 conserva el perfil de lectura. No se añade al Job. Las 36 pruebas seleccionadas pasaron sin omisiones. La [guía](silver_execution.md#verificación-local-de-shape_points) conserva los resultados. La primera publicación en Workspace sigue pendiente.

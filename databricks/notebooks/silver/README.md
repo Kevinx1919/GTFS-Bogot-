@@ -51,3 +51,17 @@ Completé el perfil de calendar y calendar_dates: patrón semanal y excepciones 
 El [notebook 13](13_preview_gtfs_service_dates.ipynb) conserva las tres consultas de vista previa. El [informe](../../../docs/service_dates_preview.md) registra el resultado de lectura y el [contrato](../../../docs/contracts/service_dates.md) define horizonte, trazabilidad y publicación.
 
 Elegí comenzar por 2026. El procesador y la sexta tarea del Job están implementados y probados localmente. También publiqué la tabla en Databricks y consulté 1.403 pares únicos, siete servicios y fechas de 2026-01-01 a 2026-12-31. El [cierre](../../../docs/silver_execution.md#cierre-de-la-ejecución-de-service_dates) conserva el alcance de la comprobación. Uso el notebook 10 con entity=service_dates y window_start/window_end explícitos. En este incremento pasaron 24 pruebas seleccionadas sin omisiones, incluidas ocho nuevas; la verificación anterior de 105 casos queda como antecedente y no como una nueva ejecución completa de toda la suite.
+
+
+## Shape_points: perfil antes de implementar
+
+El [notebook 14](14_profile_gtfs_shape_points.ipynb) conserva nueve consultas definitivas de lectura, ejecutadas mediante Genie. El [informe](../../../docs/shape_points_profile_2025_2026.md) registra 909.878 / 926.501 puntos y 676 / 1.045 trazados. Los controles no encontraron errores de claves o conversiones, pero sí coordenadas consecutivas iguales y cuatro trazados sin viajes referenciados en 2025. El [contrato](../../../docs/contracts/shape_points.md) explica por qué se conservan.
+
+Implementé shape_points localmente. Sus pruebas nativas están en ejecución y la publicación sigue pendiente. El notebook de perfilado no se añade al Job. La ejecución de las consultas está comprobada por separado; no afirmo haber ejecutado el cuaderno completo. El [plan](../../../docs/shape_points_plan.md) mantiene el mapeo shapes.txt/Bronze → shape_points Silver y los pasos de pruebas/publicación pendientes.
+
+
+## Publicación preparada de shape_points
+
+El procesador shape_points_spark.py conserva puntos y valida claves compuestas. El alias usa shapes.txt y bronze_gtfs_shapes. Notebook 10 mantiene sus dos bloques ejecutables. La plantilla añade publish_shape_points después de service_dates. No necesita un horizonte de fechas.
+
+La [guía de despliegue](../../../docs/silver_execution.md#despliegue-de-shape_points_v1) contiene parámetros y resultados esperados. El [contrato](../../../docs/contracts/shape_points.md) define advertencias y bloqueos. La primera ejecución en Workspace sigue pendiente.

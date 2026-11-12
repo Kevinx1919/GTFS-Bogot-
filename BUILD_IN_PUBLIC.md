@@ -416,6 +416,30 @@ La igualdad de filas y claves comprueba la unicidad en el ámbito consultado. No
 
 Ahora continúo con shape_points, orden 5 del plan: puntos que dibujan un trazado, antes de validar sus referencias desde trips. Como un dibujo que se forma al unir puntos numerados, la secuencia ordena la forma, pero no representa paradas ni posiciones observadas de un bus. El siguiente incremento empieza por perfilado y contrato; no cambié Raw, Bronze, el pipeline ni Archify en este cierre.
 
+### Hito 29 — Perfil de puntos de trazado antes de Silver
+
+**Fecha:** 11 de noviembre de 2026. Después del cierre de service_dates y del plan 4c8f1f1 consulté shapes Bronze de ambos snapshots mediante Genie, solo en lectura. Recuperé 55 filas estructuradas de las nueve consultas definitivas; extendí la de estructura para revisar coordenadas distintas y conservé solo su versión final en el notebook.
+
+Encontré 909.878 puntos y 676 trazados en 2025, y 926.501 puntos y 1.045 trazados en 2026. Los controles ejecutados no encontraron ausencias, conflictos de clave, colisiones del cast ni errores numéricos o de procedencia. Ambos archivos publican cuatro campos; shape_dist_traveled está ausente. Ningún trazado tiene menos de cuatro coordenadas distintas.
+
+El hallazgo está en la geometría y su interpretación: hay 439 / 30.208 segmentos consecutivos de coordenada igual y cuatro trazados de 2025 sin viajes referenciados. No son por eso filas idénticas que deba borrar. El segmento máximo, 1.716,316 metros rectos, se relaciona con C_1 y tipo 6 de transporte por cable; otro de bus de 2026 queda anotado para revisión sin imponer un umbral arbitrario. Los inicios de secuencia difieren: no todos los trazados de 2025 empiezan en cero.
+
+Dejé el [notebook 14](databricks/notebooks/silver/14_profile_gtfs_shape_points.ipynb), el [informe](docs/shape_points_profile_2025_2026.md) y una [propuesta de contrato](docs/contracts/shape_points.md). Todavía no implementé el procesador, no ejecuté pruebas de transformación de shape_points ni publiqué su Silver. La verificación de este incremento corresponde a consultas de lectura, reconciliaciones, enlaces y estructura del cuaderno; no a la suite Spark/Delta del incremento anterior. Archify y el Job no cambian.
+
+### Hito 30 — Implementar shape_points con puntos y advertencias intactos
+
+**Fecha:** 11 de noviembre de 2026. Después de revisar el perfil implementé shape_points_v1 con Spark nativo. El alias conserva shapes.txt y bronze_gtfs_shapes. La salida usa silver_gtfs_shape_points. El procesador tipa secuencia int, coordenadas double e ID string. La distancia ausente queda null con evidencia del encabezado.
+
+Conservo puntos consecutivos de igual posición y genero advertencias. Consolido solo copias idénticas. Detecto conflictos antes del cast y colisiones después del cast. La cuarentena conserva secuencias fuente como texto. Los errores obligatorios bloquean el snapshot completo.
+
+Las ventanas geométricas usan puntos válidos y únicos. Así las copias no generan segmentos falsos ni multiplican el join. Compruebo crecimiento de distancia entre valores informados, sin rellenar ausencias. Los trazados sin referencias permanecen en el catálogo. No convierto los segmentos largos en errores automáticos.
+
+Reutilicé notebook 10 y el escritor. La plantilla añade publish_shape_points como séptima tarea serial. Las seis tareas previas conservan su definición. Los dos bloques ejecutables del notebook permanecen intactos. No introduje dependencias nuevas ni otro notebook de publicación.
+
+Pasaron **36 pruebas seleccionadas en 491,759 segundos, sin omisiones**. Incluyen trece nuevas y regresiones de despacho, configuración, service_dates y lector versionado. Tres integraciones Delta comprobaron publicación real local. La nueva cubre dos snapshots, reintento, conservación del histórico y cuarentena sin alterar Silver. La [guía](docs/silver_execution.md#verificación-local-de-shape_points) conserva el alcance. No repetí los 126 casos de la suite completa.
+
+Reutilicé el entorno offline existente. No modifiqué Raw, Bronze, archivos recuperados ni Archify. La primera publicación de shape_points en Databricks sigue pendiente. El [contrato](docs/contracts/shape_points.md) y los [pasos de despliegue](docs/silver_execution.md#despliegue-de-shape_points_v1) separan implementación y ejecución real.
+
 ## Qué no publicar
 
 - Access tokens, secretos, archivos `.env`, cookies, hostnames privados o identificadores de cuenta.

@@ -7,6 +7,8 @@ from datetime import date
 import re
 from typing import Any
 
+SOURCE_ENTITY_NAMES = {"shape_points": "shapes"}
+
 TECHNICAL_FIELDS = (
     "source_feed_version", "source_sha256", "source_file_path", "bronze_loaded_at_utc",
 )
@@ -27,8 +29,12 @@ class SnapshotSpec:
         date.fromisoformat(self.feed_version)
         if not re.fullmatch(r"[0-9a-f]{64}", self.sha256):
             raise ValueError("snapshot_sha256 debe contener 64 caracteres hexadecimales minúsculos.")
-        if not self.source_path or not self.source_path.endswith(f"/{self.entity}.txt"):
-            raise ValueError(f"source_path debe identificar el archivo {self.entity}.txt seleccionado.")
+        if not self.source_path or not self.source_path.endswith(f"/{self.source_entity}.txt"):
+            raise ValueError(f"source_path debe identificar el archivo {self.source_entity}.txt seleccionado.")
+
+    @property
+    def source_entity(self) -> str:
+        return SOURCE_ENTITY_NAMES.get(self.entity, self.entity)
 
 
 @dataclass
