@@ -232,6 +232,12 @@ Antes de implementar o publicar la derivación fijo el período que voy a calcul
 
 Después de service_dates el plan continúa con shape_points, trips, frequencies y stop_times. Todavía no paso a Gold ni expando horarios por todas las fechas.
 
+## Siguiente incremento: shape_points
+
+Después de comprobar service_dates continúo con el orden 5. El [plan de shape_points](shape_points_plan.md) define el grano de punto de trazado, la clave S + shape_id + shape_pt_sequence, el mapeo desde shapes.txt/Bronze y las preguntas de perfilado. Los tipos y la política de calidad quedan como propuestas hasta revisar los datos de ambos snapshots.
+
+Primero revisaré presencia, nulos, vacíos, conversiones, copias y conflictos, coordenadas, secuencias y distancia opcional. Después cerraré el contrato y reutilizaré pipeline/notebook 10 con pruebas e idempotencia. No añadí todavía un procesador ni una tarea al Job. La secuencia puede tener saltos válidos; un trazado no es una parada ni una posición observada.
+
 ## Definición de negocio obligatoria para cada futura tabla Gold
 
 Antes de implementar una tabla Gold completaré una ficha breve con estas seis respuestas. La conservaré junto a su SQL y la revisaré cuando cambien las reglas del indicador.
