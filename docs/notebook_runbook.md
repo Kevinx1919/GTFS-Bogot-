@@ -440,7 +440,7 @@ Los bloques 5–9 filtran las parejas explícitas. Sus resultados no constituyen
 El [perfil](frequencies_profile_2025_2026.md) conserva rangos, contexto y límites.
 La [contrato implementado](contracts/frequencies.md) define los tipos y controles implementados.
 El cuaderno no se añade al Job. Notebook 10 conserva la responsabilidad de ejecutar el pipeline.
-Después del perfil añadí procesador, pruebas y tarea de frequencies. La primera publicación sigue pendiente. El planificador sigue pendiente 8b.
+Después del perfil añadí procesador, pruebas y tarea de frequencies. El despliegue funcional ya está confirmado. El planificador sigue pendiente 8b.
 
 
 ## Notebook 10 — Entrada de frequencies_v1 — 12 de noviembre de 2026
@@ -455,4 +455,4 @@ Mantengo los dos bloques ejecutables. No añado widgets, instalaciones ni otro n
 La plantilla añade publish_frequencies después de publish_trips. El For each usa frequencies_work_items y concurrency=1.
 Process_frequencies_snapshot ejecuta notebook 10 con entidad, versión y hash.
 No necesita horizonte de fechas. El notebook 16 continúa como perfil de lectura independiente.
-La [guía](silver_execution.md#despliegue-de-frequencies_v1) separa código local y publicación real pendiente.
+La [guía](silver_execution.md#despliegue-de-frequencies_v1) separa código local y despliegue funcional confirmado.

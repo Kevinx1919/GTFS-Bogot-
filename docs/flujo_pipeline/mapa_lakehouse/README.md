@@ -1,37 +1,49 @@
 # Mi mapa del lakehouse
 
-[Abro el mapa interactivo del lakehouse](mapa_lakehouse.html).
+[Abro el mapa interactivo](mapa_lakehouse.html).
 
-## Qué me ayuda a entender
+Actualicé esta vista el 12 de noviembre de 2026.
+Sigo el dato desde la fuente pública hasta Silver y distingo archivos, transformaciones y tablas.
 
-Sigo el dato desde el ZIP publicado hasta las tablas Silver. Distingo los lugares donde guardo archivos de los procesos que los leen y de las tablas que producen:
+| Zona | Qué conservo |
+| --- | --- |
+| Raw | ZIP original y manifiestos en el Volume raw_gtfs. |
+| Staging | TXT extraídos en el Volume staging_gtfs. |
+| Bronze | Filas fuente y procedencia en tablas bronze_gtfs_*. |
+| Silver fuente | Ocho entidades tipadas y validadas desde Bronze. |
+| Silver derivada | Service_dates: días activos calculados desde calendarios Silver, solamente para 2026. |
+| Gold y Power BI | Métricas y consumo analítico pendientes. |
 
-| Zona | Qué conservo | Cómo la reconozco |
-| --- | --- | --- |
-| Raw | ZIP original y manifiestos de captura | Archivos en el Volume `raw_gtfs`. |
-| Staging | TXT extraídos del ZIP | Archivos en el Volume `staging_gtfs`. |
-| Bronze | Filas fuente y columnas de procedencia | Tablas Delta `bronze_gtfs_*`. |
-| Silver | Filas validadas y tipadas de agency y routes | Tablas Delta `silver_gtfs_*`. |
-| Gold y Power BI | Indicadores y consumo analítico por construir | Etapas marcadas como futuras. |
+Mantengo Bronze y Silver en workspace.gtfs_bogota.
+Sus responsabilidades y prefijos distinguen las capas. Un Volume almacena archivos; no equivale a una tabla Delta.
 
-Mantengo Bronze y Silver dentro de `workspace.gtfs_bogota`. La capa depende de su responsabilidad y sus reglas; compartir schema no las convierte en una sola capa. Es como tener documentos recibidos y documentos revisados en el mismo archivo, con una clasificación clara. Esta comparación es explicativa.
+## Qué entradas necesita Silver
 
-## Un detalle del recorrido
+Las entidades fuente reciben filas Bronze y el encabezado TXT del mismo snapshot.
+El encabezado distingue una columna ausente de una columna publicada con valores nulos.
+Las dependencias Silver se validan según el contrato de cada entidad.
 
-El pipeline Silver recibe las filas de Bronze y lee el encabezado del TXT del mismo snapshot en Staging. El encabezado me permite distinguir una columna ausente en el archivo de una columna publicada con valores nulos. Por eso el mapa incluye las dos entradas: `Snapshot` y `Encabezado TXT`.
+Service_dates recibe calendarios Silver y un horizonte explícito.
+El mapa muestra ambas entradas. El año del feed no sustituye una decisión de horizonte.
 
-Solo publico Silver si la validación permite hacerlo. La auditoría y la cuarentena se resumen en las notas del mapa; abro el [recorrido del Job](../job_silver/README.md) para ver sus estados y errores. Uso Genie como ayuda de exploración de lectura; las reglas y escrituras pertenecen al pipeline versionado.
+Las nueve entidades tienen despliegue funcional confirmado durante el desarrollo.
+El [cierre de frequencies](../../silver_execution.md#cierre-de-la-ejecución-de-frequencies) registra la última confirmación.
+Los conteos de perfil, las pruebas locales y las confirmaciones de publicación conservan evidencias separadas.
 
-## Cómo lo exploro
+## Qué no interpreto como operación real
 
-Puedo seleccionar elementos para consultar sus referencias, usar las vistas de archivos, tablas y futuro, y acercar el recorrido que necesite. Los enlaces al código apuntan a una revisión fija, de modo que puedo comparar una explicación con el código que la respalda.
+El GTFS estático describe oferta planificada.
+Las ventanas de frequencies no cuentan vehículos observados ni garantizan salidas exactas.
+Gold y Power BI siguen pendientes. El siguiente contrato Silver es stop_times.
+La selección automática de snapshots continúa pendiente 8b.
 
-El flujo se limita al GTFS estático. Gold, su agregación y Power BI son un objetivo de diseño; no representan salidas implementadas. Tampoco interpreto estos datos como evidencia de puntualidad, demanda u operación real.
+Uso Genie para explorar en lectura. El pipeline versionado ejecuta transformaciones y escrituras.
+El mapa no consulta Databricks ni representa telemetría en vivo.
 
 ## Fuente y comprobación
 
-La fuente editable es [mapa_lakehouse.dataflow.json](mapa_lakehouse.dataflow.json). El mapa está respaldado por el código del commit `598bc0de6b65b25ffa2ef13b628ab0966fd41dcd`.
-
-Comprobé estructura, referencias y funcionamiento del HTML en navegador. Revisé capturas en claro y oscuro a 1440×900 y 2048×1320, incluida la conexión del encabezado que rodea el flujo principal. El [resumen público de verificación](verificacion.json) conserva el alcance y los hashes. Estas comprobaciones son de documentación; no ejecutan la ingesta ni consultan Databricks.
-
-Genero fuera de OneDrive y copio el HTML comprobado sin cambiar sus bytes. Los recibos de Archify y capturas detalladas permanecen en el entorno local, fuera de Git; el resumen identifica la copia final.
+La [fuente editable](mapa_lakehouse.dataflow.json) enlaza el código de 34e3769e1d6eaebca950161f4f47f0bf38f7bc40.
+La vista pasó controles automáticos de estructura, referencias, HTML y navegador.
+El [resumen público](verificacion.json) conserva hashes y medidas de esta revisión.
+No hice una nueva revisión de capturas. El aviso sobre la ruta del encabezado queda registrado.
+Genero fuera de OneDrive y copio el HTML comprobado sin cambiar sus bytes.

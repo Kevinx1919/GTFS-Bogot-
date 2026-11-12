@@ -1,7 +1,7 @@
 # Mi contrato Silver frequencies_v1
 
 **Fecha:** 12 de noviembre de 2026. **Estado:** implementación local comprobada. Pasaron 42 pruebas seleccionadas sin omisiones.
-Implementé el procesador y añadí la novena tarea a la plantilla. La primera publicación en Databricks sigue pendiente.
+Implementé el procesador y añadí la novena tarea a la plantilla. El despliegue funcional quedó confirmado el 12 de noviembre de 2026.
 El [perfil](../frequencies_profile_2025_2026.md) conserva las comprobaciones y sus límites.
 
 ## Qué representa una fila

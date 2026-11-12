@@ -531,6 +531,17 @@ El [contrato](docs/contracts/frequencies.md) y la [guía](docs/silver_execution.
 La primera publicación real sigue pendiente. Stop_times continuará después de comprobar frequencies.
 Archify conserva su revisión anterior. El planificador automático sigue pendiente 8b.
 
+### Hito 37 — Frequencies publicada y actualización de la documentación visual
+
+**Fecha:** 12 de noviembre de 2026. Tras sincronizar 34e3769 ejecuté frequencies y confirmé la tabla Silver publicada.
+Cierro su despliegue funcional. Las nueve entidades implementadas ya funcionan en Workspace.
+El [cierre](docs/silver_execution.md#cierre-de-la-ejecución-de-frequencies) distingue esa confirmación de los conteos del perfil.
+
+Actualizo las cinco vistas interactivas de Archify con el código de 34e3769.
+El recorrido incorpora nueve tareas. El modelo incluye todas las columnas y diferencia tablas físicas de catálogos lógicos.
+Mantengo service_dates limitada a 2026. Identifico stop_times, Gold y el planificador como pendientes.
+Los diagramas documentan código; no son monitoreo en vivo ni otra ejecución del Job.
+
 ## Qué no publicar
 
 - Access tokens, secretos, archivos `.env`, cookies, hostnames privados o identificadores de cuenta.

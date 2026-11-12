@@ -162,7 +162,7 @@ El [contrato stops_v1](docs/contracts/stops.md) ya convierte coordenadas a doubl
 
 Cada futura tabla Gold completará seis respuestas de negocio: pregunta, grano, ubicaciones, ausencias, claves y limitaciones que debe mostrar Power BI. Dejé la [ficha obligatoria en el plan](docs/silver_design.md#definición-de-negocio-obligatoria-para-cada-futura-tabla-gold).
 
-El [siguiente bloque del plan](docs/silver_design.md#siguiente-bloque-calendar-y-calendar_dates) es calendar y calendar_dates: ya perfilé el patrón semanal y las excepciones e implementé sus procesadores localmente. Ya ejecuté sus tareas y comprobé las tablas y sus datos en Databricks. Service_dates ya está publicada y consultada para 2026; shape_points y trips ya funcionan. La siguiente entidad del plan es frequencies.
+El [siguiente bloque del plan](docs/silver_design.md#siguiente-bloque-calendar-y-calendar_dates) es calendar y calendar_dates: ya perfilé el patrón semanal y las excepciones e implementé sus procesadores localmente. Ya ejecuté sus tareas y comprobé las tablas y sus datos en Databricks. Service_dates ya está publicada y consultada para 2026; shape_points y trips ya funcionan. Frequencies ya está publicada. La siguiente entidad del plan es stop_times.
 
 ### Calendarios: perfil inicial y alcance temporal
 
@@ -198,7 +198,7 @@ Implementé shape_points_v1 con Spark nativo. Conserva puntos repetidos y genera
 La implementación de shape_points pasó 36 pruebas seleccionadas sin omisiones. Incluyen trece nuevas y tres integraciones Delta en total. El flujo de shape_points ya funciona en Databricks. El [cierre](docs/silver_execution.md#cierre-de-la-ejecución-de-shape_points) registra la evidencia disponible.
 
 
-Trips ya funciona. El siguiente paso es frequencies, antes de stop_times. Registré la [selección automática de snapshots](docs/silver_design.md#automatización-pendiente-selección-de-snapshots-silver) como pendiente 8b. Las listas actuales siguen siendo manuales. Una versión nueva todavía requiere configurar su trabajo.
+Trips ya funciona. Frequencies ya está publicada. El siguiente paso es stop_times. Registré la [selección automática de snapshots](docs/silver_design.md#automatización-pendiente-selección-de-snapshots-silver) como pendiente 8b. Las listas actuales siguen siendo manuales. Una versión nueva todavía requiere configurar su trabajo.
 
 
 ### Trips: perfil, implementación y despliegue funcional
@@ -221,9 +221,9 @@ Los controles ejecutados no encontraron errores. Todas las ventanas corresponden
 
 Preparé la [contrato implementado](docs/contracts/frequencies.md), con horas fuente, segundos de servicio e intervalos tipados.
 Exact_times no está publicado. Propongo conservar su ausencia y derivar explícitamente la interpretación predeterminada del estándar.
-Implementé el procesador y añadí su tarea a la plantilla. La primera publicación en Databricks sigue pendiente. Reutilicé notebook 10 y el escritor común. Las ocho tareas anteriores conservan su configuración.
+Implementé el procesador y añadí su tarea a la plantilla. El despliegue funcional de frequencies ya está confirmado. Reutilicé notebook 10 y el escritor común. Las ocho tareas anteriores conservan su configuración.
 
 La [guía de despliegue](docs/silver_execution.md#despliegue-de-frequencies_v1) contiene los parámetros de la novena tarea.
 
 La implementación de frequencies pasó 42 pruebas seleccionadas sin omisiones, incluidas trece nuevas y dos integraciones Delta en total.
-La publicación en Workspace sigue pendiente. Stop_times será el siguiente incremento después de comprobar frequencies.
+Frequencies ya está publicada en Workspace. El siguiente incremento es stop_times, orden 8 del plan.

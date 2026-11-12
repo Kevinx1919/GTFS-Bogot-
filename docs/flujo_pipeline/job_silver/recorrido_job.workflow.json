@@ -2,67 +2,94 @@
   "schema_version": 2,
   "diagram_type": "workflow",
   "meta": {
+    "title": "Mi Job Silver: nueve tareas por snapshot",
     "locale": "es",
     "quality_profile": "showcase",
     "repository": {
       "url": "https://github.com/Kevinx1919/GTFS-Bogot-.git",
-      "revision": "598bc0de6b65b25ffa2ef13b628ab0966fd41dcd"
+      "revision": "34e3769e1d6eaebca950161f4f47f0bf38f7bc40"
     },
-    "title": "Mi Job Silver: primero agency, después routes",
     "output": "docs/flujo_pipeline/job_silver/recorrido_job.html",
     "views": [
       {
-        "id": "camino_correcto",
-        "label": "Publicación correcta",
+        "id": "completo",
+        "label": "Orden completo",
         "focus": [
           "iniciar",
           "agency",
           "routes",
-          "terminado"
+          "stops",
+          "calendar",
+          "calendar_dates",
+          "service_dates",
+          "shape_points",
+          "trips",
+          "frequencies",
+          "fin"
         ],
-        "note": "Cada etapa termina antes de habilitar la siguiente."
+        "note": "Orden serial del Job; no todas las dependencias representan un join."
       },
       {
-        "id": "falla_agency",
-        "label": "Si falla agency",
+        "id": "calendarios",
+        "label": "Calendarios y fechas",
         "focus": [
-          "agency",
-          "error_agency",
+          "calendar",
+          "calendar_dates",
+          "service_dates"
+        ],
+        "note": "Las dos fuentes tienen ambos snapshots. Service_dates calcula solo 2026."
+      },
+      {
+        "id": "viajes",
+        "label": "Trazados y viajes",
+        "focus": [
+          "shape_points",
+          "trips",
+          "frequencies"
+        ],
+        "note": "Cada tarea llama al notebook 10 con sus parámetros."
+      },
+      {
+        "id": "fallo",
+        "label": "Ejemplo: falla trips",
+        "focus": [
+          "trips",
+          "fallo_trips",
           "bloqueada",
           "reparar"
         ],
-        "note": "Routes queda bloqueada si agency no termina correctamente."
-      },
-      {
-        "id": "falla_routes",
-        "label": "Si falla routes",
-        "focus": [
-          "routes",
-          "error_routes",
-          "reparar"
-        ],
-        "note": "Reviso el intento y reparo las tareas que no terminaron."
+        "note": "Frequencies espera si falla trips. La misma política de reintentos aplica a las demás etapas."
       }
-    ],
-    "legend": {
-      "entries": {
-        "frontend": {
-          "label": "Acción manual"
-        },
-        "backend": {
-          "label": "Pipeline y estados"
-        }
-      }
-    }
+    ]
   },
   "lanes": [
     {
-      "id": "orden",
-      "label": "Orden del Job"
+      "id": "manual",
+      "label": "Inicio manual"
     },
     {
-      "id": "incidencias",
-      "label": "Errores y recuperación",
+      "id": "referencias",
+      "label": "Agencias y rutas"
+    },
+    {
+      "id": "ubicaciones",
+      "label": "Ubicaciones y patrón"
+    },
+    {
+      "id": "excepciones",
+      "label": "Excepciones y días activos"
+    },
+    {
+      "id": "viajes",
+      "label": "Trazados y viajes"
+    },
+    {
+      "id": "cierre",
+      "label": "Frecuencias y cierre"
+    },
+    {
+      "id": "errores",
+      "label": "Ejemplo de fallo",
       "variant": "exception"
     }
   ],
@@ -70,177 +97,300 @@
     "iniciar",
     "agency",
     "routes",
-    "terminado"
+    "stops",
+    "calendar",
+    "calendar_dates",
+    "service_dates",
+    "shape_points",
+    "trips",
+    "frequencies",
+    "fin"
   ],
   "nodes": [
     {
       "id": "iniciar",
-      "lane": "orden",
+      "lane": "manual",
       "col": 0,
       "type": "frontend",
       "label": "Run now",
       "sublabel": "Inicio manual",
       "sources": [
         {
-          "path": "docs/silver_execution.md",
-          "line": 48,
-          "end_line": 50,
-          "label": "Job manual documentado"
+          "path": "databricks/gtfs_silver/job_config.py",
+          "line": 28,
+          "end_line": 40,
+          "label": "Job sin calendario automático"
         }
-      ],
-      "icon": "start"
+      ]
     },
     {
       "id": "agency",
-      "lane": "orden",
-      "col": 1,
+      "lane": "referencias",
+      "col": 0,
       "type": "backend",
-      "label": "Procesar agency",
-      "sublabel": "For each · 2025 y 2026",
+      "label": "agency",
+      "sublabel": "2025 y 2026 · For each",
       "sources": [
         {
           "path": "databricks/gtfs_silver/job_config.py",
-          "line": 10,
-          "end_line": 15,
-          "label": "Snapshots configurados"
+          "line": 45,
+          "end_line": 66,
+          "label": "Notebook y política compartidos"
         },
         {
           "path": "databricks/gtfs_silver/job_config.py",
-          "line": 45,
-          "end_line": 67,
-          "label": "Notebook y reintento"
+          "line": 75,
+          "end_line": 109,
+          "label": "Entidad, orden y parámetros"
         }
       ]
     },
     {
       "id": "routes",
-      "lane": "orden",
-      "col": 3,
+      "lane": "referencias",
+      "col": 1,
       "type": "backend",
-      "label": "Procesar routes",
-      "sublabel": "For each · 2025 y 2026",
+      "label": "routes",
+      "sublabel": "2025 y 2026 · For each",
       "sources": [
         {
           "path": "databricks/gtfs_silver/job_config.py",
-          "line": 72,
-          "end_line": 81,
-          "label": "Dependencia de agency"
+          "line": 45,
+          "end_line": 66,
+          "label": "Notebook y política compartidos"
         },
         {
-          "path": "databricks/gtfs_silver/pipeline.py",
-          "line": 58,
-          "end_line": 65,
-          "label": "Cruce con agency Silver"
+          "path": "databricks/gtfs_silver/job_config.py",
+          "line": 75,
+          "end_line": 109,
+          "label": "Entidad, orden y parámetros"
         }
       ]
     },
     {
-      "id": "terminado",
-      "lane": "orden",
+      "id": "stops",
+      "lane": "ubicaciones",
+      "col": 1,
+      "type": "backend",
+      "label": "stops",
+      "sublabel": "2025 y 2026 · For each",
+      "sources": [
+        {
+          "path": "databricks/gtfs_silver/job_config.py",
+          "line": 45,
+          "end_line": 66,
+          "label": "Notebook y política compartidos"
+        },
+        {
+          "path": "databricks/gtfs_silver/job_config.py",
+          "line": 75,
+          "end_line": 109,
+          "label": "Entidad, orden y parámetros"
+        }
+      ]
+    },
+    {
+      "id": "calendar",
+      "lane": "ubicaciones",
+      "col": 2,
+      "type": "backend",
+      "label": "calendar",
+      "sublabel": "2025 y 2026 · For each",
+      "sources": [
+        {
+          "path": "databricks/gtfs_silver/job_config.py",
+          "line": 45,
+          "end_line": 66,
+          "label": "Notebook y política compartidos"
+        },
+        {
+          "path": "databricks/gtfs_silver/job_config.py",
+          "line": 75,
+          "end_line": 109,
+          "label": "Entidad, orden y parámetros"
+        }
+      ]
+    },
+    {
+      "id": "calendar_dates",
+      "lane": "excepciones",
+      "col": 2,
+      "type": "backend",
+      "label": "calendar_dates",
+      "sublabel": "2025 y 2026 · For each",
+      "sources": [
+        {
+          "path": "databricks/gtfs_silver/job_config.py",
+          "line": 45,
+          "end_line": 66,
+          "label": "Notebook y política compartidos"
+        },
+        {
+          "path": "databricks/gtfs_silver/job_config.py",
+          "line": 75,
+          "end_line": 109,
+          "label": "Entidad, orden y parámetros"
+        }
+      ]
+    },
+    {
+      "id": "service_dates",
+      "lane": "excepciones",
+      "col": 3,
+      "type": "backend",
+      "label": "service_dates",
+      "sublabel": "2026 · ventana explícita",
+      "sources": [
+        {
+          "path": "databricks/gtfs_silver/job_config.py",
+          "line": 45,
+          "end_line": 66,
+          "label": "Notebook y política compartidos"
+        },
+        {
+          "path": "databricks/gtfs_silver/job_config.py",
+          "line": 75,
+          "end_line": 109,
+          "label": "Entidad, orden y parámetros"
+        }
+      ]
+    },
+    {
+      "id": "shape_points",
+      "lane": "viajes",
+      "col": 3,
+      "type": "backend",
+      "label": "shape_points",
+      "sublabel": "2025 y 2026 · For each",
+      "sources": [
+        {
+          "path": "databricks/gtfs_silver/job_config.py",
+          "line": 45,
+          "end_line": 66,
+          "label": "Notebook y política compartidos"
+        },
+        {
+          "path": "databricks/gtfs_silver/job_config.py",
+          "line": 75,
+          "end_line": 109,
+          "label": "Entidad, orden y parámetros"
+        }
+      ]
+    },
+    {
+      "id": "trips",
+      "lane": "viajes",
+      "col": 4,
+      "type": "backend",
+      "label": "trips",
+      "sublabel": "2025 y 2026 · For each",
+      "sources": [
+        {
+          "path": "databricks/gtfs_silver/job_config.py",
+          "line": 45,
+          "end_line": 66,
+          "label": "Notebook y política compartidos"
+        },
+        {
+          "path": "databricks/gtfs_silver/job_config.py",
+          "line": 75,
+          "end_line": 109,
+          "label": "Entidad, orden y parámetros"
+        }
+      ]
+    },
+    {
+      "id": "frequencies",
+      "lane": "cierre",
+      "col": 4,
+      "type": "backend",
+      "label": "frequencies",
+      "sublabel": "2025 y 2026 · For each",
+      "sources": [
+        {
+          "path": "databricks/gtfs_silver/job_config.py",
+          "line": 45,
+          "end_line": 66,
+          "label": "Notebook y política compartidos"
+        },
+        {
+          "path": "databricks/gtfs_silver/job_config.py",
+          "line": 75,
+          "end_line": 109,
+          "label": "Entidad, orden y parámetros"
+        }
+      ]
+    },
+    {
+      "id": "fin",
+      "lane": "cierre",
       "col": 5,
       "type": "backend",
       "label": "Job completado",
-      "sublabel": "Ambas etapas correctas",
+      "sublabel": "Etapas seleccionadas correctas",
       "sources": [
         {
           "path": "databricks/gtfs_silver/job_config.py",
-          "line": 72,
-          "end_line": 81,
-          "label": "Etapas conectadas"
-        },
-        {
-          "path": "databricks/gtfs_silver/publication.py",
-          "line": 224,
-          "end_line": 231,
-          "label": "Publicación verificada"
+          "line": 75,
+          "end_line": 109,
+          "label": "Dependencias entre tareas"
         }
-      ],
-      "icon": "success"
+      ]
     },
     {
-      "id": "error_agency",
-      "lane": "incidencias",
-      "col": 1,
+      "id": "fallo_trips",
+      "lane": "errores",
+      "col": 3,
       "type": "backend",
-      "label": "Error en agency",
-      "sublabel": "Tras agotar reintentos",
+      "label": "Trips falla",
+      "sublabel": "Agota 1 reintento",
+      "icon": "failure",
       "sources": [
         {
           "path": "databricks/gtfs_silver/job_config.py",
           "line": 65,
           "end_line": 66,
-          "label": "Un reintento configurado"
-        },
-        {
-          "path": "databricks/gtfs_silver/job_config.py",
-          "line": 78,
-          "end_line": 78,
-          "label": "Dependencia entre etapas"
+          "label": "Reintento mínimo de 60 segundos"
         }
-      ],
-      "icon": "failure"
+      ]
     },
     {
       "id": "bloqueada",
-      "lane": "incidencias",
-      "col": 3,
-      "type": "backend",
-      "label": "Routes bloqueada",
-      "sublabel": "Falla su dependencia",
-      "sources": [
-        {
-          "path": "databricks/gtfs_silver/job_config.py",
-          "line": 72,
-          "end_line": 81,
-          "label": "Routes espera a agency"
-        }
-      ],
-      "icon": "waiting"
-    },
-    {
-      "id": "error_routes",
-      "lane": "incidencias",
+      "lane": "errores",
       "col": 4,
       "type": "backend",
-      "label": "Error en routes",
-      "sublabel": "Tras agotar reintentos",
+      "label": "Frequencies espera",
+      "sublabel": "Dependencia sin éxito",
+      "icon": "waiting",
       "sources": [
         {
           "path": "databricks/gtfs_silver/job_config.py",
-          "line": 65,
-          "end_line": 66,
-          "label": "Política del notebook"
-        },
-        {
-          "path": "databricks/gtfs_silver/job_config.py",
-          "line": 76,
-          "end_line": 80,
-          "label": "Routes hereda la política"
+          "line": 98,
+          "end_line": 109,
+          "label": "Frequencies depende de trips"
         }
-      ],
-      "icon": "failure"
+      ]
     },
     {
       "id": "reparar",
-      "lane": "incidencias",
+      "lane": "errores",
       "col": 5,
       "type": "frontend",
-      "label": "Reparación manual",
-      "sublabel": "Reviso y corrijo la causa",
+      "label": "Revisar y reparar",
+      "sublabel": "Logs, causa y Repair run",
       "sources": [
         {
           "path": "docs/silver_execution.md",
-          "line": 153,
+          "line": 145,
           "end_line": 153,
-          "label": "Pull y Repair run"
+          "label": "Recuperación manual"
         }
-      ],
-      "icon": "active"
+      ]
     }
   ],
   "edges": [
     {
-      "id": "inicio_agency",
+      "id": "iniciar_agency",
       "from": "iniciar",
       "to": "agency",
       "role": "main",
@@ -251,55 +401,122 @@
       "from": "agency",
       "to": "routes",
       "role": "main",
-      "variant": "emphasis",
-      "label": "All succeeded"
+      "variant": "emphasis"
     },
     {
-      "id": "routes_fin",
+      "id": "routes_stops",
       "from": "routes",
-      "to": "terminado",
+      "to": "stops",
       "role": "main",
-      "variant": "emphasis",
-      "label": "All succeeded"
+      "variant": "emphasis"
     },
     {
-      "id": "agency_error",
-      "from": "agency",
-      "to": "error_agency",
+      "id": "stops_calendar",
+      "from": "stops",
+      "to": "calendar",
+      "role": "main",
+      "variant": "emphasis"
+    },
+    {
+      "id": "calendar_calendar_dates",
+      "from": "calendar",
+      "to": "calendar_dates",
+      "role": "main",
+      "variant": "emphasis"
+    },
+    {
+      "id": "calendar_dates_service_dates",
+      "from": "calendar_dates",
+      "to": "service_dates",
+      "role": "main",
+      "variant": "emphasis"
+    },
+    {
+      "id": "service_dates_shape_points",
+      "from": "service_dates",
+      "to": "shape_points",
+      "role": "main",
+      "variant": "emphasis"
+    },
+    {
+      "id": "shape_points_trips",
+      "from": "shape_points",
+      "to": "trips",
+      "role": "main",
+      "variant": "emphasis"
+    },
+    {
+      "id": "trips_frequencies",
+      "from": "trips",
+      "to": "frequencies",
+      "role": "main",
+      "variant": "emphasis"
+    },
+    {
+      "id": "frequencies_fin",
+      "from": "frequencies",
+      "to": "fin",
+      "role": "main",
+      "variant": "emphasis"
+    },
+    {
+      "id": "trips_falla",
+      "from": "trips",
+      "to": "fallo_trips",
+      "label": "Fallo final",
       "role": "error",
-      "variant": "security",
-      "label": "Fallo final"
+      "variant": "security"
     },
     {
-      "id": "agency_bloquea",
-      "from": "error_agency",
+      "id": "espera",
+      "from": "fallo_trips",
       "to": "bloqueada",
+      "label": "Bloquea",
       "role": "error",
-      "variant": "security",
-      "label": "Bloquea"
+      "variant": "security"
     },
     {
-      "id": "bloqueada_reparar",
+      "id": "revisa",
       "from": "bloqueada",
       "to": "reparar",
-      "role": "branch",
-      "variant": "default",
-      "label": "Revisar"
+      "role": "branch"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "Cómo leo el orden",
+      "items": [
+        "Sigo las flechas hacia abajo y a la derecha. Cada bloque representa una tarea del Job.",
+        "Las nueve tareas reutilizan notebook 10. Cambian entidad, versión y hash.",
+        "Cada For each usa concurrencia 1. La serialización protege también la auditoría compartida."
+      ]
     },
     {
-      "id": "routes_error",
-      "from": "routes",
-      "to": "error_routes",
-      "role": "error",
-      "variant": "security",
-      "label": "Fallo final"
+      "dot": "emerald",
+      "title": "Dependencias que sí validan datos",
+      "items": [
+        "Routes valida agency. Calendar_dates valida calendar cuando está publicado.",
+        "Trips valida rutas, servicios y trazados del mismo snapshot. Frequencies valida trips.",
+        "Stops valida su jerarquía interna; esperar a routes no significa que consulte routes."
+      ]
     },
     {
-      "id": "routes_reparar",
-      "from": "error_routes",
-      "to": "reparar",
-      "role": "branch",
-      "variant": "default"
+      "dot": "amber",
+      "title": "Selección y alcance",
+      "items": [
+        "Las listas de snapshots son manuales. El planificador automático sigue pendiente.",
+        "Ocho tareas fuente contemplan 2025 y 2026. Service_dates contempla solamente el horizonte 2026.",
+        "La rama de error ejemplifica trips; las otras tareas conservan la misma política de un reintento."
+      ]
+    },
+    {
+      "dot": "violet",
+      "title": "Estado comprobado y límites",
+      "items": [
+        "Las nueve entidades tienen cierre funcional durante el desarrollo. Las animaciones no representan una ejecución real.",
+        "Los enlaces fijan el código de la plantilla. Los cambios de configuración en la interfaz necesitan su propia revisión."
+      ]
     }
   ],
   "semanticChecks": {
@@ -307,47 +524,18 @@
       "iniciar"
     ],
     "allowedTerminals": [
-      "terminado",
+      "fin",
       "reparar"
     ],
-    "requiredEdges": [
+    "requiredPaths": [
       {
-        "from": "agency",
-        "to": "routes"
+        "from": "iniciar",
+        "to": "fin"
       },
       {
-        "from": "error_agency",
-        "to": "bloqueada"
+        "from": "trips",
+        "to": "reparar"
       }
     ]
-  },
-  "cards": [
-    {
-      "dot": "cyan",
-      "title": "Cómo recorro este mapa",
-      "items": [
-        "Sigo la fila superior para entender el orden. Abro una etapa para ver sus referencias al código.",
-        "Ambos For each llaman al mismo notebook 10. Cambian entity, feed_version y snapshot_sha256.",
-        "La vista de una iteración explica qué ocurre dentro de cada llamada."
-      ]
-    },
-    {
-      "dot": "emerald",
-      "title": "Qué se ejecuta y cuándo",
-      "items": [
-        "El Job es manual. La lista versionada contiene los snapshots 2025-10-28 y 2026-09-29.",
-        "Cada For each usa concurrencia 1; el Job admite una ejecución simultánea.",
-        "Antes de cada iteración preparo dependencias en el entorno, sin instalar ni reiniciar Python en las celdas."
-      ]
-    },
-    {
-      "dot": "amber",
-      "title": "Reintentos y alcance",
-      "items": [
-        "La plantilla permite un reintento por iteración con intervalo mínimo de 60 segundos.",
-        "Si el error persiste, reviso el fallo y uso Repair run tras corregirlo. No reconstruyo todo el lakehouse.",
-        "Este mapa explica la definición versionada: no muestra telemetría en vivo ni confirma ajustes externos de la interfaz."
-      ]
-    }
-  ]
+  }
 }

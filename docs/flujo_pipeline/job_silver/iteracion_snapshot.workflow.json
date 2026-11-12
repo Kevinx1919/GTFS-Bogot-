@@ -6,7 +6,7 @@
     "quality_profile": "showcase",
     "repository": {
       "url": "https://github.com/Kevinx1919/GTFS-Bogot-.git",
-      "revision": "598bc0de6b65b25ffa2ef13b628ab0966fd41dcd"
+      "revision": "34e3769e1d6eaebca950161f4f47f0bf38f7bc40"
     },
     "title": "Mi Job Silver: una entidad y un snapshot",
     "output": "docs/flujo_pipeline/job_silver/iteracion_snapshot.html",
@@ -103,19 +103,19 @@
       "col": 0,
       "type": "backend",
       "label": "Leer snapshot",
-      "sublabel": "Bronze + encabezado",
+      "sublabel": "Fuente o derivada + dependencias",
       "sources": [
         {
           "path": "databricks/gtfs_silver/pipeline.py",
-          "line": 45,
-          "end_line": 62,
-          "label": "Entradas y versiones Delta"
+          "line": 59,
+          "end_line": 90,
+          "label": "Entradas fuente versionadas"
         },
         {
-          "path": "databricks/gtfs_silver/routes_spark.py",
-          "line": 65,
-          "end_line": 78,
-          "label": "Dependencia del mismo snapshot"
+          "path": "databricks/gtfs_silver/pipeline.py",
+          "line": 130,
+          "end_line": 160,
+          "label": "Derivación desde Silver"
         }
       ]
     },
@@ -128,22 +128,22 @@
       "sublabel": "Candidatos y rechazos",
       "sources": [
         {
-          "path": "databricks/gtfs_silver/pipeline.py",
-          "line": 62,
-          "end_line": 70,
-          "label": "Despacho por entidad"
+          "path": "databricks/gtfs_silver/spark_validation.py",
+          "line": 57,
+          "end_line": 95,
+          "label": "Reconciliación y candidatos"
         },
         {
-          "path": "databricks/gtfs_silver/routes_spark.py",
-          "line": 136,
-          "end_line": 174,
-          "label": "Tipos y reconciliación"
+          "path": "databricks/gtfs_silver/frequencies_spark.py",
+          "line": 69,
+          "end_line": 145,
+          "label": "Reglas de ventanas"
         },
         {
-          "path": "databricks/gtfs_silver/agency_spark.py",
-          "line": 36,
-          "end_line": 43,
-          "label": "Agency acotada"
+          "path": "databricks/gtfs_silver/service_dates_spark.py",
+          "line": 65,
+          "end_line": 122,
+          "label": "Reglas de días activos"
         }
       ]
     },
@@ -157,9 +157,9 @@
       "sources": [
         {
           "path": "databricks/gtfs_silver/publication.py",
-          "line": 170,
-          "end_line": 188,
-          "label": "Controles e inicio del intento"
+          "line": 175,
+          "end_line": 194,
+          "label": "Escritor compartido"
         }
       ]
     },
@@ -173,9 +173,9 @@
       "sources": [
         {
           "path": "databricks/gtfs_silver/publication.py",
-          "line": 190,
-          "end_line": 203,
-          "label": "Persistencia de cuarentena"
+          "line": 195,
+          "end_line": 208,
+          "label": "Escritor compartido"
         }
       ]
     },
@@ -189,9 +189,9 @@
       "sources": [
         {
           "path": "databricks/gtfs_silver/publication.py",
-          "line": 203,
-          "end_line": 217,
-          "label": "Barrera antes de Silver"
+          "line": 209,
+          "end_line": 225,
+          "label": "Escritor compartido"
         }
       ],
       "icon": "decision"
@@ -206,15 +206,15 @@
       "sources": [
         {
           "path": "databricks/gtfs_silver/publication.py",
-          "line": 54,
+          "line": 53,
           "end_line": 82,
-          "label": "Escritura por ámbito"
+          "label": "Sustituye solo versión y hash"
         },
         {
           "path": "databricks/gtfs_silver/publication.py",
-          "line": 218,
-          "end_line": 223,
-          "label": "Commit de Silver"
+          "line": 226,
+          "end_line": 231,
+          "label": "Commit Delta"
         }
       ]
     },
@@ -228,9 +228,9 @@
       "sources": [
         {
           "path": "databricks/gtfs_silver/publication.py",
-          "line": 224,
-          "end_line": 228,
-          "label": "Comparación posterior"
+          "line": 232,
+          "end_line": 236,
+          "label": "Escritor compartido"
         }
       ],
       "yOffset": -55
@@ -245,9 +245,9 @@
       "sources": [
         {
           "path": "databricks/gtfs_silver/publication.py",
-          "line": 229,
-          "end_line": 231,
-          "label": "Cierre y resultado"
+          "line": 237,
+          "end_line": 239,
+          "label": "Escritor compartido"
         }
       ],
       "icon": "success",
@@ -263,21 +263,15 @@
       "sources": [
         {
           "path": "databricks/gtfs_silver/pipeline.py",
-          "line": 30,
-          "end_line": 62,
+          "line": 32,
+          "end_line": 78,
           "label": "Configuración y entradas"
         },
         {
-          "path": "databricks/gtfs_silver/routes_spark.py",
-          "line": 51,
-          "end_line": 78,
-          "label": "Contrato y dependencia"
-        },
-        {
           "path": "databricks/gtfs_silver/publication.py",
-          "line": 188,
-          "end_line": 189,
-          "label": "Auditoría inicial fuera del try"
+          "line": 185,
+          "end_line": 194,
+          "label": "Auditoría inicial"
         }
       ],
       "icon": "failure"
@@ -292,15 +286,15 @@
       "sources": [
         {
           "path": "databricks/gtfs_silver/publication.py",
-          "line": 204,
-          "end_line": 205,
-          "label": "Bloqueo por rechazos"
+          "line": 208,
+          "end_line": 210,
+          "label": "Bloquea publicación parcial"
         },
         {
           "path": "databricks/gtfs_silver/publication.py",
-          "line": 232,
-          "end_line": 241,
-          "label": "Auditoría y tarea fallida"
+          "line": 240,
+          "end_line": 249,
+          "label": "Registra rechazo"
         }
       ],
       "icon": "failure"
@@ -315,9 +309,9 @@
       "sources": [
         {
           "path": "databricks/gtfs_silver/publication.py",
-          "line": 232,
-          "end_line": 241,
-          "label": "Estado y silver_committed"
+          "line": 240,
+          "end_line": 249,
+          "label": "Escritor compartido"
         }
       ],
       "icon": "failure"
@@ -461,38 +455,38 @@
   "cards": [
     {
       "dot": "cyan",
-      "title": "Qué selecciono y qué valido",
+      "title": "Qué entra en una iteración",
       "items": [
-        "Esta vista sigue una llamada al notebook 10 con mode=publish, una entidad, una versión y un hash.",
-        "Leo el encabezado real y una versión Delta fijada de Bronze. Routes exige agency_v1 del mismo snapshot.",
-        "Agency conserva string y tiene límite de 1.000 filas en su validador; routes procesa sus registros en Spark y convierte route_type a int."
+        "Ocho entidades fuente leen Bronze, encabezado TXT y las dependencias que requiere su contrato.",
+        "Service_dates recibe calendarios Silver y un horizonte explícito. No simula un TXT adicional.",
+        "Frequencies conserva horas fuente y deriva segundos. Exact_times ausente queda null con interpretación derivada explícita."
       ]
     },
     {
       "dot": "emerald",
-      "title": "Qué significa publicar correctamente",
+      "title": "Qué significa publicar",
       "items": [
-        "Reconcilio entrada = candidatos + rechazados + copias consolidadas.",
-        "Escribo silver_gtfs_agency o silver_gtfs_routes solo para la versión y hash seleccionados.",
-        "Compruebo la lectura posterior y, con verify_history=true, las otras versiones. Después cierro la auditoría con SUCCEEDED."
+        "Reconcilio entradas, candidatos, rechazados y copias consolidadas.",
+        "Escribo silver_gtfs_<entidad> solo para versión y hash seleccionados.",
+        "Después compruebo lectura posterior e histórico y cierro la auditoría."
       ]
     },
     {
       "dot": "rose",
-      "title": "Qué hago ante un error",
+      "title": "Qué sucede ante errores",
       "items": [
-        "Un rechazo conserva la fila original y sus motivos en quarantine_gtfs_<entidad>; el snapshot no se publica parcialmente.",
-        "Si fallan configuración, encabezado o dependencia antes de publicar, consulto el Job. La auditoría inicial también puede fallar.",
-        "Las escrituras de auditoría, cuarentena y Silver son independientes. FAILED puede indicar silver_committed=true y requiere revisión; no hago rollback automático."
+        "La cuarentena conserva originales y motivos. Un rechazo bloquea el snapshot completo.",
+        "Antes de preparar candidatos puede fallar una dependencia o un encabezado. Ese error queda en el Job.",
+        "Auditoría, cuarentena y Silver tienen commits independientes. Un fallo posterior puede dejar silver_committed=true."
       ]
     },
     {
       "dot": "amber",
-      "title": "Cómo interpreto la interacción",
+      "title": "Lectura frente a publicación",
       "items": [
-        "Los colores y animaciones explican el recorrido definido en el código; no representan una ejecución en vivo.",
-        "La lectura con mode=validate termina sin escribir y queda fuera de este recorrido de publicación.",
-        "El Job puede reintentar una iteración desde el inicio. La escritura por snapshot evita duplicados; un nuevo intento conserva su propia auditoría."
+        "Esta vista explica mode=publish. Mode=validate devuelve resumen antes de escribir auditoría, cuarentena o Silver.",
+        "Un reintento comienza desde el inicio. La escritura acotada protege los demás snapshots.",
+        "Las animaciones no son telemetría. La publicación confirmada no sustituye nuevos conteos o verificaciones detalladas."
       ]
     }
   ]

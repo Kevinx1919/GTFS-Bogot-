@@ -64,7 +64,7 @@ Implementé shape_points localmente. Las 36 pruebas seleccionadas pasaron sin om
 
 El procesador shape_points_spark.py conserva puntos y valida claves compuestas. El alias usa shapes.txt y bronze_gtfs_shapes. Notebook 10 mantiene sus dos bloques ejecutables. La plantilla añade publish_shape_points después de service_dates. No necesita un horizonte de fechas.
 
-La [guía de despliegue](../../../docs/silver_execution.md#despliegue-de-shape_points_v1) contiene parámetros y resultados esperados. El [contrato](../../../docs/contracts/shape_points.md) define advertencias y bloqueos. El flujo ya funciona en Workspace. El [cierre](../../../docs/silver_execution.md#cierre-de-la-ejecución-de-shape_points) conserva el alcance de la confirmación. Trips también funciona. Ahora continúo con frequencies.
+La [guía de despliegue](../../../docs/silver_execution.md#despliegue-de-shape_points_v1) contiene parámetros y resultados esperados. El [contrato](../../../docs/contracts/shape_points.md) define advertencias y bloqueos. El flujo ya funciona en Workspace. El [cierre](../../../docs/silver_execution.md#cierre-de-la-ejecución-de-shape_points) conserva el alcance de la confirmación. Trips también funciona. Frequencies ya está publicada. Ahora continúo con stop_times.
 
 
 ## Trips: perfil de viajes y referencias
@@ -82,7 +82,7 @@ Trips_spark.py conserva los cinco campos de negocio como string. Valida referenc
 
 Notebook 10 conserva sus dos bloques ejecutables. La plantilla añade publish_trips como octava tarea, después de shape_points. Los parámetros siguen siendo entidad, versión y hash. La [guía de despliegue](../../../docs/silver_execution.md#despliegue-de-trips_v1) conserva los pasos y resultados esperados. El planificador 8b sigue pendiente.
 
-El [cierre de trips](../../../docs/silver_execution.md#cierre-de-la-ejecución-de-trips) registra la confirmación funcional. Continúo con el perfil de frequencies.
+El [cierre de trips](../../../docs/silver_execution.md#cierre-de-la-ejecución-de-trips) registra la confirmación funcional. Frequencies también está publicada. El siguiente perfil es stop_times.
 
 ## Frequencies: perfil de ventanas e intervalos
 
@@ -91,11 +91,11 @@ Recuperé 77 filas estructuradas completas. El [perfil](../../../docs/frequencie
 No encontré errores en los controles ejecutados. Los intervalos publicados son segundos y corresponden a transporte por cable.
 Cada ventana actual tiene un trip_id distinto. No fusiono esas identidades.
 
-La [contrato frequencies_v1](../../../docs/contracts/frequencies.md) define campos fuente y derivados.
-Implementé el procesador y añadí su tarea a la plantilla. La primera publicación en Databricks sigue pendiente.
+El [contrato frequencies_v1](../../../docs/contracts/frequencies.md) define campos fuente y derivados.
+Implementé el procesador y añadí su tarea a la plantilla. El despliegue funcional de frequencies ya está confirmado.
 El notebook de perfilado solo lee. Notebook 10 ejecuta frequencies_v1 mediante el pipeline compartido. La plantilla incorpora su novena tarea serial.
 
 
 Frequencies_v1 pasó 42 pruebas seleccionadas sin omisiones. Incluyen trece nuevas y dos integraciones Delta en total.
 La [guía](../../../docs/silver_execution.md#despliegue-de-frequencies_v1) conserva parámetros y comprobaciones.
-Las ocho tareas anteriores permanecen iguales. La primera publicación de frequencies en Workspace sigue pendiente.
+Las ocho tareas anteriores permanecen iguales. Frequencies ya está publicada en Workspace. El siguiente incremento es stop_times.

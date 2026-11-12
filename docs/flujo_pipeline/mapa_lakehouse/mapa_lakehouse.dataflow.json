@@ -8,7 +8,7 @@
     "quality_profile": "showcase",
     "repository": {
       "url": "https://github.com/Kevinx1919/GTFS-Bogot-.git",
-      "revision": "598bc0de6b65b25ffa2ef13b628ab0966fd41dcd"
+      "revision": "34e3769e1d6eaebca950161f4f47f0bf38f7bc40"
     },
     "views": [
       {
@@ -29,7 +29,10 @@
           "ingesta",
           "bronze",
           "transformar",
-          "silver"
+          "silver",
+          "horizonte",
+          "derivar",
+          "service_dates"
         ],
         "note": "Bronze y Silver comparten workspace.gtfs_bogota; cambian su responsabilidad y sus prefijos."
       },
@@ -244,18 +247,18 @@
       "sublabel": "Valido, tipo y publico",
       "stage": 3,
       "row": 4,
-      "tag": "agency + routes",
+      "tag": "8 entidades fuente",
       "sources": [
         {
           "path": "databricks/gtfs_silver/pipeline.py",
-          "line": 26,
-          "end_line": 71,
-          "label": "Lee Bronze y encabezado"
+          "line": 45,
+          "end_line": 90,
+          "label": "Lecturas y contratos habilitados"
         },
         {
           "path": "databricks/gtfs_silver/publication.py",
-          "line": 190,
-          "end_line": 229,
+          "line": 193,
+          "end_line": 239,
           "label": "Rechazos y publicación"
         }
       ]
@@ -263,22 +266,22 @@
     {
       "id": "silver",
       "type": "database",
-      "label": "Silver · Delta",
-      "sublabel": "silver_gtfs_*",
+      "label": "Silver fuente",
+      "sublabel": "8 tablas Delta",
       "stage": 3,
       "row": 3,
-      "tag": "agency + routes",
+      "tag": "Histórico por snapshot",
       "sources": [
         {
           "path": "databricks/gtfs_silver/publication.py",
           "line": 44,
-          "end_line": 50,
-          "label": "Nombres de tablas"
+          "end_line": 54,
+          "label": "Tablas y ámbito"
         },
         {
           "path": "databricks/gtfs_silver/publication.py",
-          "line": 206,
-          "end_line": 229,
+          "line": 211,
+          "end_line": 239,
           "label": "Publicación verificada"
         }
       ]
@@ -331,6 +334,67 @@
           "line": 9,
           "end_line": 11,
           "label": "Destino previsto"
+        }
+      ]
+    },
+    {
+      "id": "horizonte",
+      "type": "backend",
+      "label": "Horizonte 2026",
+      "sublabel": "Parámetro explícito",
+      "stage": 2,
+      "row": 1,
+      "sources": [
+        {
+          "path": "databricks/gtfs_silver/job_config.py",
+          "line": 86,
+          "end_line": 97,
+          "label": "Ventana de service_dates"
+        }
+      ]
+    },
+    {
+      "id": "derivar",
+      "type": "backend",
+      "label": "Derivar días",
+      "sublabel": "Patrón y excepciones",
+      "stage": 3,
+      "row": 1,
+      "sources": [
+        {
+          "path": "databricks/gtfs_silver/pipeline.py",
+          "line": 130,
+          "end_line": 160,
+          "label": "Lee fuentes Silver"
+        },
+        {
+          "path": "databricks/gtfs_silver/service_dates_spark.py",
+          "line": 65,
+          "end_line": 113,
+          "label": "Días activos dentro de ventana"
+        }
+      ]
+    },
+    {
+      "id": "service_dates",
+      "type": "database",
+      "label": "service_dates",
+      "sublabel": "Silver derivada",
+      "tag": "Solo 2026",
+      "stage": 3,
+      "row": 0,
+      "sources": [
+        {
+          "path": "databricks/gtfs_silver/service_dates_spark.py",
+          "line": 107,
+          "end_line": 122,
+          "label": "Salida derivada"
+        },
+        {
+          "path": "databricks/gtfs_silver/pipeline.py",
+          "line": 155,
+          "end_line": 160,
+          "label": "Publica derivación"
         }
       ]
     }
@@ -419,43 +483,67 @@
       "to": "transformar",
       "label": "Encabezado TXT",
       "variant": "default"
+    },
+    {
+      "id": "weekly_inputs",
+      "from": "silver",
+      "to": "derivar",
+      "label": "Calendarios"
+    },
+    {
+      "id": "window_input",
+      "from": "horizonte",
+      "to": "derivar",
+      "label": "Ventana"
+    },
+    {
+      "id": "active_days",
+      "from": "derivar",
+      "to": "service_dates",
+      "label": "Días activos",
+      "variant": "emphasis"
+    },
+    {
+      "id": "derived_future",
+      "from": "service_dates",
+      "to": "agregar",
+      "label": "Plan futuro"
     }
   ],
   "cards": [
     {
       "dot": "cyan",
-      "title": "Cómo leo las capas",
+      "title": "Archivos y tablas",
       "items": [
-        "Raw y Staging son archivos dentro de Volumes de Unity Catalog.",
-        "Bronze, Silver y la futura Gold son tablas Delta; no carpetas de TXT.",
-        "Mantengo Bronze y Silver en workspace.gtfs_bogota, con prefijos bronze_gtfs_ y silver_gtfs_."
+        "Raw y Staging conservan archivos en Volumes. Bronze y Silver son tablas Delta.",
+        "Bronze y Silver comparten workspace.gtfs_bogota. Los prefijos y contratos distinguen las capas."
       ]
     },
     {
       "dot": "emerald",
-      "title": "Qué cambia en Silver",
+      "title": "Nueve entidades publicadas",
       "items": [
-        "Leo filas de Bronze y el encabezado del TXT del mismo snapshot.",
-        "Valido claves, campos, duplicados y relaciones; aplico tipos explícitos.",
-        "Publico solo si el snapshot es apto; conservo versión, hash y procedencia."
+        "Agency, routes, stops, calendar, calendar_dates, shape_points, trips y frequencies son entidades fuente.",
+        "Service_dates deriva días activos desde los calendarios Silver. Su horizonte actual cubre solamente 2026.",
+        "El cierre funcional registra la confirmación durante el desarrollo. Este HTML no consulta tablas en vivo."
       ]
     },
     {
       "dot": "amber",
-      "title": "Alcance actual",
+      "title": "Lo que sigue pendiente",
       "items": [
-        "Silver implementada: agency y routes. Las demás entidades siguen pendientes.",
-        "Gold, su agregación y Power BI aparecen como plan futuro; no hay salidas implementadas aquí.",
-        "El GTFS estático describe oferta planificada; no demuestra operación real, demanda ni puntualidad."
+        "Stop_times será el siguiente contrato Silver. Gold y Power BI continúan como objetivos.",
+        "La selección automática de snapshots sigue pendiente 8b. Las listas del Job todavía son manuales.",
+        "Los datos describen oferta planificada; no demuestran operación, demanda ni puntualidad."
       ]
     },
     {
       "dot": "violet",
-      "title": "Controles y exploración",
+      "title": "Qué protege el histórico",
       "items": [
-        "La publicación mantiene audit_gtfs_silver_runs y quarantine_gtfs_<entidad>; su detalle está en el recorrido del Job.",
-        "Uso Genie para explorar con consultas de lectura; las transformaciones y escrituras corresponden al pipeline versionado.",
-        "Este mapa explica el código fijado en sus enlaces; no consulta tablas ni representa una ejecución en vivo."
+        "La entrada fuente combina Bronze y el encabezado del TXT. La derivación recibe calendarios y una ventana explícita.",
+        "Conservo versión y hash. Los errores bloquean el snapshot; auditoría y cuarentena conservan evidencia.",
+        "Genie ayuda a explorar en lectura. El pipeline versionado ejecuta transformaciones y escrituras."
       ]
     }
   ]

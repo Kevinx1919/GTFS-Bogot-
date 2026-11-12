@@ -2,66 +2,74 @@
   "schema_version": 1,
   "diagram_type": "erd",
   "meta": {
-    "title": "Mi modelo Silver: agency y routes",
+    "title": "Mi Silver GTFS: tablas y referencias por snapshot",
     "locale": "es",
-    "output": "docs/flujo_pipeline/modelo_gtfs/modelo_silver.html",
-    "quality_profile": "showcase",
+    "quality_profile": "standard",
     "repository": {
       "url": "https://github.com/Kevinx1919/GTFS-Bogot-.git",
-      "revision": "598bc0de6b65b25ffa2ef13b628ab0966fd41dcd"
+      "revision": "34e3769e1d6eaebca950161f4f47f0bf38f7bc40"
     },
+    "output": "docs/flujo_pipeline/modelo_gtfs/modelo_silver.html",
     "views": [
       {
-        "id": "identidad",
-        "label": "Identidad del snapshot",
+        "id": "viajes",
+        "label": "Rutas, viajes y frecuencias",
         "focus": [
           "agency",
-          "routes"
+          "routes",
+          "trips",
+          "frequencies"
         ],
-        "note": "Relaciono versión + hash + agency_id. El ID aislado no representa continuidad entre años."
+        "note": "Referencias compuestas: versión, hash e ID. Una ventana no representa un vehículo."
       },
       {
-        "id": "agencias",
-        "label": "Tabla agency",
+        "id": "servicios",
+        "label": "Calendarios y días activos",
         "focus": [
-          "agency"
+          "calendar",
+          "calendar_dates",
+          "service_dates",
+          "service_ids",
+          "trips"
         ],
-        "note": "Una agencia o marca dentro de un snapshot; conservo todos sus campos como string."
+        "note": "Service_ids es un catálogo lógico en memoria; no una décima tabla Silver."
       },
       {
-        "id": "rutas",
-        "label": "Tabla routes",
+        "id": "geometria",
+        "label": "Trazados y ubicaciones",
         "focus": [
-          "routes"
+          "stops",
+          "shape_points",
+          "shape_ids",
+          "trips"
         ],
-        "note": "Una ruta del snapshot; route_type y route_sort_order son int, los IDs siguen como string."
+        "note": "Shape_ids agrupa IDs. Shape_points conserva varios puntos por trazado."
+      },
+      {
+        "id": "frecuencia",
+        "label": "Detalle de frequencies",
+        "focus": [
+          "frequencies",
+          "trips"
+        ],
+        "note": "Conservo exact_times ausente y su interpretación efectiva por separado."
       }
-    ],
-    "legend": {
-      "entries": {
-        "pk": {
-          "label": "Clave validada"
-        },
-        "fk": {
-          "label": "Referencia validada"
-        }
-      }
-    }
+    ]
   },
   "layout": {
     "mode": "grid",
-    "gapX": 160,
-    "gapY": 38,
-    "entityW": 360,
+    "entityW": 272,
+    "gapX": 16,
+    "gapY": 48,
     "rowH": 24
   },
   "entities": [
     {
       "id": "agency",
       "label": "silver_gtfs_agency",
-      "tag": "Silver implementada",
       "row": 0,
       "col": 0,
+      "tag": "Agencias y rutas",
       "attributes": [
         {
           "name": "agency_id",
@@ -133,31 +141,31 @@
       ],
       "sources": [
         {
-          "path": "databricks/gtfs_silver/agency_validation.py",
-          "line": 18,
-          "end_line": 24,
-          "label": "Campos de agency_v1"
-        },
-        {
           "path": "databricks/gtfs_silver/agency_spark.py",
           "line": 46,
-          "end_line": 57,
-          "label": "Esquema candidato explícito"
+          "end_line": 58,
+          "label": "Esquema explícito de agency"
+        },
+        {
+          "path": "databricks/gtfs_silver/spark_validation.py",
+          "line": 84,
+          "end_line": 88,
+          "label": "Procedencia y regla"
         },
         {
           "path": "databricks/gtfs_silver/publication.py",
-          "line": 206,
-          "end_line": 217,
-          "label": "Campos finales y unicidad"
+          "line": 211,
+          "end_line": 225,
+          "label": "Campos finales y clave"
         }
       ]
     },
     {
       "id": "routes",
       "label": "silver_gtfs_routes",
-      "tag": "Silver implementada",
-      "row": 0,
-      "col": 1,
+      "row": 1,
+      "col": 0,
+      "tag": "Agencias y rutas",
       "attributes": [
         {
           "name": "route_id",
@@ -167,8 +175,8 @@
         {
           "name": "agency_id",
           "type": "string",
-          "key": "fk",
-          "references": "agency.agency_id"
+          "references": "agency.agency_id",
+          "key": "fk"
         },
         {
           "name": "route_short_name",
@@ -205,20 +213,20 @@
         {
           "name": "source_feed_version",
           "type": "string",
+          "references": "agency.source_feed_version",
           "key": [
             "pk",
             "fk"
-          ],
-          "references": "agency.source_feed_version"
+          ]
         },
         {
           "name": "source_sha256",
           "type": "string",
+          "references": "agency.source_sha256",
           "key": [
             "pk",
             "fk"
-          ],
-          "references": "agency.source_sha256"
+          ]
         },
         {
           "name": "source_file_path",
@@ -248,31 +256,903 @@
       "sources": [
         {
           "path": "databricks/gtfs_silver/routes_spark.py",
-          "line": 13,
-          "end_line": 20,
-          "label": "Tipos del contrato routes_v1"
+          "line": 14,
+          "end_line": 21,
+          "label": "Campos y tipos de routes"
         },
         {
-          "path": "databricks/gtfs_silver/routes_spark.py",
-          "line": 65,
-          "end_line": 78,
-          "label": "Dependencia del mismo snapshot"
+          "path": "databricks/gtfs_silver/spark_validation.py",
+          "line": 84,
+          "end_line": 88,
+          "label": "Procedencia y regla"
         },
         {
-          "path": "databricks/gtfs_silver/routes_spark.py",
-          "line": 159,
-          "end_line": 167,
-          "label": "Esquema tipado de salida"
+          "path": "databricks/gtfs_silver/publication.py",
+          "line": 211,
+          "end_line": 225,
+          "label": "Campos finales y clave"
         }
-      ]
+      ],
+      "width": 272
+    },
+    {
+      "id": "stops",
+      "label": "silver_gtfs_stops",
+      "row": 1,
+      "col": 3,
+      "tag": "Ubicaciones",
+      "attributes": [
+        {
+          "name": "stop_id",
+          "type": "string",
+          "key": "pk"
+        },
+        {
+          "name": "stop_code",
+          "type": "string"
+        },
+        {
+          "name": "stop_name",
+          "type": "string"
+        },
+        {
+          "name": "stop_lat",
+          "type": "double"
+        },
+        {
+          "name": "stop_lon",
+          "type": "double"
+        },
+        {
+          "name": "location_type",
+          "type": "int"
+        },
+        {
+          "name": "parent_station",
+          "type": "string",
+          "references": "stops.stop_id",
+          "key": "fk"
+        },
+        {
+          "name": "zone_id",
+          "type": "string"
+        },
+        {
+          "name": "wheelchair_boarding",
+          "type": "int"
+        },
+        {
+          "name": "source_feed_version",
+          "type": "string",
+          "references": "stops.source_feed_version",
+          "key": [
+            "pk",
+            "fk"
+          ]
+        },
+        {
+          "name": "source_sha256",
+          "type": "string",
+          "references": "stops.source_sha256",
+          "key": [
+            "pk",
+            "fk"
+          ]
+        },
+        {
+          "name": "source_file_path",
+          "type": "string"
+        },
+        {
+          "name": "bronze_loaded_at_utc",
+          "type": "timestamp"
+        },
+        {
+          "name": "source_columns",
+          "type": "array<string>"
+        },
+        {
+          "name": "silver_rule_version",
+          "type": "string"
+        },
+        {
+          "name": "silver_run_id",
+          "type": "string"
+        },
+        {
+          "name": "silver_loaded_at_utc",
+          "type": "timestamp"
+        }
+      ],
+      "sources": [
+        {
+          "path": "databricks/gtfs_silver/stops_spark.py",
+          "line": 14,
+          "end_line": 19,
+          "label": "Campos y tipos de stops"
+        },
+        {
+          "path": "databricks/gtfs_silver/spark_validation.py",
+          "line": 84,
+          "end_line": 88,
+          "label": "Procedencia y regla"
+        },
+        {
+          "path": "databricks/gtfs_silver/publication.py",
+          "line": 211,
+          "end_line": 225,
+          "label": "Campos finales y clave"
+        }
+      ],
+      "width": 272
+    },
+    {
+      "id": "calendar",
+      "label": "silver_gtfs_calendar",
+      "row": 0,
+      "col": 2,
+      "tag": "Catálogo de servicios",
+      "attributes": [
+        {
+          "name": "service_id",
+          "type": "string",
+          "references": "service_ids.service_id",
+          "key": [
+            "pk",
+            "fk"
+          ]
+        },
+        {
+          "name": "monday",
+          "type": "int"
+        },
+        {
+          "name": "tuesday",
+          "type": "int"
+        },
+        {
+          "name": "wednesday",
+          "type": "int"
+        },
+        {
+          "name": "thursday",
+          "type": "int"
+        },
+        {
+          "name": "friday",
+          "type": "int"
+        },
+        {
+          "name": "saturday",
+          "type": "int"
+        },
+        {
+          "name": "sunday",
+          "type": "int"
+        },
+        {
+          "name": "start_date",
+          "type": "date"
+        },
+        {
+          "name": "end_date",
+          "type": "date"
+        },
+        {
+          "name": "source_feed_version",
+          "type": "string",
+          "references": "service_ids.source_feed_version",
+          "key": [
+            "pk",
+            "fk"
+          ]
+        },
+        {
+          "name": "source_sha256",
+          "type": "string",
+          "references": "service_ids.source_sha256",
+          "key": [
+            "pk",
+            "fk"
+          ]
+        },
+        {
+          "name": "source_file_path",
+          "type": "string"
+        },
+        {
+          "name": "bronze_loaded_at_utc",
+          "type": "timestamp"
+        },
+        {
+          "name": "source_columns",
+          "type": "array<string>"
+        },
+        {
+          "name": "silver_rule_version",
+          "type": "string"
+        },
+        {
+          "name": "silver_run_id",
+          "type": "string"
+        },
+        {
+          "name": "silver_loaded_at_utc",
+          "type": "timestamp"
+        }
+      ],
+      "sources": [
+        {
+          "path": "databricks/gtfs_silver/calendars_spark.py",
+          "line": 15,
+          "end_line": 21,
+          "label": "Esquemas de calendarios"
+        },
+        {
+          "path": "databricks/gtfs_silver/spark_validation.py",
+          "line": 84,
+          "end_line": 88,
+          "label": "Procedencia y regla"
+        },
+        {
+          "path": "databricks/gtfs_silver/publication.py",
+          "line": 211,
+          "end_line": 225,
+          "label": "Campos finales y clave"
+        }
+      ],
+      "width": 272
+    },
+    {
+      "id": "calendar_dates",
+      "label": "silver_gtfs_calendar_dates",
+      "row": 1,
+      "col": 2,
+      "tag": "Catálogo de servicios",
+      "attributes": [
+        {
+          "name": "service_id",
+          "type": "string",
+          "references": "service_ids.service_id",
+          "key": [
+            "pk",
+            "fk"
+          ]
+        },
+        {
+          "name": "date",
+          "type": "date",
+          "key": "pk"
+        },
+        {
+          "name": "exception_type",
+          "type": "int"
+        },
+        {
+          "name": "source_feed_version",
+          "type": "string",
+          "references": "service_ids.source_feed_version",
+          "key": [
+            "pk",
+            "fk"
+          ]
+        },
+        {
+          "name": "source_sha256",
+          "type": "string",
+          "references": "service_ids.source_sha256",
+          "key": [
+            "pk",
+            "fk"
+          ]
+        },
+        {
+          "name": "source_file_path",
+          "type": "string"
+        },
+        {
+          "name": "bronze_loaded_at_utc",
+          "type": "timestamp"
+        },
+        {
+          "name": "source_columns",
+          "type": "array<string>"
+        },
+        {
+          "name": "silver_rule_version",
+          "type": "string"
+        },
+        {
+          "name": "silver_run_id",
+          "type": "string"
+        },
+        {
+          "name": "silver_loaded_at_utc",
+          "type": "timestamp"
+        }
+      ],
+      "sources": [
+        {
+          "path": "databricks/gtfs_silver/calendars_spark.py",
+          "line": 15,
+          "end_line": 21,
+          "label": "Esquemas de calendarios"
+        },
+        {
+          "path": "databricks/gtfs_silver/spark_validation.py",
+          "line": 84,
+          "end_line": 88,
+          "label": "Procedencia y regla"
+        },
+        {
+          "path": "databricks/gtfs_silver/publication.py",
+          "line": 211,
+          "end_line": 225,
+          "label": "Campos finales y clave"
+        }
+      ],
+      "width": 272
+    },
+    {
+      "id": "shape_points",
+      "label": "silver_gtfs_shape_points",
+      "row": 1,
+      "col": 4,
+      "tag": "Trazados e IDs",
+      "attributes": [
+        {
+          "name": "shape_id",
+          "type": "string",
+          "references": "shape_ids.shape_id",
+          "key": [
+            "pk",
+            "fk"
+          ]
+        },
+        {
+          "name": "shape_pt_sequence",
+          "type": "int",
+          "key": "pk"
+        },
+        {
+          "name": "shape_pt_lat",
+          "type": "double"
+        },
+        {
+          "name": "shape_pt_lon",
+          "type": "double"
+        },
+        {
+          "name": "shape_dist_traveled",
+          "type": "double"
+        },
+        {
+          "name": "source_feed_version",
+          "type": "string",
+          "references": "shape_ids.source_feed_version",
+          "key": [
+            "pk",
+            "fk"
+          ]
+        },
+        {
+          "name": "source_sha256",
+          "type": "string",
+          "references": "shape_ids.source_sha256",
+          "key": [
+            "pk",
+            "fk"
+          ]
+        },
+        {
+          "name": "source_file_path",
+          "type": "string"
+        },
+        {
+          "name": "bronze_loaded_at_utc",
+          "type": "timestamp"
+        },
+        {
+          "name": "source_columns",
+          "type": "array<string>"
+        },
+        {
+          "name": "silver_rule_version",
+          "type": "string"
+        },
+        {
+          "name": "silver_run_id",
+          "type": "string"
+        },
+        {
+          "name": "silver_loaded_at_utc",
+          "type": "timestamp"
+        }
+      ],
+      "sources": [
+        {
+          "path": "databricks/gtfs_silver/shape_points_spark.py",
+          "line": 13,
+          "end_line": 18,
+          "label": "Campos de puntos de trazado"
+        },
+        {
+          "path": "databricks/gtfs_silver/spark_validation.py",
+          "line": 84,
+          "end_line": 88,
+          "label": "Procedencia y regla"
+        },
+        {
+          "path": "databricks/gtfs_silver/publication.py",
+          "line": 211,
+          "end_line": 225,
+          "label": "Campos finales y clave"
+        }
+      ],
+      "width": 272
+    },
+    {
+      "id": "trips",
+      "label": "silver_gtfs_trips",
+      "row": 0,
+      "col": 1,
+      "tag": "Viajes y frecuencias",
+      "attributes": [
+        {
+          "name": "trip_id",
+          "type": "string",
+          "key": "pk"
+        },
+        {
+          "name": "route_id",
+          "type": "string",
+          "references": "routes.route_id",
+          "key": "fk"
+        },
+        {
+          "name": "service_id",
+          "type": "string",
+          "references": "service_ids.service_id",
+          "key": "fk"
+        },
+        {
+          "name": "shape_id",
+          "type": "string",
+          "references": "shape_ids.shape_id",
+          "key": "fk"
+        },
+        {
+          "name": "trip_headsign",
+          "type": "string"
+        },
+        {
+          "name": "source_feed_version",
+          "type": "string",
+          "references": "routes.source_feed_version",
+          "key": [
+            "pk",
+            "fk"
+          ]
+        },
+        {
+          "name": "source_sha256",
+          "type": "string",
+          "references": "routes.source_sha256",
+          "key": [
+            "pk",
+            "fk"
+          ]
+        },
+        {
+          "name": "source_file_path",
+          "type": "string"
+        },
+        {
+          "name": "bronze_loaded_at_utc",
+          "type": "timestamp"
+        },
+        {
+          "name": "source_columns",
+          "type": "array<string>"
+        },
+        {
+          "name": "silver_rule_version",
+          "type": "string"
+        },
+        {
+          "name": "silver_run_id",
+          "type": "string"
+        },
+        {
+          "name": "silver_loaded_at_utc",
+          "type": "timestamp"
+        }
+      ],
+      "sources": [
+        {
+          "path": "databricks/gtfs_silver/trips_spark.py",
+          "line": 14,
+          "end_line": 17,
+          "label": "Campos de trips"
+        },
+        {
+          "path": "databricks/gtfs_silver/spark_validation.py",
+          "line": 84,
+          "end_line": 88,
+          "label": "Procedencia y regla"
+        },
+        {
+          "path": "databricks/gtfs_silver/publication.py",
+          "line": 211,
+          "end_line": 225,
+          "label": "Campos finales y clave"
+        }
+      ],
+      "width": 272
+    },
+    {
+      "id": "frequencies",
+      "label": "silver_gtfs_frequencies",
+      "row": 1,
+      "col": 1,
+      "tag": "Viajes y frecuencias",
+      "attributes": [
+        {
+          "name": "trip_id",
+          "type": "string",
+          "references": "trips.trip_id",
+          "key": [
+            "pk",
+            "fk"
+          ]
+        },
+        {
+          "name": "start_time",
+          "type": "string"
+        },
+        {
+          "name": "end_time",
+          "type": "string"
+        },
+        {
+          "name": "headway_secs",
+          "type": "int"
+        },
+        {
+          "name": "exact_times",
+          "type": "int"
+        },
+        {
+          "name": "start_time_seconds",
+          "type": "bigint",
+          "key": "pk"
+        },
+        {
+          "name": "end_time_seconds",
+          "type": "bigint"
+        },
+        {
+          "name": "exact_times_effective",
+          "type": "int"
+        },
+        {
+          "name": "source_feed_version",
+          "type": "string",
+          "references": "trips.source_feed_version",
+          "key": [
+            "pk",
+            "fk"
+          ]
+        },
+        {
+          "name": "source_sha256",
+          "type": "string",
+          "references": "trips.source_sha256",
+          "key": [
+            "pk",
+            "fk"
+          ]
+        },
+        {
+          "name": "source_file_path",
+          "type": "string"
+        },
+        {
+          "name": "bronze_loaded_at_utc",
+          "type": "timestamp"
+        },
+        {
+          "name": "source_columns",
+          "type": "array<string>"
+        },
+        {
+          "name": "silver_rule_version",
+          "type": "string"
+        },
+        {
+          "name": "silver_run_id",
+          "type": "string"
+        },
+        {
+          "name": "silver_loaded_at_utc",
+          "type": "timestamp"
+        }
+      ],
+      "sources": [
+        {
+          "path": "databricks/gtfs_silver/frequencies_spark.py",
+          "line": 141,
+          "end_line": 145,
+          "label": "Campos fuente y derivados"
+        },
+        {
+          "path": "databricks/gtfs_silver/spark_validation.py",
+          "line": 84,
+          "end_line": 88,
+          "label": "Procedencia y regla"
+        },
+        {
+          "path": "databricks/gtfs_silver/publication.py",
+          "line": 211,
+          "end_line": 225,
+          "label": "Campos finales y clave"
+        }
+      ],
+      "width": 272
+    },
+    {
+      "id": "service_dates",
+      "label": "silver_gtfs_service_dates",
+      "row": 0,
+      "col": 3,
+      "tag": "Días activos",
+      "attributes": [
+        {
+          "name": "service_id",
+          "type": "string",
+          "references": "service_ids.service_id",
+          "key": [
+            "pk",
+            "fk"
+          ]
+        },
+        {
+          "name": "service_date",
+          "type": "date",
+          "key": "pk"
+        },
+        {
+          "name": "activation_source",
+          "type": "string"
+        },
+        {
+          "name": "weekly_pattern_active",
+          "type": "boolean"
+        },
+        {
+          "name": "source_feed_version",
+          "type": "string",
+          "references": "service_ids.source_feed_version",
+          "key": [
+            "pk",
+            "fk"
+          ]
+        },
+        {
+          "name": "source_sha256",
+          "type": "string",
+          "references": "service_ids.source_sha256",
+          "key": [
+            "pk",
+            "fk"
+          ]
+        },
+        {
+          "name": "analysis_window_start",
+          "type": "date"
+        },
+        {
+          "name": "analysis_window_end",
+          "type": "date"
+        },
+        {
+          "name": "source_temporal_warning",
+          "type": "boolean"
+        },
+        {
+          "name": "input_versions_json",
+          "type": "string"
+        },
+        {
+          "name": "silver_rule_version",
+          "type": "string"
+        },
+        {
+          "name": "silver_run_id",
+          "type": "string"
+        },
+        {
+          "name": "silver_loaded_at_utc",
+          "type": "timestamp"
+        }
+      ],
+      "sources": [
+        {
+          "path": "databricks/gtfs_silver/service_dates_spark.py",
+          "line": 107,
+          "end_line": 122,
+          "label": "Esquema derivado"
+        },
+        {
+          "path": "databricks/gtfs_silver/publication.py",
+          "line": 211,
+          "end_line": 225,
+          "label": "Campos finales y clave"
+        }
+      ],
+      "width": 278
+    },
+    {
+      "id": "service_ids",
+      "label": "LÓGICO · service_ids",
+      "row": 2,
+      "col": 2,
+      "tag": "Catálogo de servicios",
+      "attributes": [
+        {
+          "name": "service_id",
+          "type": "string",
+          "key": "pk"
+        },
+        {
+          "name": "source_feed_version",
+          "type": "string",
+          "key": "pk"
+        },
+        {
+          "name": "source_sha256",
+          "type": "string",
+          "key": "pk"
+        }
+      ],
+      "sources": [
+        {
+          "path": "databricks/gtfs_silver/trips_spark.py",
+          "line": 99,
+          "end_line": 120,
+          "label": "Unión de IDs de calendarios"
+        }
+      ],
+      "sublabel": "Catálogo en memoria; no tabla física"
+    },
+    {
+      "id": "shape_ids",
+      "label": "LÓGICO · shape_ids",
+      "row": 0,
+      "col": 4,
+      "tag": "Trazados e IDs",
+      "attributes": [
+        {
+          "name": "shape_id",
+          "type": "string",
+          "key": "pk"
+        },
+        {
+          "name": "source_feed_version",
+          "type": "string",
+          "key": "pk"
+        },
+        {
+          "name": "source_sha256",
+          "type": "string",
+          "key": "pk"
+        }
+      ],
+      "sources": [
+        {
+          "path": "databricks/gtfs_silver/trips_spark.py",
+          "line": 107,
+          "end_line": 122,
+          "label": "IDs distintos de trazados"
+        }
+      ],
+      "sublabel": "Catálogo en memoria; no tabla física"
     }
   ],
   "relationships": [
     {
-      "id": "agency_routes",
+      "id": "routes_agency_id",
       "from": "routes",
       "to": "agency",
-      "label": "Mismo snapshot",
+      "label": "S + agency_id",
+      "fromCardinality": "many",
+      "toCardinality": "one",
+      "fromOptional": true,
+      "toOptional": false,
+      "identifying": false
+    },
+    {
+      "id": "trips_route_id",
+      "from": "trips",
+      "to": "routes",
+      "label": "S + route_id",
+      "fromCardinality": "many",
+      "toCardinality": "one",
+      "fromOptional": true,
+      "toOptional": false,
+      "identifying": false
+    },
+    {
+      "id": "trips_service_id",
+      "from": "trips",
+      "to": "service_ids",
+      "label": "S + service_id",
+      "fromCardinality": "many",
+      "toCardinality": "one",
+      "fromOptional": true,
+      "toOptional": false,
+      "identifying": false
+    },
+    {
+      "id": "trips_shape_id",
+      "from": "trips",
+      "to": "shape_ids",
+      "label": "S + shape_id",
+      "fromCardinality": "many",
+      "toCardinality": "one",
+      "fromOptional": true,
+      "toOptional": true,
+      "identifying": false
+    },
+    {
+      "id": "frequencies_trip_id",
+      "from": "frequencies",
+      "to": "trips",
+      "label": "S + trip_id",
+      "fromCardinality": "many",
+      "toCardinality": "one",
+      "fromOptional": true,
+      "toOptional": false,
+      "identifying": false
+    },
+    {
+      "id": "calendar_service_id",
+      "from": "calendar",
+      "to": "service_ids",
+      "label": "S + service_id",
+      "fromCardinality": "many",
+      "toCardinality": "one",
+      "fromOptional": true,
+      "toOptional": false,
+      "identifying": false
+    },
+    {
+      "id": "calendar_dates_service_id",
+      "from": "calendar_dates",
+      "to": "service_ids",
+      "label": "S + service_id",
+      "fromCardinality": "many",
+      "toCardinality": "one",
+      "fromOptional": true,
+      "toOptional": false,
+      "identifying": false
+    },
+    {
+      "id": "service_dates_service_id",
+      "from": "service_dates",
+      "to": "service_ids",
+      "label": "S + service_id",
+      "fromCardinality": "many",
+      "toCardinality": "one",
+      "fromOptional": true,
+      "toOptional": false,
+      "identifying": false
+    },
+    {
+      "id": "shape_points_shape_id",
+      "from": "shape_points",
+      "to": "shape_ids",
+      "label": "S + shape_id",
       "fromCardinality": "many",
       "toCardinality": "one",
       "fromOptional": true,
@@ -282,39 +1162,47 @@
   ],
   "cards": [
     {
-      "dot": "emerald",
-      "title": "Cómo leo las claves",
-      "items": [
-        "PK representa la clave compuesta que valido en el pipeline, no una restricción PRIMARY KEY declarada en Delta.",
-        "Agency: (source_feed_version, source_sha256, agency_id). Routes: (source_feed_version, source_sha256, route_id).",
-        "Las tres columnas FK de routes forman una sola referencia compuesta hacia agency; no son tres relaciones independientes."
-      ]
-    },
-    {
       "dot": "cyan",
-      "title": "Qué significa la relación",
+      "title": "Qué significa una clave",
       "items": [
-        "Cada ruta aceptada referencia una agency del mismo snapshot; una agency puede tener cero o muchas rutas.",
-        "La URL y el nombre son atributos; no los uso como identificadores ni homologación entre años.",
-        "Es como separar dos ediciones de un catálogo: el código 2 de una edición no demuestra que sea el mismo elemento en la siguiente. Es un ejemplo explicativo."
+        "S significa versión y hash. Cada PK combina S con sus campos de negocio.",
+        "PK y FK describen validaciones del pipeline; no restricciones declaradas en Delta.",
+        "Las columnas compartidas de S forman parte de cada referencia compuesta, aunque una fila solo pueda mostrar un destino."
       ]
     },
     {
-      "dot": "violet",
-      "title": "Todas las columnas de salida",
+      "dot": "emerald",
+      "title": "Nueve tablas físicas; dos catálogos lógicos",
       "items": [
-        "Incluyo 16 columnas físicas de agency y 18 de routes, también las de procedencia y auditoría.",
-        "source_columns distingue lo publicado en el archivo de una columna ausente; no lo deduzco solo por null.",
-        "silver_run_id identifica una ejecución; silver_rule_version identifica las reglas aplicadas. Ninguno sustituye la clave del snapshot."
+        "Incluyo todas las columnas físicas de las nueve tablas Silver.",
+        "Service_ids representa la unión distinta de servicios declarados por los calendarios disponibles.",
+        "Shape_ids representa IDs distintos extraídos de shape_points. Ambos catálogos son lógicos, no tablas persistidas."
       ]
     },
     {
       "dot": "amber",
-      "title": "Cómo crecerá este modelo",
+      "title": "Relaciones que requieren interpretación",
       "items": [
-        "Esta vista solo presenta contratos implementados. El panorama GTFS enumera el alcance pendiente.",
-        "Las claves se comprueban mediante validaciones y unicidad antes de publicar; los tipos proceden del código.",
-        "La verificación de la documentación no equivale a ejecutar un Job ni a volver a comprobar tablas en Databricks."
+        "Trips usa el catálogo de servicios, no los días activos de un horizonte arbitrario.",
+        "Un shape_id de trips puede estar ausente cuando el contrato lo permite. No uno viajes con todos los puntos.",
+        "Calendar_dates valida calendar si el patrón está publicado. Las modalidades de solo excepciones también están admitidas."
+      ]
+    },
+    {
+      "dot": "violet",
+      "title": "Cómo interpreto el estado",
+      "items": [
+        "Las nueve entidades tienen cierre funcional. Service_dates cubre solo 2026.",
+        "Los campos opcionales pueden quedar null. Source_columns conserva la evidencia del encabezado en entidades fuente.",
+        "Stop_times y Gold siguen pendientes. Este modelo no muestra operación real ni consulta tablas en vivo."
+      ]
+    },
+    {
+      "dot": "rose",
+      "title": "Padres dentro de stops",
+      "items": [
+        "Parent_station referencia stop_id dentro del mismo snapshot. El tipo de ubicación determina cuándo exige un padre.",
+        "Conservo las columnas FK en la tabla. Esta autorreferencia se explica aquí porque el motor no dibuja relaciones de una entidad consigo misma."
       ]
     }
   ]

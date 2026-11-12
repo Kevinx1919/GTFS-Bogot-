@@ -587,7 +587,7 @@ El perfil de frequencies todavía no incorpora otra tarea al Job.
 ## Despliegue de frequencies_v1
 
 **Fecha:** 12 de noviembre de 2026. **Estado:** implementación local comprobada. Pasaron 42 pruebas seleccionadas sin omisiones.
-La primera publicación de frequencies en Databricks sigue pendiente.
+El despliegue funcional de frequencies quedó confirmado el 12 de noviembre de 2026.
 El [contrato](contracts/frequencies.md) define ocho campos de negocio. El [perfil](frequencies_profile_2025_2026.md) conserva las mediciones fuente.
 
 ### Dependencia y tipos
@@ -704,4 +704,20 @@ No modifiqué datos de Databricks, archivos recuperados ni Archify.
 También comprobé sintaxis, plantilla regenerable y código idéntico a la copia probada.
 Las ocho tareas anteriores y sus parámetros permanecen intactos.
 Notebook 10 conserva sus dos bloques ejecutables. Notebook 16 conserva sus nueve consultas verificadas.
-La primera publicación real de frequencies sigue pendiente.
+El despliegue funcional de frequencies ya está confirmado; el cierre siguiente conserva el alcance de la evidencia.
+
+
+## Cierre de la ejecución de frequencies
+
+**Fecha:** 12 de noviembre de 2026. Después de sincronizar 34e3769 ejecuté el flujo y confirmé la tabla Silver publicada.
+Cierro el despliegue funcional de frequencies_v1 mediante el Job y notebook 10.
+La tabla destino es workspace.gtfs_bogota.silver_gtfs_frequencies.
+
+La configuración contempla los snapshots 2025-10-28 y 2026-09-29. Este cierre registra una confirmación funcional general.
+No adjunté nuevos resúmenes por iteración ni conteos SQL detallados.
+Conservo 2 / 14 como conteos medidos del perfil fuente, sin atribuirlos a una nueva consulta Silver.
+Las 42 pruebas locales mantienen su evidencia independiente.
+
+Con frequencies completo nueve entidades Silver con despliegue funcional. El siguiente incremento es stop_times, orden 8.
+Actualizo también la documentación visual basada en el código de 34e3769.
+Los diagramas explican el flujo y sus claves; no consultan Databricks ni representan telemetría en vivo.

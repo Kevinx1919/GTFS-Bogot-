@@ -8,7 +8,7 @@
     "quality_profile": "showcase",
     "repository": {
       "url": "https://github.com/Kevinx1919/GTFS-Bogot-.git",
-      "revision": "598bc0de6b65b25ffa2ef13b628ab0966fd41dcd"
+      "revision": "34e3769e1d6eaebca950161f4f47f0bf38f7bc40"
     },
     "views": [
       {
@@ -17,9 +17,19 @@
         "focus": [
           "hoy",
           "agency",
-          "routes"
+          "routes",
+          "ubicaciones",
+          "stops",
+          "shapes",
+          "servicios",
+          "calendar",
+          "calendar_dates",
+          "service_dates",
+          "viajes",
+          "trips",
+          "frequencies"
         ],
-        "note": "Solo agency y routes están habilitadas en el pipeline Silver actual."
+        "note": "Nueve entidades con contrato implementado y cierre funcional confirmado durante el desarrollo."
       },
       {
         "id": "programacion",
@@ -34,7 +44,7 @@
           "frequencies",
           "stop_times"
         ],
-        "note": "Este grupo es una propuesta de desarrollo; sus contratos Silver aún están pendientes."
+        "note": "Calendarios, días activos, viajes y frecuencias ya funcionan. Stop_times es el siguiente incremento."
       },
       {
         "id": "territorio",
@@ -72,13 +82,13 @@
     {
       "id": "hoy",
       "label": "Silver implementada",
-      "sublabel": "Contratos agency_v1 y routes_v1",
+      "sublabel": "Referencias publicadas",
       "sources": [
         {
-          "path": "databricks/gtfs_silver/pipeline.py",
-          "line": 32,
-          "end_line": 37,
-          "label": "Procesadores habilitados"
+          "path": "databricks/config/silver_entities.json",
+          "line": 1,
+          "end_line": 18,
+          "label": "Registro de entidades"
         }
       ],
       "parent": "gtfs"
@@ -86,13 +96,19 @@
     {
       "id": "agency",
       "label": "agency",
-      "sublabel": "Agencias o marcas por snapshot",
+      "sublabel": "Agencias o marcas · PUBLICADA",
       "sources": [
         {
-          "path": "databricks/gtfs_silver/agency_validation.py",
-          "line": 18,
-          "end_line": 24,
-          "label": "Contrato agency_v1"
+          "path": "databricks/gtfs_silver/agency_spark.py",
+          "line": 46,
+          "end_line": 58,
+          "label": "Esquema explícito de agency"
+        },
+        {
+          "path": "databricks/gtfs_silver/spark_validation.py",
+          "line": 84,
+          "end_line": 88,
+          "label": "Procedencia y regla"
         }
       ],
       "parent": "hoy"
@@ -100,13 +116,19 @@
     {
       "id": "routes",
       "label": "routes",
-      "sublabel": "Rutas; referencia a agency",
+      "sublabel": "Catálogo de rutas · PUBLICADA",
       "sources": [
         {
           "path": "databricks/gtfs_silver/routes_spark.py",
-          "line": 65,
-          "end_line": 78,
-          "label": "Referencia del mismo snapshot"
+          "line": 14,
+          "end_line": 21,
+          "label": "Campos y tipos de routes"
+        },
+        {
+          "path": "databricks/gtfs_silver/spark_validation.py",
+          "line": 84,
+          "end_line": 88,
+          "label": "Procedencia y regla"
         }
       ],
       "parent": "hoy"
@@ -114,7 +136,7 @@
     {
       "id": "ubicaciones",
       "label": "Ubicaciones y trazados",
-      "sublabel": "PENDIENTE EN SILVER",
+      "sublabel": "Dos contratos publicados",
       "sources": [
         {
           "path": "docs/silver_design.md",
@@ -128,13 +150,19 @@
     {
       "id": "stops",
       "label": "stops",
-      "sublabel": "Ubicaciones y jerarquía",
+      "sublabel": "Ubicaciones y padres · PUBLICADA",
       "sources": [
         {
-          "path": "docs/silver_design.md",
-          "line": 62,
-          "end_line": 79,
-          "label": "Plan de entidades Silver"
+          "path": "databricks/gtfs_silver/stops_spark.py",
+          "line": 14,
+          "end_line": 19,
+          "label": "Campos y tipos de stops"
+        },
+        {
+          "path": "databricks/gtfs_silver/spark_validation.py",
+          "line": 84,
+          "end_line": 88,
+          "label": "Procedencia y regla"
         }
       ],
       "parent": "ubicaciones"
@@ -142,13 +170,19 @@
     {
       "id": "shapes",
       "label": "shape_points",
-      "sublabel": "Puntos de shapes.txt",
+      "sublabel": "Puntos ordenados · PUBLICADA",
       "sources": [
         {
-          "path": "docs/silver_design.md",
-          "line": 62,
-          "end_line": 79,
-          "label": "Plan de entidades Silver"
+          "path": "databricks/gtfs_silver/shape_points_spark.py",
+          "line": 13,
+          "end_line": 18,
+          "label": "Campos de puntos de trazado"
+        },
+        {
+          "path": "databricks/gtfs_silver/spark_validation.py",
+          "line": 84,
+          "end_line": 88,
+          "label": "Procedencia y regla"
         }
       ],
       "parent": "ubicaciones"
@@ -156,7 +190,7 @@
     {
       "id": "servicios",
       "label": "Servicios y calendario",
-      "sublabel": "PENDIENTE EN SILVER",
+      "sublabel": "Fuentes y derivación publicadas",
       "sources": [
         {
           "path": "docs/silver_design.md",
@@ -170,13 +204,19 @@
     {
       "id": "calendar",
       "label": "calendar",
-      "sublabel": "Patrón semanal publicado",
+      "sublabel": "Patrón semanal · PUBLICADA",
       "sources": [
         {
-          "path": "docs/silver_design.md",
-          "line": 62,
-          "end_line": 79,
-          "label": "Plan de entidades Silver"
+          "path": "databricks/gtfs_silver/calendars_spark.py",
+          "line": 15,
+          "end_line": 21,
+          "label": "Esquemas de calendarios"
+        },
+        {
+          "path": "databricks/gtfs_silver/spark_validation.py",
+          "line": 84,
+          "end_line": 88,
+          "label": "Procedencia y regla"
         }
       ],
       "parent": "servicios"
@@ -184,13 +224,19 @@
     {
       "id": "calendar_dates",
       "label": "calendar_dates",
-      "sublabel": "Excepciones por fecha",
+      "sublabel": "Excepciones por fecha · PUBLICADA",
       "sources": [
         {
-          "path": "docs/silver_design.md",
-          "line": 62,
-          "end_line": 79,
-          "label": "Plan de entidades Silver"
+          "path": "databricks/gtfs_silver/calendars_spark.py",
+          "line": 15,
+          "end_line": 21,
+          "label": "Esquemas de calendarios"
+        },
+        {
+          "path": "databricks/gtfs_silver/spark_validation.py",
+          "line": 84,
+          "end_line": 88,
+          "label": "Procedencia y regla"
         }
       ],
       "parent": "servicios"
@@ -198,13 +244,19 @@
     {
       "id": "service_dates",
       "label": "service_dates",
-      "sublabel": "Derivada: días activos",
+      "sublabel": "Días activos de 2026 · PUBLICADA",
       "sources": [
         {
-          "path": "docs/silver_design.md",
-          "line": 62,
-          "end_line": 79,
-          "label": "Plan de entidades Silver"
+          "path": "databricks/gtfs_silver/service_dates_spark.py",
+          "line": 107,
+          "end_line": 122,
+          "label": "Esquema derivado"
+        },
+        {
+          "path": "databricks/gtfs_silver/publication.py",
+          "line": 211,
+          "end_line": 225,
+          "label": "Campos finales y clave"
         }
       ],
       "parent": "servicios"
@@ -212,7 +264,7 @@
     {
       "id": "viajes",
       "label": "Viajes y horarios",
-      "sublabel": "PENDIENTE EN SILVER",
+      "sublabel": "Trips y frequencies publicadas",
       "sources": [
         {
           "path": "docs/silver_design.md",
@@ -226,13 +278,19 @@
     {
       "id": "trips",
       "label": "trips",
-      "sublabel": "Viajes o patrones publicados",
+      "sublabel": "Viajes plantilla · PUBLICADA",
       "sources": [
         {
-          "path": "docs/silver_design.md",
-          "line": 62,
-          "end_line": 79,
-          "label": "Plan de entidades Silver"
+          "path": "databricks/gtfs_silver/trips_spark.py",
+          "line": 14,
+          "end_line": 17,
+          "label": "Campos de trips"
+        },
+        {
+          "path": "databricks/gtfs_silver/spark_validation.py",
+          "line": 84,
+          "end_line": 88,
+          "label": "Procedencia y regla"
         }
       ],
       "parent": "viajes"
@@ -240,13 +298,19 @@
     {
       "id": "frequencies",
       "label": "frequencies",
-      "sublabel": "Ventanas por frecuencia",
+      "sublabel": "Ventanas e intervalos · PUBLICADA",
       "sources": [
         {
-          "path": "docs/silver_design.md",
-          "line": 62,
-          "end_line": 79,
-          "label": "Plan de entidades Silver"
+          "path": "databricks/gtfs_silver/frequencies_spark.py",
+          "line": 141,
+          "end_line": 145,
+          "label": "Campos fuente y derivados"
+        },
+        {
+          "path": "databricks/gtfs_silver/spark_validation.py",
+          "line": 84,
+          "end_line": 88,
+          "label": "Procedencia y regla"
         }
       ],
       "parent": "viajes"
@@ -254,7 +318,7 @@
     {
       "id": "stop_times",
       "label": "stop_times",
-      "sublabel": "Visitas planificadas a paradas",
+      "sublabel": "Visitas y horas · SIGUIENTE",
       "sources": [
         {
           "path": "docs/silver_design.md",
@@ -325,28 +389,28 @@
   "cards": [
     {
       "dot": "cyan",
-      "title": "Qué representan las líneas",
+      "title": "Cómo leo las ramas",
       "items": [
-        "Las ramas agrupan el alcance por responsabilidad; no representan joins, claves foráneas ni el orden exacto del Job.",
-        "Para la relación implementada entre agency y routes abro el ERD con todas sus columnas."
+        "Las ramas agrupan responsabilidades. No representan joins ni el orden del Job.",
+        "El ERD muestra las columnas y referencias. El recorrido del Job muestra la serialización."
       ]
     },
     {
       "dot": "emerald",
-      "title": "Cómo amplio la documentación",
+      "title": "Lo que ya funciona",
       "items": [
-        "Al incorporar una entidad reviso sus datos, cierro su contrato, implemento sus tipos y compruebo su ejecución.",
-        "Entonces la muevo al grupo implementado y añado sus columnas y relaciones al ERD.",
-        "Es como un índice de capítulos: el índice muestra lo que quiero cubrir, aunque algunos capítulos sigan por escribir."
+        "Nueve entidades tienen contrato implementado y cierre funcional. Service_dates cubre solamente 2026.",
+        "Shape_points viene de shapes.txt. Service_dates es una derivación; no un TXT adicional.",
+        "Este estado documenta las comprobaciones del desarrollo; no consulta Databricks en vivo."
       ]
     },
     {
       "dot": "amber",
-      "title": "Qué sigue siendo propuesta",
+      "title": "Lo que sigue",
       "items": [
-        "Los nombres shape_points y service_dates proceden del plan; service_dates es una entidad derivada, no un TXT adicional.",
-        "La disponibilidad de una tabla Bronze o un archivo no significa que su contrato Silver esté implementado.",
-        "No invento filas para archivos opcionales ausentes. Mantengo el snapshot en las futuras claves y relaciones."
+        "El siguiente contrato es stop_times: visitas planificadas, secuencia y tiempos.",
+        "Después cerraré el planificador 8b antes de programar el Job automáticamente.",
+        "Tarifas y feed_info siguen pendientes según la pregunta analítica. Gold y Power BI también siguen pendientes."
       ]
     }
   ]

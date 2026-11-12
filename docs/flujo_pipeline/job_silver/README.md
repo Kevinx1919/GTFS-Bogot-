@@ -1,30 +1,53 @@
 # Mi recorrido del Job Silver
 
-Ya preparé dos vistas interactivas. Las abro en el navegador y sigo este orden:
+Actualicé las dos vistas el 12 de noviembre de 2026.
 
-1. [Orden del Job](recorrido_job.html): Run now, agency, routes y recuperación cuando una etapa falla.
-2. [Una iteración por snapshot](iteracion_snapshot.html): lectura, reglas, cuarentena, decisión, publicación y auditoría final.
+1. [Orden del Job](recorrido_job.html): nueve tareas, parámetros por snapshot y un ejemplo de recuperación.
+2. [Una iteración](iteracion_snapshot.html): entradas, validación, cuarentena, publicación, auditoría y errores.
 
-## Cómo las exploro
+## Cómo sigo el Job
 
-Empiezo por la fila superior del mapa del Job. La conexión All succeeded explica por qué routes espera a agency. Abro un bloque para consultar sus referencias al código; puedo usar RUTA para explorar un recorrido y la búsqueda para localizar un componente. Las ramas inferiores describen errores y recuperación.
+Las flechas avanzan hacia abajo y a la derecha:
 
-Después abro la vista de una iteración. Sigo el camino hasta publicar y comparo las salidas Error previo, Snapshot rechazado y Fallo de publicación. Las tarjetas inferiores explican los detalles que no caben en el dibujo. La interfaz está en español; conservo los nombres técnicos que aparecen en el código.
+```text
+agency → routes → stops → calendar → calendar_dates
+→ service_dates → shape_points → trips → frequencies
+```
 
-## Qué está representado
+Cada bloque representa un For each. Las nueve tareas utilizan notebook 10.
+Ocho tareas fuente contemplan 2025 y 2026. Service_dates calcula solamente el horizonte 2026.
+Cada bucle usa concurrencia 1. La plantilla mantiene un reintento con un intervalo mínimo de 60 segundos.
 
-Las vistas documentan el código y la definición del Job en el commit 598bc0de6b65b25ffa2ef13b628ab0966fd41dcd. Representan mode=publish y listas versionadas para 2025 y 2026. Las animaciones explican relaciones del diagrama; no muestran telemetría ni verifican la configuración actual de la interfaz de Databricks.
+El orden también protege la auditoría compartida. Una dependencia entre tareas no implica siempre una relación entre tablas.
+Por ejemplo, stops espera a routes en el Job, pero valida su propia jerarquía.
+Routes sí consulta agency. Frequencies sí consulta trips.
 
-Ambos For each llaman al notebook 10. El pipeline selecciona reglas por entidad y snapshot; routes exige agency_v1 del mismo snapshot. Si hay rechazos no publico un subconjunto. Un fallo posterior a la escritura puede dejar silver_committed=true y requiere revisar el intento. No represento mode=validate ni la ingesta Bronze en estos recorridos.
+La rama de errores ejemplifica un fallo de trips. Frequencies espera mientras su dependencia no termina correctamente.
+Las otras etapas conservan la misma política de reintentos.
+Abro el error de la iteración, reviso la causa y reparo las tareas afectadas.
 
-## Fuentes y verificación
+## Qué ocurre dentro de una iteración
 
-Conservo [la fuente del mapa](recorrido_job.workflow.json) y [la fuente de la iteración](iteracion_snapshot.workflow.json), con referencias de archivos y líneas vinculadas al commit. Los contratos y procedimientos completos siguen en la [guía Silver](../../silver_execution.md) y el [runbook](../../notebook_runbook.md).
+Las entidades fuente leen Bronze y el encabezado TXT del mismo snapshot.
+El procesador añade las dependencias requeridas por su contrato.
+Service_dates recibe calendarios Silver y una ventana explícita; no simula otro TXT.
 
-Ambas vistas pasaron los controles de Archify, incluidos los de navegador. Revisé capturas en claro y oscuro a 1440×900 y 2048×1320. El [resumen público](verificacion.json) registra los hashes, el commit y el alcance de estas comprobaciones; los recibos completos y capturas locales quedan fuera de Git.
+La vista interior representa mode=publish. Mode=validate devuelve el resumen antes de escribir auditoría, cuarentena o Silver.
+Un rechazo conserva originales y motivos. El escritor bloquea la publicación parcial del snapshot.
+Un error anterior a la preparación puede quedar solamente en el Job.
 
-OneDrive impidió restaurar un archivo de control al reemplazar una versión durante el primer render. Recuperé la evidencia previa y generé las versiones finales en una carpeta temporal local. Copié los HTML comprobados y verifiqué igualdad de hashes. Para regenerar usaré una carpeta temporal fuera de OneDrive, las fuentes de esta carpeta y el repositorio como repo-root; después copiaré los resultados comprobados. No traslado recibos de Archify como si hubieran sido emitidos para otra ruta: el resumen público distingue la copia final de la ubicación de validación.
+Los commits de auditoría, cuarentena y Silver son independientes.
+Un fallo posterior a la escritura puede dejar silver_committed=true. Reviso ese estado antes de reintentar.
 
-## Qué sigue
+## Estado y evidencia
 
-Ya revisé la interactividad y los enlaces de este recorrido. Puedo continuar con el [mapa del lakehouse](../mapa_lakehouse/README.md) y el [modelo GTFS](../modelo_gtfs/README.md), que crecerá con las demás entidades. Conservo la documentación visual en el repositorio; todavía no fue publicada en un sitio web.
+Las nueve entidades tienen despliegue funcional confirmado durante el desarrollo.
+El [cierre de frequencies](../../silver_execution.md#cierre-de-la-ejecución-de-frequencies) conserva el alcance de esa confirmación.
+Los diagramas enlazan el código de 34e3769e1d6eaebca950161f4f47f0bf38f7bc40. No muestran telemetría ni verifican cambios externos de la interfaz.
+Las listas de snapshots siguen siendo manuales. El planificador automático permanece pendiente 8b.
+
+Las fuentes son [el recorrido](recorrido_job.workflow.json) y [la iteración](iteracion_snapshot.workflow.json).
+Ambas vistas pasaron controles automáticos de estructura, referencias, HTML y navegador.
+El [resumen público](verificacion.json) identifica los hashes y las medidas de navegador de esta revisión.
+No hice una nueva revisión de capturas. Los recibos detallados permanecen fuera de Git.
+Genero fuera de OneDrive y copio los HTML comprobados sin cambiar sus bytes.

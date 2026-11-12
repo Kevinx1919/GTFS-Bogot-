@@ -7,8 +7,8 @@ Uso esta carpeta para explicar el proyecto mediante diagramas interactivos y pá
 | Documento | Pregunta que responde | Alcance |
 | --- | --- | --- |
 | [Mapa del lakehouse](mapa_lakehouse/README.md) | ¿Dónde están los datos y cómo avanzan entre capas? | Raw, Staging, Bronze y Silver actuales; Gold y Power BI identificados como futuros. |
-| [Recorrido del Job Silver](job_silver/README.md) | ¿Qué ocurre al pulsar Run now y qué pasa ante un error? | Agency y routes, parámetros por snapshot, validación, publicación, auditoría y recuperación. |
-| [Modelo GTFS](modelo_gtfs/README.md) | ¿Cómo se relacionan las entidades y cómo preservo cada snapshot? | Empiezo con agency y routes; ampliaré las vistas al incorporar las demás entidades. |
+| [Recorrido del Job Silver](job_silver/README.md) | ¿Qué ocurre al pulsar Run now y qué pasa ante un error? | Nueve tareas, parámetros por snapshot, validación, publicación, auditoría y recuperación. |
+| [Modelo GTFS](modelo_gtfs/README.md) | ¿Cómo se relacionan las entidades y cómo preservo cada snapshot? | Nueve tablas físicas y dos catálogos lógicos; stop_times continúa como siguiente contrato. |
 
 Puedo empezar directamente por el [mapa del lakehouse](mapa_lakehouse/mapa_lakehouse.html), el [orden del Job](job_silver/recorrido_job.html), el [interior de una iteración](job_silver/iteracion_snapshot.html), el [modelo Silver actual](modelo_gtfs/modelo_silver.html) o el [panorama GTFS](modelo_gtfs/panorama_gtfs.html).
 
@@ -38,13 +38,26 @@ Ya creé los tres documentos: el mapa del lakehouse, el recorrido del Job Silver
 
 ## Estado de esta preparación
 
-La herramienta está instalada y los cinco HTML de los tres documentos están generados, con fuentes JSON, controles automáticos y revisión de capturas en ambos temas. Conservo esta documentación en el repositorio; no publiqué un sitio web. Las comprobaciones de los diagramas no son ejecuciones del pipeline en Databricks.
+La herramienta está instalada. Actualicé los cinco HTML con sus fuentes JSON y controles automáticos de navegador. No atribuyo las capturas anteriores a esta revisión nueva. Conservo esta documentación en el repositorio; no publiqué un sitio web. Las comprobaciones de los diagramas no son ejecuciones del pipeline en Databricks.
 
 Para evitar un problema de reemplazo de archivos de control en OneDrive genero en una carpeta temporal fuera de la sincronización y publico copias byte a byte de los HTML comprobados. Conservo en el proyecto un resumen público de verificación; los controles de entrega y recuperación locales quedan excluidos de Git.
 
 Referencias: [Archify](https://github.com/tt-a1i/archify), [skill](https://github.com/tt-a1i/archify/blob/a4065941f12be7967436261d9934784e381d423c/archify/SKILL.md), [guía operativa Silver](../silver_execution.md) y [contratos](../contracts).
 
 
-## Revisión pendiente tras stops_v1
+## Estado actualizado tras frequencies_v1
 
-El código local incorpora stops_v1 y una tercera tarea serial del Job. Los cinco HTML actuales siguen explicando la revisión fijada en sus referencias, con agency y routes; el panorama todavía muestra stops como pendiente de ese incremento. Cuando el nuevo código quede en un commit actualizaré las vistas y las validaré contra esa revisión. No cambio referencias a archivos sin commit ni presento el modelo anterior como prueba de la implementación local nueva. El estado de stops está en el [contrato](../contracts/stops.md) y la [guía de ejecución](../silver_execution.md).
+Actualicé las cinco vistas el 12 de noviembre de 2026.
+Las nueve entidades tienen despliegue funcional confirmado durante el desarrollo.
+El modelo conserva todas sus 135 columnas físicas. Distingue dos catálogos lógicos que no son tablas persistidas.
+El recorrido muestra las nueve tareas y separa dependencias operativas de relaciones entre tablas.
+El mapa distingue ocho entidades fuente y service_dates derivada, limitada a 2026.
+
+Los enlaces de evidencia fijan el código de 34e3769e1d6eaebca950161f4f47f0bf38f7bc40.
+El cierre de ejecución y esta actualización documental son cambios posteriores todavía locales.
+Actualicé guías Markdown, fuentes JSON, HTML y resúmenes; no modifiqué el pipeline ni ejecuté Jobs.
+El siguiente contrato es stop_times. Gold y el planificador automático permanecen pendientes.
+
+Las cinco vistas pasaron comprobaciones automáticas de navegador.
+Los resúmenes distinguen esos controles de una revisión visual de capturas, que no repetí para esta revisión.
+El ERD denso utiliza el perfil standard para conservar todos los campos.

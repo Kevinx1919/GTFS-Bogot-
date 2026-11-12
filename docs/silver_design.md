@@ -2,7 +2,7 @@
 
 ## 1. Estado y propósito
 
-**Estado de este documento:** este es mi plan para construir Silver por etapas. La carpeta Silver contiene una guía SQL de agency como punto de entrada y un perfilador PySpark como alternativa. Revisé las salidas del perfilador PySpark de agency para 2025 y 2026 y las contrasté con consultas SQL mediante Genie. La guía SQL con widgets no tiene una comprobación de ejecución completa documentada. El [contrato v1 de agency](contracts/agency.md) define el primer incremento. Su núcleo Python de validación ya fue implementado y contrastado; el notebook 09 de lectura fue ejecutado y revisado en Databricks para ambos snapshots. La [publicación y el Job manual](silver_execution.md) ya están preparados y probados localmente con Delta real. Agency ya fue publicada para ambos snapshots y su Job manual terminó con éxito. Implementé y publiqué [routes_v1](contracts/routes.md) con Spark y el Job compartido. Al 10 de noviembre completé el [perfil de stops](stops_profile_2025_2026.md) en lectura. El contrato stops_v1 ya está implementado y ejecutado en Databricks: comprobé el Job, la tabla Silver y sus datos con una consulta breve. Calendar y calendar_dates ya están implementados y publicados: ejecuté sus tareas y consulté las tablas en Workspace. Service_dates está publicada y consultada para 2026: 1.403 pares únicos, siete servicios y fechas de enero a diciembre. Completé el perfil e implementé shape_points. Sus 36 pruebas seleccionadas pasaron. El flujo ya funciona en Databricks. Completé el perfil de trips, orden 6. Su contrato está implementado. Las 37 pruebas seleccionadas pasaron. El Job de trips ya funciona. Las ocho entidades actuales tienen despliegue funcional en Workspace. Continúo con frequencies, orden 7. Las demás entidades continúan como propuestas. El [cierre de stops](silver_execution.md#cierre-de-la-ejecución-de-stops) distingue esta comprobación de los conteos del perfil y de las pruebas locales.
+**Estado de este documento:** este es mi plan para construir Silver por etapas. La carpeta Silver contiene una guía SQL de agency como punto de entrada y un perfilador PySpark como alternativa. Revisé las salidas del perfilador PySpark de agency para 2025 y 2026 y las contrasté con consultas SQL mediante Genie. La guía SQL con widgets no tiene una comprobación de ejecución completa documentada. El [contrato v1 de agency](contracts/agency.md) define el primer incremento. Su núcleo Python de validación ya fue implementado y contrastado; el notebook 09 de lectura fue ejecutado y revisado en Databricks para ambos snapshots. La [publicación y el Job manual](silver_execution.md) ya están preparados y probados localmente con Delta real. Agency ya fue publicada para ambos snapshots y su Job manual terminó con éxito. Implementé y publiqué [routes_v1](contracts/routes.md) con Spark y el Job compartido. Al 10 de noviembre completé el [perfil de stops](stops_profile_2025_2026.md) en lectura. El contrato stops_v1 ya está implementado y ejecutado en Databricks: comprobé el Job, la tabla Silver y sus datos con una consulta breve. Calendar y calendar_dates ya están implementados y publicados: ejecuté sus tareas y consulté las tablas en Workspace. Service_dates está publicada y consultada para 2026: 1.403 pares únicos, siete servicios y fechas de enero a diciembre. Completé el perfil e implementé shape_points. Sus 36 pruebas seleccionadas pasaron. El flujo ya funciona en Databricks. Completé el perfil de trips, orden 6. Su contrato está implementado. Las 37 pruebas seleccionadas pasaron. El Job de trips ya funciona. Las nueve entidades actuales tienen despliegue funcional en Workspace. Continúo con stop_times, orden 8. Las demás entidades continúan como propuestas. El [cierre de stops](silver_execution.md#cierre-de-la-ejecución-de-stops) distingue esta comprobación de los conteos del perfil y de las pruebas locales.
 
 **Punto de partida:** al reejecutar 04 comprobé que reconoció los hashes ya cargados de las ocho entidades de referencia de cada versión. La auditoría 07 de 2025 terminó en PASSED, sin fallos ni advertencias; la de 2026 en WARNING, sin fallos bloqueantes y con cinco advertencias de esquema conocidas. Esto no significa que ya estén probados los tipos, la unicidad o todas las reglas GTFS que necesitará Silver.
 
@@ -63,7 +63,7 @@ Los conteos pueden incluir categorías derivadas del mismo valor; no los sumaré
 
 Llamaré **S** a la pareja (source_feed_version, source_sha256). Todas las claves y relaciones se evaluarán dentro de S. No mezclaré filas de 2025 y 2026 en un join por ID aislado. Una fecha de publicación no es una fecha de servicio. run_id identifica una ejecución, no una ruta o parada.
 
-Agency, routes y stops ya tienen sus tablas silver_gtfs_* publicadas y su ejecución revisada en Workspace. El orden 4a, calendar y calendar_dates, ya está ejecutado en Databricks y comprobé sus datos. El orden 4b, service_dates, está publicado para 2026. Shape_points, orden 5, ya funciona en Databricks. Trips, orden 6, ya funciona. Continúo con frequencies, orden 7. Los nombres y tipos de las demás entidades continúan como propuestas. Los archivos opcionales se procesarán solo si están publicados; su ausencia se documentará sin inventar registros.
+Agency, routes y stops ya tienen sus tablas silver_gtfs_* publicadas y su ejecución revisada en Workspace. El orden 4a, calendar y calendar_dates, ya está ejecutado en Databricks y comprobé sus datos. El orden 4b, service_dates, está publicado para 2026. Shape_points, orden 5, ya funciona en Databricks. Trips, orden 6, ya funciona. Frequencies, orden 7, ya funciona. Continúo con stop_times, orden 8. Los nombres y tipos de las demás entidades continúan como propuestas. Los archivos opcionales se procesarán solo si están publicados; su ausencia se documentará sin inventar registros.
 
 | Orden | Entidad Silver | Qué representa una fila / clave dentro de S | Tipos principales propuestos | Qué revisaré y qué permite analizar |
 | --- | --- | --- | --- | --- |
@@ -223,7 +223,7 @@ El orden 4b será service_dates: una fila por servicio activo y fecha, dentro de
 
 ## Próximo incremento: service_dates
 
-**Estado al 12 de noviembre de 2026:** el despliegue de las dos fuentes y la primera derivación service_dates están completados. Comprobé la tabla derivada con 1.403 pares únicos y siete servicios en el horizonte 2026. El [cierre](silver_execution.md#cierre-de-la-ejecución-de-service_dates) distingue esa consulta de las pruebas locales. Shape_points ya funciona. Trips también funciona. El siguiente paso es frequencies.
+**Estado al 12 de noviembre de 2026:** el despliegue de las dos fuentes y la primera derivación service_dates están completados. Comprobé la tabla derivada con 1.403 pares únicos y siete servicios en el horizonte 2026. El [cierre](silver_execution.md#cierre-de-la-ejecución-de-service_dates) distingue esa consulta de las pruebas locales. Shape_points ya funciona. Trips también funciona. Frequencies ya está publicada. El siguiente paso es stop_times.
 
 Una fila representará un servicio activo en una fecha dentro del mismo snapshot. Aplicaré el patrón semanal en el intervalo correspondiente, añadiré excepciones de tipo 1 y retiraré las de tipo 2. Registraré la procedencia y el horizonte utilizado para no mezclar una expansión parcial con una cobertura completa.
 
@@ -247,7 +247,7 @@ El archivo 2025 no publica trip_headsign. El archivo 2026 lo publica sin conteni
 
 El [contrato trips_v1](contracts/trips.md) conserva cinco campos string. Los IDs relacionan entidades; no son cantidades. El catálogo de servicios usa calendar/calendar_dates, no el horizonte de service_dates. Los 2 / 14 IDs relacionados con frequencies requieren su interpretación posterior. Implementé trips localmente y añadí su tarea a la plantilla. El [cierre de trips](silver_execution.md#cierre-de-la-ejecución-de-trips) registra su despliegue funcional confirmado.
 
-## Siguiente incremento: frequencies
+## Incremento completado: frequencies
 
 Completé el [perfil de frequencies](frequencies_profile_2025_2026.md) mediante nueve consultas correctas de lectura.
 El [notebook 16](../databricks/notebooks/silver/16_profile_gtfs_frequencies.ipynb) conserva esas consultas.
@@ -256,14 +256,22 @@ No encontré errores en los controles ejecutados de completitud, claves, convers
 Todas corresponden a la ruta C_1, con route_type=6. Cada ventana actual usa un trip_id distinto.
 No inferiré mejoras operativas desde el cambio de cantidad o intervalo.
 
-Preparé la [contrato frequencies_v1](contracts/frequencies.md). Conserva horas fuente y deriva segundos de servicio como long.
+Implementé el [contrato frequencies_v1](contracts/frequencies.md). Conserva horas fuente y deriva segundos de servicio como long.
 Propone headway_secs int positivo y tratamiento explícito de exact_times ausente.
-Implementé el procesador y añadí su tarea a la plantilla. La primera publicación en Databricks sigue pendiente.
+Implementé el procesador y añadí su tarea a la plantilla. El despliegue funcional de frequencies ya está confirmado.
 Después de revisar el perfil implementé las reglas con Spark nativo y reutilicé notebook 10.
 La plantilla añade publish_frequencies después de publish_trips. Las ocho tareas anteriores permanecen iguales.
 La [guía de despliegue](silver_execution.md#despliegue-de-frequencies_v1) conserva parámetros y resultados esperados.
-Las 42 pruebas seleccionadas pasaron sin omisiones. La publicación real de frequencies sigue pendiente.
+Las 42 pruebas seleccionadas pasaron sin omisiones. Frequencies ya está publicada en Databricks. El siguiente paso es perfilar stop_times, orden 8.
 Stop_times seguirá después, en el orden 8. El planificador de snapshots permanece pendiente 8b.
+
+## Siguiente incremento: stop_times
+
+Continúo con el orden 8 después de confirmar frequencies publicada.
+Primero perfilaré visitas planificadas, secuencias, horas extendidas y referencias a trips y stops dentro del mismo snapshot.
+Revisaré tiempos ausentes, timepoint, repeticiones y coherencia temporal antes de implementar reglas.
+Las visitas de una plantilla por frecuencia necesitan una interpretación distinta de horarios exactos al construir Gold.
+No comenzaré Gold antes de cerrar este contrato. El planificador automático sigue pendiente 8b.
 
 ## Automatización pendiente: selección de snapshots Silver
 

@@ -1,48 +1,103 @@
 {
   "schema_version": 1,
-  "archify_version": "3.2.0",
-  "source_revision": "598bc0de6b65b25ffa2ef13b628ab0966fd41dcd",
-  "scope": "Definición versionada del Job; mode=publish; sin telemetría en vivo.",
-  "generated_at_utc": "2026-11-07T04:54:18.382672+00:00",
-  "publication": "Copia byte a byte desde la generación temporal validada fuera de OneDrive.",
+  "checked_at_utc": "2026-11-12T18:06:47.836414+00:00",
+  "tool": "Archify 3.2.0",
+  "repository_revision": "34e3769e1d6eaebca950161f4f47f0bf38f7bc40",
+  "delivery_method": "Generé y comprobé fuera de OneDrive. Copié los HTML byte a byte y verifiqué sus hashes. Los recibos locales conservan su ruta original.",
+  "scope": "Documentación y navegador local. No ejecuté Jobs ni consulté Databricks. El cierre funcional procede de la confirmación del desarrollo.",
+  "operational_confirmation_date": "2026-11-12",
   "artifacts": [
     {
-      "html": "recorrido_job.html",
       "source": "recorrido_job.workflow.json",
-      "html_sha256": "4822dd214a0fbc32ee349b15456ec19713299920022be20eb40d439b39a38a53",
-      "source_sha256": "5b9ad737c3310c47c7c95e7242ed550b121c5a325bf9eeafe21a4af739eb1e1a",
-      "bytes": 846458,
+      "source_sha256": "04307aa7c0b0053e0a59b84d155095375bd2b5ddd5d1f96aebd99d9f17ceb7aa",
+      "html": "recorrido_job.html",
+      "html_sha256": "ed7a7003dd35fd0a3c0842fbcd12fee8b7257fa04b1efa8b5c737c1c78c0e53c",
+      "bytes": 858455,
+      "quality_profile": "showcase",
       "automated_gates": {
         "validate": "pass",
         "deliver": "pass",
         "check": "pass",
         "browser-check": "pass"
       },
-      "browser_captures": "passed",
+      "browser_viewports": [
+        {
+          "width": 1440,
+          "height": 900,
+          "minimum_projected_node_text_px": 6.3,
+          "readability_ok": true
+        },
+        {
+          "width": 1600,
+          "height": 1000,
+          "minimum_projected_node_text_px": 6.3,
+          "readability_ok": true
+        },
+        {
+          "width": 1920,
+          "height": 1080,
+          "minimum_projected_node_text_px": 6.3,
+          "readability_ok": true
+        },
+        {
+          "width": 2048,
+          "height": 1320,
+          "minimum_projected_node_text_px": 6.3,
+          "readability_ok": true
+        }
+      ],
       "visual_review": {
-        "status": "passed",
-        "scope": "Capturas 1440×900 y 2048×1320, claro y oscuro; legibilidad y recorridos."
+        "status": "not-requested",
+        "scope": "Esta actualización tiene controles automáticos de navegador. No atribuyo las capturas de la versión anterior a estos HTML nuevos."
       },
-      "published_copy_matches_validated_artifact": true
+      "final_copy_matches_validated_artifact": true,
+      "advisories": {}
     },
     {
-      "html": "iteracion_snapshot.html",
       "source": "iteracion_snapshot.workflow.json",
-      "html_sha256": "8aec3b8b78201593c2009ba5bb24a0fa4066fdd807d808bb835be3a2f0941c0e",
-      "source_sha256": "45a864ac6224575d84a5126e1f2ab7ea78839062b63797b1e8b342cc73b530f3",
-      "bytes": 855642,
+      "source_sha256": "1988c53d42702c37d2dd77939291bc006126d0b6934708d5aa80b59d5e7c15bf",
+      "html": "iteracion_snapshot.html",
+      "html_sha256": "fe54efd2fd32c7088dbafd38ffa2d7fcc6e94d40af3d222e69f2ed99f5c17c87",
+      "bytes": 855191,
+      "quality_profile": "showcase",
       "automated_gates": {
         "validate": "pass",
         "deliver": "pass",
         "check": "pass",
         "browser-check": "pass"
       },
-      "browser_captures": "passed",
+      "browser_viewports": [
+        {
+          "width": 1440,
+          "height": 900,
+          "minimum_projected_node_text_px": 7,
+          "readability_ok": true
+        },
+        {
+          "width": 1600,
+          "height": 1000,
+          "minimum_projected_node_text_px": 7,
+          "readability_ok": true
+        },
+        {
+          "width": 1920,
+          "height": 1080,
+          "minimum_projected_node_text_px": 7,
+          "readability_ok": true
+        },
+        {
+          "width": 2048,
+          "height": 1320,
+          "minimum_projected_node_text_px": 7,
+          "readability_ok": true
+        }
+      ],
       "visual_review": {
-        "status": "passed",
-        "scope": "Capturas 1440×900 y 2048×1320, claro y oscuro; legibilidad y recorridos."
+        "status": "not-requested",
+        "scope": "Esta actualización tiene controles automáticos de navegador. No atribuyo las capturas de la versión anterior a estos HTML nuevos."
       },
-      "published_copy_matches_validated_artifact": true
+      "final_copy_matches_validated_artifact": true,
+      "advisories": {}
     }
   ]
 }
