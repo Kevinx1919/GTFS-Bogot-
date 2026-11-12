@@ -1,6 +1,6 @@
 # Mi contrato derivado service_dates_v1
 
-**Fecha:** 11 de noviembre de 2026. **Estado:** implementación y configuración probadas localmente. La vista previa SQL está ejecutada; las 24 pruebas seleccionadas pasaron sin omisiones con Spark 4.0.1 y Delta 4.0.0, incluidas las ocho nuevas y las regresiones de calendarios y del lector compartido. No hay publicación de esta derivación en Databricks.
+**Fecha:** 11 de noviembre de 2026. **Estado:** implementación y configuración probadas localmente. La vista previa SQL está ejecutada; las 24 pruebas seleccionadas pasaron sin omisiones con Spark 4.0.1 y Delta 4.0.0, incluidas las ocho nuevas y las regresiones de calendarios y del lector compartido. Ya publiqué la derivación en Databricks y consulté sus datos: 1.403 filas, 1.403 claves distintas y siete servicios, entre 2026-01-01 y 2026-12-31. El [cierre de ejecución](../silver_execution.md#cierre-de-la-ejecución-de-service_dates) conserva la evidencia y su alcance.
 
 ## Horizonte, fuentes y grano
 
@@ -49,6 +49,6 @@ Reutilizo notebook 10 y el escritor común. Validate no escribe; publish sustitu
 
 La cuarentena derivada puede quedar vacía: los datos de salida son construidos y las fuentes se comprueban antes. Una fuente curada inválida falla antes de obtener candidatos; el error aparece en el Job, sin fabricar registros rechazados de una derivación que no llegó a calcularse.
 
-El [notebook 13](../../databricks/notebooks/silver/13_preview_gtfs_service_dates.ipynb) es exploración, no una tarea del Job. La plantilla añade publish_service_dates después de publish_calendar_dates y un único work item 2026. Las pruebas nativas ya pasaron; falta sincronizar el código y comprobar la primera ejecución real en Workspace.
+El [notebook 13](../../databricks/notebooks/silver/13_preview_gtfs_service_dates.ipynb) es exploración, no una tarea del Job. La plantilla añade publish_service_dates después de publish_calendar_dates y un único work item 2026. Las pruebas nativas ya pasaron y la primera publicación en Workspace está comprobada mediante la consulta del cierre.
 
-El [informe](../service_dates_preview.md) espera 1.403 pares activos en 2026 con las fuentes consultadas. Eso no mide operación, pasajeros, ocupación ni cantidad de viajes. Gold seguirá requiriendo su ficha de negocio y las uniones correctas con viajes/horarios.
+El [informe](../service_dates_preview.md) conserva la vista previa de 1.403 pares activos en 2026; la consulta posterior de la tabla publicada confirmó ese total. Eso no mide operación, pasajeros, ocupación ni cantidad de viajes. Gold seguirá requiriendo su ficha de negocio y las uniones correctas con viajes/horarios.

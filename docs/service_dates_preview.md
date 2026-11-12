@@ -46,3 +46,8 @@ No comparo 1.670 frente a 1.403 como reducción de oferta. Además del alcance f
 La primera implementación registra versiones Delta fijadas y el horizonte. Este SQL es una exploración de lectura sobre las tablas consultadas; no publica ni sustituye las pruebas del módulo PySpark. No expandí stop_times ni empecé Gold.
 
 La especificación fuente está en [GTFS](https://gtfs.org/documentation/schedule/reference/#calendar_datestxt). El horizonte, el esquema derivado y las protecciones de publicación pertenecen al [contrato del proyecto](contracts/service_dates.md).
+
+
+## Comprobación posterior de la tabla publicada
+
+El 11 de noviembre publiqué service_dates de 2026 y consulté la tabla Silver: 1.403 filas, 1.403 claves distintas, siete servicios, primera fecha 2026-01-01 y última fecha 2026-12-31. También inspeccioné sus datos. El resultado coincide con la vista previa anterior; el [cierre de ejecución](silver_execution.md#cierre-de-la-ejecución-de-service_dates) registra el ámbito y la evidencia disponible. El escenario 2025 permanece como diagnóstico, sin publicación derivada.

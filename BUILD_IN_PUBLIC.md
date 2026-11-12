@@ -408,6 +408,14 @@ Elegí empezar solo con 2026-01-01 a 2026-12-31. Preparé el modelo derivado sin
 
 La compilación, los enlaces y la plantilla regenerable pasaron. Tras iniciar Docker, ejecuté 24 pruebas seleccionadas en 301,570 segundos con Spark 4.0.1 y Delta 4.0.0: todas pasaron, sin omisiones. Incluyen las ocho nuevas de contrato, reglas y publicación, más regresiones de despacho, configuración, calendarios y lectura versionada de Bronze/agency. Comprobé idempotencia, horizonte estable y protección ante fuentes inválidas. No repetí la suite completa anterior ni equiparo su resultado histórico con esta selección. El [contrato](docs/contracts/service_dates.md) y la [guía](docs/silver_execution.md#primera-derivación-service_dates-de-2026) conservan el estado real. Archify sigue pendiente.
 
+### Hito 28 — Service_dates publicada y comprobada para 2026
+
+**Fecha:** 11 de noviembre de 2026. Tras sincronizar 156f2c3 completé la publicación de service_dates y consulté su tabla Silver para el snapshot 2026-09-29. Obtuve 1.403 filas, 1.403 claves distintas y siete servicios, con fechas entre 2026-01-01 y 2026-12-31; también revisé sus registros. Coincide con la vista previa, ahora como resultado consultado en una tabla persistida.
+
+La igualdad de filas y claves comprueba la unicidad en el ámbito consultado. No la presento como prueba de otra reejecución ni invento IDs de runs, advertencias o versiones Delta que no registré en esta comprobación. El [cierre](docs/silver_execution.md#cierre-de-la-ejecución-de-service_dates) conserva el detalle. Los 24 casos locales anteriores siguen documentados por separado.
+
+Ahora continúo con shape_points, orden 5 del plan: puntos que dibujan un trazado, antes de validar sus referencias desde trips. Como un dibujo que se forma al unir puntos numerados, la secuencia ordena la forma, pero no representa paradas ni posiciones observadas de un bus. El siguiente incremento empieza por perfilado y contrato; no cambié Raw, Bronze, el pipeline ni Archify en este cierre.
+
 ## Qué no publicar
 
 - Access tokens, secretos, archivos `.env`, cookies, hostnames privados o identificadores de cuenta.

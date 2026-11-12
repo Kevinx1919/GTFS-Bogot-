@@ -162,7 +162,7 @@ El [contrato stops_v1](docs/contracts/stops.md) ya convierte coordenadas a doubl
 
 Cada futura tabla Gold completará seis respuestas de negocio: pregunta, grano, ubicaciones, ausencias, claves y limitaciones que debe mostrar Power BI. Dejé la [ficha obligatoria en el plan](docs/silver_design.md#definición-de-negocio-obligatoria-para-cada-futura-tabla-gold).
 
-El [siguiente bloque del plan](docs/silver_design.md#siguiente-bloque-calendar-y-calendar_dates) es calendar y calendar_dates: ya perfilé el patrón semanal y las excepciones e implementé sus procesadores localmente. Ya ejecuté sus tareas y comprobé las tablas y sus datos en Databricks. El siguiente paso es service_dates, con horizonte de fechas explícito.
+El [siguiente bloque del plan](docs/silver_design.md#siguiente-bloque-calendar-y-calendar_dates) es calendar y calendar_dates: ya perfilé el patrón semanal y las excepciones e implementé sus procesadores localmente. Ya ejecuté sus tareas y comprobé las tablas y sus datos en Databricks. Service_dates ya está publicada y consultada para 2026; la siguiente entidad del plan es shape_points.
 
 ### Calendarios: perfil inicial y alcance temporal
 
@@ -179,7 +179,7 @@ El [cierre de calendarios](docs/silver_execution.md#cierre-de-la-ejecución-de-c
 
 Elegí comenzar solo con 2026. El [contrato derivado](docs/contracts/service_dates.md) convierte patrones y excepciones Silver en pares servicio-fecha. Como ejemplo, si el patrón activa los lunes pero una excepción retira un lunes festivo, ese día no aparece como activo; una adición puede activar otro día sin duplicarlo.
 
-La [vista previa consultada con Genie](docs/service_dates_preview.md) produce 1.403 pares activos para siete servicios. Eso todavía no cuenta viajes ni pasajeros. El [notebook 13](databricks/notebooks/silver/13_preview_gtfs_service_dates.ipynb) conserva las tres consultas de lectura. El módulo PySpark y la sexta tarea de la plantilla reutilizan el notebook 10; las fuentes se fijan por versión Delta y el horizonte queda explícito. La [guía de ejecución](docs/silver_execution.md#primera-derivación-service_dates-de-2026) distingue pruebas locales y primera publicación pendiente en Workspace.
+La [vista previa consultada con Genie](docs/service_dates_preview.md) produce 1.403 pares activos para siete servicios. Eso todavía no cuenta viajes ni pasajeros. El [notebook 13](databricks/notebooks/silver/13_preview_gtfs_service_dates.ipynb) conserva las tres consultas de lectura. El módulo PySpark y la sexta tarea de la plantilla reutilizan el notebook 10; las fuentes se fijan por versión Delta y el horizonte queda explícito. La [guía de ejecución](docs/silver_execution.md#primera-derivación-service_dates-de-2026) distingue pruebas locales y la publicación ya comprobada en Workspace.
 
 
-La verificación de service_dates terminó con 24 pruebas seleccionadas aprobadas sin omisiones, incluidas ocho nuevas y tres integraciones Delta en total. La primera publicación de la derivación en Databricks sigue pendiente; las cinco entidades fuente anteriores ya están publicadas.
+La verificación de service_dates terminó con 24 pruebas seleccionadas aprobadas sin omisiones, incluidas ocho nuevas y tres integraciones Delta en total. La derivación ya está publicada en Databricks: comprobé 1.403 filas y claves distintas, siete servicios y fechas de 2026-01-01 a 2026-12-31. Las cinco entidades fuente anteriores también están publicadas. Continúo con shape_points, los puntos ordenados de cada trazado.

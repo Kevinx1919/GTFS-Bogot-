@@ -1,6 +1,6 @@
 # Mi ejecución Silver por entidad y snapshot
 
-**Estado actualizado al 11 de noviembre de 2026:** agency, routes, stops, calendar y calendar_dates están publicadas en Silver. Ejecuté el Job ampliado y comprobé las tablas; para stops también consulté sus datos. El [cierre de ejecución](#cierre-de-la-ejecución-de-stops) distingue esta comprobación de los conteos del perfil fuente y de las pruebas locales. Ejecuté las dos tareas nuevas de calendarios y comprobé sus tablas y datos; el siguiente paso del plan es la derivación service_dates, con horizonte explícito.
+**Estado actualizado al 11 de noviembre de 2026:** agency, routes, stops, calendar, calendar_dates y service_dates están publicadas en Silver; service_dates está comprobada para el horizonte anual 2026. Ejecuté el Job ampliado y comprobé las tablas; para stops también consulté sus datos. El [cierre de ejecución](#cierre-de-la-ejecución-de-stops) distingue esta comprobación de los conteos del perfil fuente y de las pruebas locales. Ejecuté las dos tareas nuevas de calendarios y comprobé sus tablas y datos; también publiqué service_dates para 2026 y comprobé sus datos; el siguiente paso del plan es shape_points.
 
 ## Mi recorrido habitual
 
@@ -278,7 +278,7 @@ Publicar las fuentes no corrige el alcance temporal de 2025: conserva los interv
 
 ## Primera derivación: service_dates de 2026
 
-**Estado al 11 de noviembre de 2026:** las dos fuentes están publicadas y comprobadas. Acordé comenzar solo por 2026. El módulo derivado y la configuración están implementados y probados localmente: las 24 pruebas seleccionadas pasaron sin omisiones con Spark y Delta reales. No publicaré esta derivación como si estuviera comprobada en Workspace.
+**Estado al 11 de noviembre de 2026:** las dos fuentes están publicadas y comprobadas. Acordé comenzar solo por 2026. El módulo derivado y la configuración están implementados y probados localmente: las 24 pruebas seleccionadas pasaron sin omisiones con Spark y Delta reales. Ya publiqué esta derivación en Workspace y comprobé sus datos; el cierre siguiente registra los conteos observados.
 
 El [notebook 13](../databricks/notebooks/silver/13_preview_gtfs_service_dates.ipynb) conserva tres consultas reales de lectura. La [vista previa](service_dates_preview.md) devuelve 1.403 pares servicio-fecha para 2026. La comparación de 2025 es solo diagnóstico y no aparece en la nueva lista de trabajo.
 
@@ -299,11 +299,11 @@ Comenzaré por el bloque 1 después de reiniciar una sesión que ya hubiese impo
 
 El resultado esperado con las fuentes consultadas es candidate_rows=1.403, source_calendar_rows=7, source_calendar_dates_rows=133, weekly_service_days=1.460 y warning_rows=0. Las métricas de adiciones nuevas y retiradas efectivas explicarán el resultado: no se resta cada regla de baja como si hubiera un día activo por eliminar.
 
-### Sexta tarea preparada, todavía sin desplegar
+### Sexta tarea incorporada y publicación comprobada
 
 La plantilla añade publish_service_dates después de publish_calendar_dates. El parámetro general service_dates_work_items contiene un único elemento de 2026 con los dos límites del horizonte. La tarea interna process_service_dates_snapshot usa el notebook 10 y añade window_start={{input.window_start}} / window_end={{input.window_end}} a los tres campos de snapshot ya conocidos.
 
-La salida prevista es silver_gtfs_service_dates, con 13 columnas. Los campos de horizonte y las versiones Delta usadas permiten distinguir el alcance de la derivación. Un cambio de horizonte para un snapshot ya publicado se bloquea antes de sustituir datos y requiere una migración explícita.
+La salida diseñada es silver_gtfs_service_dates, con 13 columnas. La tabla ya está publicada; la consulta del cierre comprueba su grano y alcance temporal. Los campos de horizonte y las versiones Delta usadas permiten distinguir el alcance de la derivación. Un cambio de horizonte para un snapshot ya publicado se bloquea antes de sustituir datos y requiere una migración explícita.
 
 ### Verificación local de service_dates
 
@@ -313,4 +313,23 @@ Las fixtures comprueban patrón semanal, adiciones repetidas, retiradas efectiva
 
 El primer intento se detuvo porque Docker no estaba disponible. Tras iniciar el motor, reutilicé la imagen y las librerías ya descargadas, sin red ni reinstalaciones globales. Corregí solo los saltos de línea del ejecutor temporal para Linux. El contenedor tuvo código de solo lectura y sus escrituras quedaron en almacenamiento temporal; no modifiqué archivos recuperados ni datos de Databricks.
 
-También comprobé compilación, igualdad de código entre repositorio y contenedor, plantilla regenerable del Job, dos bloques Python del notebook 10, tres consultas de lectura sin outputs en el notebook 13 y enlaces locales. Sigue pendiente sincronizar este incremento y ejecutar primero validate y después publish en Workspace.
+También comprobé compilación, igualdad de código entre repositorio y contenedor, plantilla regenerable del Job, dos bloques Python del notebook 10, tres consultas de lectura sin outputs en el notebook 13 y enlaces locales. Después de sincronizar el incremento publiqué la tabla y comprobé sus datos en Workspace, como registro a continuación.
+
+
+## Cierre de la ejecución de service_dates
+
+**Fecha:** 11 de noviembre de 2026. Después de sincronizar el commit 156f2c3 completé la publicación de workspace.gtfs_bogota.silver_gtfs_service_dates y consulté sus datos. La consulta filtró el snapshot 2026-09-29 y su hash 08d14e0b3a5b9caa5451b722659871fd554e3273b94bdd770fdf81a26bf02097.
+
+| Medida consultada en Silver | Resultado |
+| --- | ---: |
+| Filas | 1.403 |
+| Claves distintas (service_id, service_date) | 1.403 |
+| Servicios distintos | 7 |
+| Primera fecha | 2026-01-01 |
+| Última fecha | 2026-12-31 |
+
+También revisé los registros de la tabla. El total coincide con la vista previa y la igualdad entre filas y claves distintas confirma que no hay claves duplicadas en el ámbito consultado. Estos son conteos de la tabla publicada, distintos de las fixtures locales y de la exploración previa.
+
+Registro exactamente lo comprobado: no adjunto aquí IDs de ejecución, un nuevo resumen de advertencias, las versiones Delta concretas ni una segunda ejecución para demostrar idempotencia en Workspace. Las pruebas locales de reintento siguen siendo evidencia separada. El alcance publicado continúa siendo solo 2026; no publiqué el escenario 2025 ni convierto estos pares servicio-fecha en viajes o pasajeros.
+
+Cierro la primera derivación Silver y continúo con shape_points, orden 5 del plan. No requiere volver a cargar Bronze ni expandir stop_times por fecha.
