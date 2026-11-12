@@ -476,6 +476,19 @@ Pasaron **37 pruebas seleccionadas en 325,531 segundos, sin omisiones**. Incluye
 
 Reutilicé el entorno offline y datos sintéticos. No modifiqué Raw, Bronze, archivos recuperados ni Archify. La primera publicación de trips en Databricks sigue pendiente. El [contrato](docs/contracts/trips.md) y el [despliegue](docs/silver_execution.md#despliegue-de-trips_v1) separan código probado y resultado real pendiente.
 
+
+### Hito 34 — Trips funciona en Databricks y continúo con frequencies
+
+**Fecha:** 12 de noviembre de 2026. Después de sincronizar 265efd1 configuré la tarea de trips en el Job compartido.
+Seguí los pasos de ejecución y confirmé que funciona. Cierro el despliegue funcional de trips_v1.
+Reutilicé notebook 10 y mantuve las dependencias del mismo snapshot.
+
+El [cierre](docs/silver_execution.md#cierre-de-la-ejecución-de-trips) distingue esta confirmación de los conteos del perfil.
+No adjunté nuevos resultados por iteración ni conteos SQL. Las 37 pruebas locales mantienen su evidencia independiente.
+La documentación refleja ocho entidades Silver con despliegue funcional. El siguiente incremento es frequencies, antes de stop_times.
+Primero revisaré ventanas, intervalos y referencias a trips. El planificador automático sigue pendiente 8b.
+Archify conserva su revisión anterior.
+
 ## Qué no publicar
 
 - Access tokens, secretos, archivos `.env`, cookies, hostnames privados o identificadores de cuenta.

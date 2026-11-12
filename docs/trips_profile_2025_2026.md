@@ -1,6 +1,6 @@
 # Mi perfil de trips de 2025 y 2026
 
-**Fecha:** 11 de noviembre de 2026. **Estado:** perfil de lectura completado. El contrato ya tiene implementación local. Las 37 pruebas seleccionadas pasaron sin omisiones. La primera publicación Silver sigue pendiente.
+**Fecha:** 11 de noviembre de 2026. **Estado:** perfil de lectura completado. El contrato ya tiene implementación local. Las 37 pruebas seleccionadas pasaron sin omisiones. El despliegue funcional quedó confirmado el 12 de noviembre de 2026. Conservo el [cierre de ejecución](silver_execution.md#cierre-de-la-ejecución-de-trips).
 
 ## Alcance y evidencia
 
@@ -87,6 +87,6 @@ Frequencies contiene 2 / 14 filas y 2 / 14 trip_id distintos. Todas sus referenc
 
 El [contrato](contracts/trips.md) mantiene cinco campos de negocio string. Los tres IDs principales son obligatorios. shape_id requiere validación condicional. trip_headsign conserva sus ausencias. Las fuentes curadas deberán pertenecer al mismo snapshot.
 
-Después de revisar el significado implementé las reglas y sus pruebas. Reutilicé notebook 10. El registro habilita trips y la plantilla añade su tarea. La primera publicación en Databricks sigue pendiente. El planificador de snapshots continúa pendiente 8b.
+Después de revisar el significado implementé las reglas y sus pruebas. Reutilicé notebook 10. El registro habilita trips y la plantilla añade su tarea. El despliegue funcional ya está confirmado. Los conteos de este informe siguen correspondiendo al perfil de lectura. El planificador de snapshots continúa pendiente 8b.
 
 La [referencia GTFS](https://gtfs.org/documentation/schedule/reference/#tripstxt) define los campos. El proyecto define identidad histórica, controles de calidad y política de publicación.

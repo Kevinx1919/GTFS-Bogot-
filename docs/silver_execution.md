@@ -456,7 +456,7 @@ Usé los hashes ya documentados. Los resultados coinciden con los conteos espera
 
 ## Despliegue de trips_v1
 
-**Fecha:** 11 de noviembre de 2026. **Estado:** implementación local preparada. Las 37 pruebas seleccionadas pasaron sin omisiones. La primera publicación de trips en Databricks sigue pendiente.
+**Implementación:** 11 de noviembre de 2026. **Cierre funcional:** 12 de noviembre de 2026. Trips ya funciona en Databricks. Las 37 pruebas seleccionadas pasaron sin omisiones.
 
 El [contrato](contracts/trips.md) conserva los cinco campos de negocio como string. Los IDs relacionan entidades; no representan cantidades. Las ausencias opcionales permanecen null. El procesador no genera destinos ni expande frecuencias.
 
@@ -477,7 +477,7 @@ El procesador fija versiones Delta de Bronze y dependencias. La auditoría conse
 
 Estos valores proceden del perfil, no de una publicación del procesador en Workspace. Trip_headsign quedará null en ambos snapshots. Source_columns distinguirá ausencia de columna en 2025 y columna publicada sin contenido en 2026.
 
-### Octava tarea preparada
+### Configuración de la octava tarea
 
 Después de sincronizar el código, añadiré trips_work_items en Job parameters:
 
@@ -551,4 +551,19 @@ Reutilicé el entorno offline existente. El contenedor mantuvo el código como l
 
 También comprobé compilación, plantilla regenerable y código idéntico al probado. Las siete tareas previas permanecen intactas. Notebook 10 conserva sus dos bloques ejecutables. Notebook 15 conserva sus diez consultas verificadas.
 
-La primera publicación real de trips sigue pendiente. Los conteos esperados del perfil no sustituyen esa ejecución.
+El cierre siguiente registra el despliegue funcional. Los conteos esperados del perfil permanecen separados de esa confirmación.
+
+## Cierre de la ejecución de trips
+
+**Fecha:** 12 de noviembre de 2026. Después de sincronizar 265efd1 seguí los pasos del Job para trips.
+Confirmé que el flujo funciona en Databricks. Cierro el despliegue funcional de trips_v1 mediante notebook 10.
+La tarea publish_trips reutiliza el pipeline y publica en workspace.gtfs_bogota.silver_gtfs_trips.
+
+La configuración incluye los snapshots 2025-10-28 y 2026-09-29. Este cierre registra una confirmación funcional general.
+No adjunté nuevos resúmenes por iteración ni resultados SQL de conteos.
+Mantengo 107.162 / 181.060 como conteos del perfil, sin presentarlos como una nueva medición de Silver.
+Las 37 pruebas locales conservan su evidencia independiente. No repetí pruebas de Spark para este cambio documental.
+
+Trips completa la octava entidad Silver con despliegue funcional. Continúo con frequencies, orden 7 del plan.
+Primero revisaré ventanas, intervalos y referencias antes de implementar su contrato.
+El planificador automático sigue pendiente 8b. Archify mantiene su revisión anterior.

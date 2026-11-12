@@ -396,7 +396,7 @@ El notebook 14 conserva el perfil de lectura. No se añade al Job. Las 36 prueba
 
 Los hashes y nombres son valores actuales del proyecto. Las consultas no fijan versiones Delta ni una transacción conjunta. El bloque 10 infiere nombres del encabezado; desactiva inferencia de tipos. Esa exploración no cambia el esquema explícito del pipeline.
 
-El [informe](trips_profile_2025_2026.md) conserva hallazgos y reconciliaciones. La [propuesta de contrato](contracts/trips.md) mantiene los cinco campos publicados como string. Todavía no añadí procesador, pruebas de transformación ni tarea de trips. El planificador de snapshots permanece pendiente 8b.
+El [informe](trips_profile_2025_2026.md) conserva hallazgos y reconciliaciones. La [propuesta de contrato](contracts/trips.md) mantiene los cinco campos publicados como string. Después de este perfil añadí procesador, pruebas y tarea de trips. El apartado siguiente conserva ese incremento. El planificador de snapshots permanece pendiente 8b.
 
 
 ## Notebook 10 — Entrada de trips_v1 — 11 de noviembre de 2026
@@ -412,4 +412,4 @@ La auditoría debe contener routes.txt, stop_times.txt y al menos un calendario.
 
 La plantilla añade publish_trips como octava tarea después de publish_shape_points. Su For each usa trips_work_items y concurrency=1. La tarea interna process_trips_snapshot ejecuta notebook 10. No necesita horizonte de fechas.
 
-El notebook 15 conserva el perfil y no se añade al Job. Las 37 pruebas seleccionadas pasaron sin omisiones. La primera publicación en Databricks sigue pendiente. El planificador 8b permanece sin implementar.
+El notebook 15 conserva el perfil y no se añade al Job. Las 37 pruebas seleccionadas pasaron sin omisiones. El despliegue funcional quedó confirmado el 12 de noviembre de 2026. El [cierre](silver_execution.md#cierre-de-la-ejecución-de-trips) registra su alcance. El planificador 8b permanece sin implementar.

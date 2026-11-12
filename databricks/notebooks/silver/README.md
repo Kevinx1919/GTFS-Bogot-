@@ -64,7 +64,7 @@ Implementé shape_points localmente. Las 36 pruebas seleccionadas pasaron sin om
 
 El procesador shape_points_spark.py conserva puntos y valida claves compuestas. El alias usa shapes.txt y bronze_gtfs_shapes. Notebook 10 mantiene sus dos bloques ejecutables. La plantilla añade publish_shape_points después de service_dates. No necesita un horizonte de fechas.
 
-La [guía de despliegue](../../../docs/silver_execution.md#despliegue-de-shape_points_v1) contiene parámetros y resultados esperados. El [contrato](../../../docs/contracts/shape_points.md) define advertencias y bloqueos. El flujo ya funciona en Workspace. El [cierre](../../../docs/silver_execution.md#cierre-de-la-ejecución-de-shape_points) conserva el alcance de la confirmación. Ahora comienzo trips.
+La [guía de despliegue](../../../docs/silver_execution.md#despliegue-de-shape_points_v1) contiene parámetros y resultados esperados. El [contrato](../../../docs/contracts/shape_points.md) define advertencias y bloqueos. El flujo ya funciona en Workspace. El [cierre](../../../docs/silver_execution.md#cierre-de-la-ejecución-de-shape_points) conserva el alcance de la confirmación. Trips también funciona. Ahora continúo con frequencies.
 
 
 ## Trips: perfil de viajes y referencias
@@ -73,11 +73,13 @@ El [notebook 15](15_profile_gtfs_trips.ipynb) conserva diez consultas definitiva
 
 Trip_headsign no existe en el archivo 2025. Existe sin contenido no blanco en 2026. Comprobé ese resultado directamente en Staging. El [contrato trips_v1](../../../docs/contracts/trips.md) conserva cinco campos string y las ausencias válidas.
 
-Trips tiene implementación local. Las 37 pruebas seleccionadas pasaron sin omisiones. La primera publicación sigue pendiente. El notebook de perfilado no se añade al Job. El pendiente 8b automatizará la selección de snapshots después de los contratos iniciales.
+Trips tiene implementación local. Las 37 pruebas seleccionadas pasaron sin omisiones. El despliegue funcional quedó confirmado el 12 de noviembre de 2026. El notebook de perfilado no se añade al Job. El pendiente 8b automatizará la selección de snapshots después de los contratos iniciales.
 
 
-## Publicación preparada de trips
+## Publicación funcional de trips
 
 Trips_spark.py conserva los cinco campos de negocio como string. Valida referencias mediante catálogos únicos del mismo snapshot. La metadata controla archivos publicados y alcance del servicio continuo. Las ausencias opcionales no generan destinos inventados.
 
 Notebook 10 conserva sus dos bloques ejecutables. La plantilla añade publish_trips como octava tarea, después de shape_points. Los parámetros siguen siendo entidad, versión y hash. La [guía de despliegue](../../../docs/silver_execution.md#despliegue-de-trips_v1) conserva los pasos y resultados esperados. El planificador 8b sigue pendiente.
+
+El [cierre de trips](../../../docs/silver_execution.md#cierre-de-la-ejecución-de-trips) registra la confirmación funcional. Continúo con el perfil de frequencies.

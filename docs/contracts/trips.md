@@ -1,6 +1,6 @@
 # Mi contrato Silver trips_v1
 
-**Fecha:** 11 de noviembre de 2026. **Estado:** implementación local preparada. Las 37 pruebas seleccionadas pasaron sin omisiones. La primera publicación en Databricks sigue pendiente. El [informe](../trips_profile_2025_2026.md) conserva los resultados medidos.
+**Fecha:** 11 de noviembre de 2026. **Estado:** implementación y despliegue funcional completados. Las 37 pruebas seleccionadas pasaron sin omisiones. El despliegue funcional quedó confirmado el 12 de noviembre de 2026. Conservo el [cierre de ejecución](../silver_execution.md#cierre-de-la-ejecución-de-trips). El [informe](../trips_profile_2025_2026.md) conserva los resultados medidos.
 
 ## Grano e identidad
 

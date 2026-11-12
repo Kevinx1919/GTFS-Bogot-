@@ -162,7 +162,7 @@ El [contrato stops_v1](docs/contracts/stops.md) ya convierte coordenadas a doubl
 
 Cada futura tabla Gold completará seis respuestas de negocio: pregunta, grano, ubicaciones, ausencias, claves y limitaciones que debe mostrar Power BI. Dejé la [ficha obligatoria en el plan](docs/silver_design.md#definición-de-negocio-obligatoria-para-cada-futura-tabla-gold).
 
-El [siguiente bloque del plan](docs/silver_design.md#siguiente-bloque-calendar-y-calendar_dates) es calendar y calendar_dates: ya perfilé el patrón semanal y las excepciones e implementé sus procesadores localmente. Ya ejecuté sus tareas y comprobé las tablas y sus datos en Databricks. Service_dates ya está publicada y consultada para 2026; shape_points ya funciona y la siguiente entidad del plan es trips.
+El [siguiente bloque del plan](docs/silver_design.md#siguiente-bloque-calendar-y-calendar_dates) es calendar y calendar_dates: ya perfilé el patrón semanal y las excepciones e implementé sus procesadores localmente. Ya ejecuté sus tareas y comprobé las tablas y sus datos en Databricks. Service_dates ya está publicada y consultada para 2026; shape_points y trips ya funcionan. La siguiente entidad del plan es frequencies.
 
 ### Calendarios: perfil inicial y alcance temporal
 
@@ -198,17 +198,17 @@ Implementé shape_points_v1 con Spark nativo. Conserva puntos repetidos y genera
 La implementación de shape_points pasó 36 pruebas seleccionadas sin omisiones. Incluyen trece nuevas y tres integraciones Delta en total. El flujo de shape_points ya funciona en Databricks. El [cierre](docs/silver_execution.md#cierre-de-la-ejecución-de-shape_points) registra la evidencia disponible.
 
 
-El siguiente paso es trips, antes de frequencies y stop_times. Registré la [selección automática de snapshots](docs/silver_design.md#automatización-pendiente-selección-de-snapshots-silver) como pendiente 8b. Las listas actuales siguen siendo manuales. Una versión nueva todavía requiere configurar su trabajo.
+Trips ya funciona. El siguiente paso es frequencies, antes de stop_times. Registré la [selección automática de snapshots](docs/silver_design.md#automatización-pendiente-selección-de-snapshots-silver) como pendiente 8b. Las listas actuales siguen siendo manuales. Una versión nueva todavía requiere configurar su trabajo.
 
 
-### Trips: perfil inicial antes de implementar
+### Trips: perfil, implementación y despliegue funcional
 
 Completé el [perfil de trips](docs/trips_profile_2025_2026.md). Hay 107.162 / 181.060 claves únicas y las referencias resuelven. El [notebook 15](databricks/notebooks/silver/15_profile_gtfs_trips.ipynb) conserva diez consultas verificadas. El [contrato](docs/contracts/trips.md) mantiene IDs y texto como string.
 
-La fuente 2025 no publica trip_headsign. La fuente 2026 lo publica sin contenido no blanco, según la comparación Staging/Bronze. No fabricaré destinos ni interpretaré cada fila como un bus físico. Trips ya tiene procesador local; su primera publicación Silver sigue pendiente.
+La fuente 2025 no publica trip_headsign. La fuente 2026 lo publica sin contenido no blanco, según la comparación Staging/Bronze. No fabricaré destinos ni interpretaré cada fila como un bus físico. Trips ya funciona en Databricks mediante el Job compartido.
 
 
-Implementé trips_v1 con referencias a rutas, servicios y trazados del mismo snapshot. La plantilla incorpora una octava tarea y mantiene las siete anteriores. Notebook 10 conserva sus dos bloques ejecutables. Las 37 pruebas seleccionadas pasaron sin omisiones. La [guía](docs/silver_execution.md#despliegue-de-trips_v1) separa implementación local y publicación pendiente.
+Implementé trips_v1 con referencias a rutas, servicios y trazados del mismo snapshot. La plantilla incorpora una octava tarea y mantiene las siete anteriores. Notebook 10 conserva sus dos bloques ejecutables. Las 37 pruebas seleccionadas pasaron sin omisiones. La [guía](docs/silver_execution.md#despliegue-de-trips_v1) conserva parámetros y resultados esperados.
 
 
-La implementación de trips pasó 37 pruebas seleccionadas sin omisiones. Incluyen catorce nuevas y dos integraciones Delta en total. La primera publicación en Workspace sigue pendiente.
+La implementación de trips pasó 37 pruebas seleccionadas sin omisiones. Incluyen catorce nuevas y dos integraciones Delta en total. El [cierre de trips](docs/silver_execution.md#cierre-de-la-ejecución-de-trips) registra el despliegue funcional confirmado. Continúo con frequencies.
