@@ -413,3 +413,46 @@ La auditoría debe contener routes.txt, stop_times.txt y al menos un calendario.
 La plantilla añade publish_trips como octava tarea después de publish_shape_points. Su For each usa trips_work_items y concurrency=1. La tarea interna process_trips_snapshot ejecuta notebook 10. No necesita horizonte de fechas.
 
 El notebook 15 conserva el perfil y no se añade al Job. Las 37 pruebas seleccionadas pasaron sin omisiones. El despliegue funcional quedó confirmado el 12 de noviembre de 2026. El [cierre](silver_execution.md#cierre-de-la-ejecución-de-trips) registra su alcance. El planificador 8b permanece sin implementar.
+
+## Notebook 16 — Perfil de frequencies — 12 de noviembre de 2026
+
+**Propósito:** entender ventanas e intervalos antes de implementar frequencies_v1.
+Ejecuté nueve consultas correctas mediante Genie. Recuperé 77 filas estructuradas completas.
+El cuaderno conserva esas consultas. Todavía no documenté una ejecución completa como notebook.
+Todos sus bloques son de lectura. Ninguno publica tablas ni modifica archivos.
+
+| Bloque | Entradas | Salida comprobada | Validación y decisión |
+| --- | --- | --- | --- |
+| 1 / esquema | Information_schema de Bronze, trips Silver y auditoría. | 27 campos. | Confirmo tipos físicos y nombres antes de consultar. |
+| 2 / encabezados | Observaciones de frequencies.txt por hash. | 2 filas. | Compruebo parejas versión/hash. Exact_times no está publicado. |
+| 3 / dependencia | Trips Silver de ambos hashes. | 2 resúmenes. | 107.162 / 181.060 filas únicas, con trips_v1. |
+| 4 / fuente | Frequencies Bronze de ambos hashes. | 16 filas; límite 100. | Reviso las parejas versión/hash y la procedencia. No guardo resultados en Git. |
+| 5 / campos | Cuatro campos publicados, con versión/hash explícitos. | 8 resúmenes. | Reviso nulos, vacíos, espacios Unicode, controles y valores distintos. |
+| 6 / conversiones | Horas, intervalo y procedencia de Bronze. | 2 resúmenes. | Formatos, long/int, rangos, ventanas y rutas de archivo. No corrijo horas ni unidades. |
+| 7 / claves | Ventanas fuente y horas convertidas. | 2 resúmenes. | Copias, conflictos y superposiciones dentro de trip_id. Uso máximo previo para detectar ventanas contenidas. |
+| 8 / relación | Frequencies Bronze y trips Silver del mismo snapshot. | 2 resúmenes. | Cero huérfanos; el join conserva 2 / 14 filas. |
+| 9 / contexto | Ventanas, trips, rutas y calendario del mismo snapshot. | 16 filas; límite 100. | C_1 y route_type=6. Los patrones semanales no sustituyen excepciones. |
+
+Los nombres y hashes son valores actuales del proyecto. Las consultas no fijan versiones Delta ni una transacción conjunta.
+Los bloques 2–4 filtran hashes y muestran versiones. Comprobé que sus resultados pertenecen a las parejas esperadas.
+Los bloques 5–9 filtran las parejas explícitas. Sus resultados no constituyen una publicación Silver.
+
+El [perfil](frequencies_profile_2025_2026.md) conserva rangos, contexto y límites.
+La [contrato implementado](contracts/frequencies.md) define los tipos y controles implementados.
+El cuaderno no se añade al Job. Notebook 10 conserva la responsabilidad de ejecutar el pipeline.
+Después del perfil añadí procesador, pruebas y tarea de frequencies. La primera publicación sigue pendiente. El planificador sigue pendiente 8b.
+
+
+## Notebook 10 — Entrada de frequencies_v1 — 12 de noviembre de 2026
+
+Mantengo los dos bloques ejecutables. No añado widgets, instalaciones ni otro notebook de publicación.
+
+| Bloque | Entradas | Salidas y efectos | Validación y decisión |
+| --- | --- | --- | --- |
+| 1 / configuración | Parámetros actuales y módulos del repositorio. | Importa el procesador habilitado. No escribe tablas. | Entorno existente, sin dependencias nuevas. |
+| 2 / ejecución | Frequencies Bronze, encabezado Staging y trips Silver. | Validate devuelve resumen. Publish escribe Silver, auditoría y cuarentena. | Versiones Delta fijas, claves compuestas, ventanas y referencia del mismo snapshot. |
+
+La plantilla añade publish_frequencies después de publish_trips. El For each usa frequencies_work_items y concurrency=1.
+Process_frequencies_snapshot ejecuta notebook 10 con entidad, versión y hash.
+No necesita horizonte de fechas. El notebook 16 continúa como perfil de lectura independiente.
+La [guía](silver_execution.md#despliegue-de-frequencies_v1) separa código local y publicación real pendiente.

@@ -85,7 +85,7 @@ class SilverConfigurationTests(unittest.TestCase):
 
     def test_only_implemented_entity_is_enabled(self):
         registry = load_registry()
-        self.assertEqual(list(registry), ["agency", "routes", "stops", "calendar", "calendar_dates", "service_dates", "shape_points", "trips"])
+        self.assertEqual(list(registry), ["agency", "routes", "stops", "calendar", "calendar_dates", "service_dates", "shape_points", "trips", "frequencies"])
         self.assertTrue(registry["agency"]["enabled"])
         self.assertEqual(registry["agency"]["depends_on"], [])
         self.assertEqual(registry["routes"]["depends_on"], ["agency"])
@@ -109,7 +109,7 @@ class SilverConfigurationTests(unittest.TestCase):
         self.assertEqual(registry["calendar"]["depends_on"],[])
         self.assertEqual(registry["calendar_dates"]["depends_on"],[])
         self.assertEqual(registry["calendar_dates"]["depends_on_if_published"],["calendar"])
-        self.assertEqual(len(job["tasks"]),8)
+        self.assertEqual(len(job["tasks"]),9)
         parameters={p["name"]:p["default"] for p in job["parameters"]}
         for entity,position,parent in (("calendar",3,"publish_stops"),("calendar_dates",4,"publish_calendar")):
             task=job["tasks"][position]
@@ -432,6 +432,54 @@ class SilverPublicationDeltaTests(unittest.TestCase):
         self.assertTrue(all(r.date=="20230101" for r in rejected))
         self.assertTrue(all("SERVICE_KEY_CONFLICT" in r.error_codes for r in rejected))
         self.assertEqual(len(self.spark.table(f"spark_catalog.{self.namespace}.silver_gtfs_calendar").columns),18)
+
+    def test_frequencies_pipeline_publishes_typed_windows_retries_and_preserves_history_on_rejection(self):
+        from gtfs_silver import pipeline
+        from test_frequencies import COLUMNS as frequency_columns, frequency_spec, frequency_frame, fixture, trips_frame
+        common = dict(catalog="spark_catalog", schema=self.namespace, staging_volume="staging", entity="frequencies")
+        bronze = f"spark_catalog.{self.namespace}.bronze_gtfs_frequencies"
+        target = f"spark_catalog.{self.namespace}.silver_gtfs_frequencies"
+        old_rows = None
+        for version, content_hash in [("2025-10-28", "a"*64), ("2026-09-29", "b"*64)]:
+            selected = frequency_spec(version, content_hash, f"/Volumes/spark_catalog/{self.namespace}/staging/gtfs_static/feed_version={version}/sha256={content_hash}/frequencies.txt")
+            trips_frame(self.spark, selected).write.format("delta").mode("append").saveAsTable(f"spark_catalog.{self.namespace}.silver_gtfs_trips")
+            columns = frequency_columns if old_rows is None else (*frequency_columns, "exact_times")
+            rows = [fixture(selected), fixture(selected), fixture(selected, start_time="05:30:00", end_time="25:10:00", headway_secs="16")]
+            frequency_frame(self.spark, selected, rows, columns).write.format("delta").option("mergeSchema", "true").mode("append").saveAsTable(bronze)
+            args = {**common, "feed_version": version, "snapshot_sha256": content_hash}
+            with patch.object(pipeline.frequencies_spark, "read_source_header", return_value=columns):
+                preview = pipeline.run_entity(self.spark, **args, mode="validate")
+                self.assertFalse(preview["persisted"])
+                if old_rows is None:
+                    self.assertFalse(self.spark.catalog.tableExists(target))
+                    self.assertFalse(self.spark.catalog.tableExists(f"spark_catalog.{self.namespace}.audit_gtfs_silver_runs"))
+                result = pipeline.run_entity(self.spark, **args)
+            self.assertEqual((result["candidate_rows"], result["identical_copies_consolidated"], result["warning_rows"]), (2, 1, 0))
+            if old_rows is None:
+                old_rows = self.spark.table(target).orderBy("trip_id", "start_time_seconds").collect()
+        with patch.object(pipeline.frequencies_spark, "read_source_header", return_value=columns):
+            retry = pipeline.run_entity(self.spark, **args)
+            self.assertEqual(retry["status"], "SUCCEEDED")
+            output = self.spark.table(target)
+            self.assertEqual(output.count(), 4)
+            self.assertEqual(len(output.columns), 16)
+            self.assertEqual(output.schema["start_time_seconds"].dataType.simpleString(), "bigint")
+            self.assertEqual(output.schema["headway_secs"].dataType.simpleString(), "int")
+            self.assertEqual(output.filter("source_feed_version='2025-10-28'").orderBy("trip_id", "start_time_seconds").collect(), old_rows)
+            self.assertTrue(all(r.exact_times is None and r.exact_times_effective == 0 for r in output.collect()))
+            self.assertTrue(all(("exact_times" in r.source_columns) == (r.source_feed_version == "2026-09-29") for r in output.collect()))
+            # Una referencia ausente conserva original y motivo; no sustituye la publicación válida.
+            frequency_frame(self.spark, selected, [fixture(selected, trip_id="orphan")], columns).write.format("delta").mode("append").saveAsTable(bronze)
+            with self.assertRaises(SnapshotRejectedError): pipeline.run_entity(self.spark, **args)
+        self.assertEqual(self.spark.table(target).count(), 4)
+        rejected = self.spark.table(f"spark_catalog.{self.namespace}.quarantine_gtfs_frequencies").collect()
+        self.assertEqual(sum(r.input_copies for r in rejected), 1)
+        self.assertIn("TRIP_ID_NOT_FOUND", rejected[0].error_codes)
+        self.assertEqual(json.loads(rejected[0].original_row_json)["trip_id"], "orphan")
+        records = self.spark.table(f"spark_catalog.{self.namespace}.audit_gtfs_silver_runs").collect()
+        self.assertTrue(any(r.status == "REJECTED" and not r.silver_committed for r in records))
+        references = [json.loads(r.reference_versions_json) for r in records if r.status == "SUCCEEDED"]
+        self.assertTrue(any(r["bronze_delta_version"] == "1" and r["trips_delta_version"] == "1" for r in references))
 
     def test_trips_pipeline_publishes_retries_and_blocks_orphans_and_continuous_scope(self):
         from gtfs_silver import pipeline

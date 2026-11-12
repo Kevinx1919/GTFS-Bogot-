@@ -249,12 +249,21 @@ El [contrato trips_v1](contracts/trips.md) conserva cinco campos string. Los IDs
 
 ## Siguiente incremento: frequencies
 
-Continúo con el orden 7. Primero revisaré las ventanas de frecuencia y sus referencias a trips Silver.
-El perfil anterior encontró 2 / 14 filas fuente. Ese conteo no sustituye la validación de ventanas.
-Revisaré horas superiores a 24, intervalos positivos, ventanas superpuestas y ausencia de exact_times.
-Después definiré el contrato, implementaré las reglas y reutilizaré notebook 10.
-No interpretaré automáticamente cada ventana como salidas exactas ni como buses físicos.
-Stop_times seguirá después, en el orden 8.
+Completé el [perfil de frequencies](frequencies_profile_2025_2026.md) mediante nueve consultas correctas de lectura.
+El [notebook 16](../databricks/notebooks/silver/16_profile_gtfs_frequencies.ipynb) conserva esas consultas.
+Recuperé 77 filas estructuradas completas. Hay 2 / 14 ventanas, todas relacionadas con trips Silver del mismo snapshot.
+No encontré errores en los controles ejecutados de completitud, claves, conversiones, procedencia y superposiciones por trip_id.
+Todas corresponden a la ruta C_1, con route_type=6. Cada ventana actual usa un trip_id distinto.
+No inferiré mejoras operativas desde el cambio de cantidad o intervalo.
+
+Preparé la [contrato frequencies_v1](contracts/frequencies.md). Conserva horas fuente y deriva segundos de servicio como long.
+Propone headway_secs int positivo y tratamiento explícito de exact_times ausente.
+Implementé el procesador y añadí su tarea a la plantilla. La primera publicación en Databricks sigue pendiente.
+Después de revisar el perfil implementé las reglas con Spark nativo y reutilicé notebook 10.
+La plantilla añade publish_frequencies después de publish_trips. Las ocho tareas anteriores permanecen iguales.
+La [guía de despliegue](silver_execution.md#despliegue-de-frequencies_v1) conserva parámetros y resultados esperados.
+Las 42 pruebas seleccionadas pasaron sin omisiones. La publicación real de frequencies sigue pendiente.
+Stop_times seguirá después, en el orden 8. El planificador de snapshots permanece pendiente 8b.
 
 ## Automatización pendiente: selección de snapshots Silver
 

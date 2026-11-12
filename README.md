@@ -212,3 +212,18 @@ Implementé trips_v1 con referencias a rutas, servicios y trazados del mismo sna
 
 
 La implementación de trips pasó 37 pruebas seleccionadas sin omisiones. Incluyen catorce nuevas y dos integraciones Delta en total. El [cierre de trips](docs/silver_execution.md#cierre-de-la-ejecución-de-trips) registra el despliegue funcional confirmado. Continúo con frequencies.
+
+### Frequencies: ventanas de servicio antes de stop_times
+
+Completé el [perfil de frequencies](docs/frequencies_profile_2025_2026.md): 2 / 14 ventanas, todas relacionadas con trips Silver.
+El [notebook 16](databricks/notebooks/silver/16_profile_gtfs_frequencies.ipynb) conserva nueve consultas correctas de lectura.
+Los controles ejecutados no encontraron errores. Todas las ventanas corresponden a C_1, de cable aéreo.
+
+Preparé la [contrato implementado](docs/contracts/frequencies.md), con horas fuente, segundos de servicio e intervalos tipados.
+Exact_times no está publicado. Propongo conservar su ausencia y derivar explícitamente la interpretación predeterminada del estándar.
+Implementé el procesador y añadí su tarea a la plantilla. La primera publicación en Databricks sigue pendiente. Reutilicé notebook 10 y el escritor común. Las ocho tareas anteriores conservan su configuración.
+
+La [guía de despliegue](docs/silver_execution.md#despliegue-de-frequencies_v1) contiene los parámetros de la novena tarea.
+
+La implementación de frequencies pasó 42 pruebas seleccionadas sin omisiones, incluidas trece nuevas y dos integraciones Delta en total.
+La publicación en Workspace sigue pendiente. Stop_times será el siguiente incremento después de comprobar frequencies.

@@ -83,3 +83,19 @@ Trips_spark.py conserva los cinco campos de negocio como string. Valida referenc
 Notebook 10 conserva sus dos bloques ejecutables. La plantilla añade publish_trips como octava tarea, después de shape_points. Los parámetros siguen siendo entidad, versión y hash. La [guía de despliegue](../../../docs/silver_execution.md#despliegue-de-trips_v1) conserva los pasos y resultados esperados. El planificador 8b sigue pendiente.
 
 El [cierre de trips](../../../docs/silver_execution.md#cierre-de-la-ejecución-de-trips) registra la confirmación funcional. Continúo con el perfil de frequencies.
+
+## Frequencies: perfil de ventanas e intervalos
+
+El [notebook 16](16_profile_gtfs_frequencies.ipynb) conserva nueve consultas correctas ejecutadas mediante Genie.
+Recuperé 77 filas estructuradas completas. El [perfil](../../../docs/frequencies_profile_2025_2026.md) registra 2 / 14 ventanas y referencias resueltas.
+No encontré errores en los controles ejecutados. Los intervalos publicados son segundos y corresponden a transporte por cable.
+Cada ventana actual tiene un trip_id distinto. No fusiono esas identidades.
+
+La [contrato frequencies_v1](../../../docs/contracts/frequencies.md) define campos fuente y derivados.
+Implementé el procesador y añadí su tarea a la plantilla. La primera publicación en Databricks sigue pendiente.
+El notebook de perfilado solo lee. Notebook 10 ejecuta frequencies_v1 mediante el pipeline compartido. La plantilla incorpora su novena tarea serial.
+
+
+Frequencies_v1 pasó 42 pruebas seleccionadas sin omisiones. Incluyen trece nuevas y dos integraciones Delta en total.
+La [guía](../../../docs/silver_execution.md#despliegue-de-frequencies_v1) conserva parámetros y comprobaciones.
+Las ocho tareas anteriores permanecen iguales. La primera publicación de frequencies en Workspace sigue pendiente.

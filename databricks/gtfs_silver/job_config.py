@@ -96,7 +96,8 @@ def build_job(repo_root: str, *, environment_version: str = "4") -> dict:
         "window_start": "{{input.window_start}}", "window_end": "{{input.window_end}}"})
     job["tasks"].append(derived)
     # Mantengo las etapas fuente seriales para proteger la auditoría compartida.
-    for entity, predecessor in (("shape_points", "publish_service_dates"), ("trips", "publish_shape_points")):
+    for entity, predecessor in (("shape_points", "publish_service_dates"), ("trips", "publish_shape_points"),
+                                ("frequencies", "publish_trips")):
         items = [{**item, "entity": entity} for item in SNAPSHOTS]
         parameter = f"{entity}_work_items"
         job["parameters"].append({"name": parameter, "default": json.dumps(items, separators=(",", ":"))})

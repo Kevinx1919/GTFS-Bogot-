@@ -489,6 +489,48 @@ La documentación refleja ocho entidades Silver con despliegue funcional. El sig
 Primero revisaré ventanas, intervalos y referencias a trips. El planificador automático sigue pendiente 8b.
 Archify conserva su revisión anterior.
 
+### Hito 35 — Entender las frecuencias del cable antes de implementar
+
+**Fecha:** 12 de noviembre de 2026. Comencé frequencies, orden 7 del plan.
+Conservé nueve consultas correctas en el [notebook 16](databricks/notebooks/silver/16_profile_gtfs_frequencies.ipynb).
+Recuperé 77 filas estructuradas completas. Contrasté las 16 ventanas fuente mediante cálculos independientes.
+
+Encontré 2 / 14 ventanas, sin errores en los controles ejecutados.
+Todas resuelven contra trips Silver y pertenecen a C_1, con route_type=6.
+Los intervalos publicados son 60 segundos en 2025 y 10 o 16 segundos en 2026.
+No cambié unidades ni interpreté ese cambio como una mejora operativa demostrada.
+
+Cada ventana actual utiliza un trip_id distinto. No fusiono viajes por compartir ruta o calendario.
+Exact_times no está publicado. Propongo conservar esa ausencia y derivar explícitamente la interpretación predeterminada GTFS.
+El [perfil](docs/frequencies_profile_2025_2026.md) y la [propuesta de contrato](docs/contracts/frequencies.md) conservan evidencia y decisiones.
+
+También comprobé trips Silver: 107.162 / 181.060 filas y claves únicas, ambas con trips_v1.
+Todavía no implementé frequencies ni añadí su tarea al Job. El siguiente paso es revisar significado y reglas.
+Las consultas no modificaron tablas. Archify conserva su revisión anterior. El planificador sigue pendiente 8b.
+
+### Hito 36 — Implementar ventanas de frecuencia sin fabricar salidas
+
+**Fecha:** 12 de noviembre de 2026. Implementé frequencies_v1 con Spark nativo.
+Conservo las horas fuente y derivo segundos de servicio como long. Los intervalos usan int y permanecen en segundos.
+Distingo exact_times ausente de su interpretación predeterminada. No convierto ventanas en salidas observadas.
+
+La clave combina versión, hash, trip_id e inicio convertido.
+Compruebo referencias a trips Silver, formatos, conflictos, superposiciones y coherencia temporal.
+Los errores conservan originales en cuarentena y bloquean el snapshot completo.
+La advertencia por intervalo superior a la ventana conserva la fila para interpretación.
+
+Reutilicé notebook 10 y el escritor común. La plantilla añade publish_frequencies como novena tarea.
+Las ocho tareas anteriores y sus parámetros permanecen iguales. Fijo versiones Delta de Bronze y trips para la auditoría.
+
+Pasaron **42 pruebas seleccionadas en 428,495 segundos, sin omisiones**.
+Incluyen trece nuevas y dos integraciones Delta en total.
+Comprobé lectura sin escritura, publicación, reintento, histórico y rechazo sin reemplazar una publicación válida.
+Reutilicé el entorno offline existente. No repetí toda la suite ni modifiqué datos de Databricks.
+
+El [contrato](docs/contracts/frequencies.md) y la [guía](docs/silver_execution.md#despliegue-de-frequencies_v1) conservan reglas y despliegue.
+La primera publicación real sigue pendiente. Stop_times continuará después de comprobar frequencies.
+Archify conserva su revisión anterior. El planificador automático sigue pendiente 8b.
+
 ## Qué no publicar
 
 - Access tokens, secretos, archivos `.env`, cookies, hostnames privados o identificadores de cuenta.

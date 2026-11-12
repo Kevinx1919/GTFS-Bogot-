@@ -567,3 +567,141 @@ Las 37 pruebas locales conservan su evidencia independiente. No repetí pruebas 
 Trips completa la octava entidad Silver con despliegue funcional. Continúo con frequencies, orden 7 del plan.
 Primero revisaré ventanas, intervalos y referencias antes de implementar su contrato.
 El planificador automático sigue pendiente 8b. Archify mantiene su revisión anterior.
+
+## Comprobación posterior de trips mediante Genie
+
+**Fecha:** 12 de noviembre de 2026. Al comenzar frequencies consulté trips Silver para comprobar su dependencia.
+El bloque 3 del [notebook 16](../databricks/notebooks/silver/16_profile_gtfs_frequencies.ipynb) conserva la consulta exacta.
+Recuperé dos filas estructuradas completas.
+
+| Snapshot | Filas | Trip_id distintos | Versión de reglas |
+| --- | ---: | ---: | --- |
+| 2025-10-28 | 107.162 | 107.162 | trips_v1 |
+| 2026-09-29 | 181.060 | 181.060 | trips_v1 |
+
+Usé los hashes documentados y comprobé las parejas versión/hash devueltas.
+Esta lectura complementa el cierre funcional anterior. No demuestra de nuevo todos los controles ni los reintentos del procesador.
+El perfil de frequencies todavía no incorpora otra tarea al Job.
+
+
+## Despliegue de frequencies_v1
+
+**Fecha:** 12 de noviembre de 2026. **Estado:** implementación local comprobada. Pasaron 42 pruebas seleccionadas sin omisiones.
+La primera publicación de frequencies en Databricks sigue pendiente.
+El [contrato](contracts/frequencies.md) define ocho campos de negocio. El [perfil](frequencies_profile_2025_2026.md) conserva las mediciones fuente.
+
+### Dependencia y tipos
+
+Necesito trips_v1 Silver del mismo par versión/hash. El procesador comprueba tipos, contenido, unicidad y regla de esa dependencia.
+No necesita consultar routes, calendarios ni stop_times para volver a validar la existencia del viaje.
+Fijo las versiones Delta de Bronze y trips. La auditoría conserva ambas referencias.
+
+Conservo trip_id y horas fuente como string. Headway_secs y exact_times usan int.
+Derivo start_time_seconds y end_time_seconds como long. Exact_times_effective usa int.
+Exact_times conserva null cuando falta. Su interpretación predeterminada queda explícita en el campo derivado.
+La salida publicada tiene 16 columnas: ocho de negocio y ocho técnicas.
+
+### Novena tarea preparada
+
+Después de sincronizar el código añadiré frequencies_work_items en Job parameters.
+Guardaré ese parámetro general antes de configurar Inputs del For each.
+
+```json
+[
+  {
+    "entity": "frequencies",
+    "feed_version": "2025-10-28",
+    "snapshot_sha256": "07ba2ba9bb3b5bc1e38357355956757ce84fc68e6d05b74577bf017e189ab952"
+  },
+  {
+    "entity": "frequencies",
+    "feed_version": "2026-09-29",
+    "snapshot_sha256": "08d14e0b3a5b9caa5451b722659871fd554e3273b94bdd770fdf81a26bf02097"
+  }
+]
+```
+
+La tarea exterior publish_frequencies depende de publish_trips y usa concurrency=1.
+Su Inputs es {{job.parameters.frequencies_work_items}}.
+La tarea interior process_frequencies_snapshot ejecuta notebook 10 desde Workspace con el entorno existente.
+Las ocho tareas anteriores y sus parámetros permanecen iguales.
+
+| Parámetro interno | Valor |
+| --- | --- |
+| repo_root | La raíz Workspace ya utilizada por las tareas existentes. |
+| catalog | {{job.parameters.catalog}} |
+| schema | {{job.parameters.schema}} |
+| staging_volume | {{job.parameters.staging_volume}} |
+| mode | {{job.parameters.mode}} |
+| verify_history | {{job.parameters.verify_history}} |
+| entity | {{input.entity}} |
+| feed_version | {{input.feed_version}} |
+| snapshot_sha256 | {{input.snapshot_sha256}} |
+
+No necesito window_start ni window_end.
+Seleccionaré únicamente publish_frequencies con Run now with different settings.
+Primero ejecutaré mode=validate. Después revisaré el resultado y ejecutaré mode=publish.
+El notebook 16 no constituye un paso adicional del Job. No necesito recargar Bronze.
+
+### Resultados esperados del perfil
+
+| Snapshot | Candidatas esperadas | Rechazos esperados | Advertencias esperadas |
+| --- | ---: | ---: | ---: |
+| 2025-10-28 | 2 | 0 | 0 |
+| 2026-09-29 | 14 | 0 | 0 |
+
+Estos valores proceden del perfil fuente. No son resultados de una publicación real de frequencies en Workspace.
+Validate debe devolver persisted=false. Publish debe devolver SUCCEEDED y persisted=true.
+La tabla destino es workspace.gtfs_bogota.silver_gtfs_frequencies.
+
+### Comprobación después de publicar
+
+```sql
+select source_feed_version, source_sha256,
+  count(*) as filas,
+  count(distinct struct(trip_id, start_time_seconds)) as claves_distintas,
+  min(headway_secs) as intervalo_minimo_segundos,
+  max(headway_secs) as intervalo_maximo_segundos,
+  count(exact_times) as valores_exact_times_publicados,
+  count_if(exact_times_effective = 0) as ventanas_por_frecuencia
+from workspace.gtfs_bogota.silver_gtfs_frequencies
+where (source_feed_version = '2025-10-28'
+       and source_sha256 = '07ba2ba9bb3b5bc1e38357355956757ce84fc68e6d05b74577bf017e189ab952')
+   or (source_feed_version = '2026-09-29'
+       and source_sha256 = '08d14e0b3a5b9caa5451b722659871fd554e3273b94bdd770fdf81a26bf02097')
+group by source_feed_version, source_sha256
+order by source_feed_version;
+```
+
+Espero 2 / 14 filas y claves distintas, con intervalos de 60 / 10–16 segundos.
+Espero cero exact_times informados y 2 / 14 ventanas con interpretación efectiva 0.
+Registraré los resultados reales después de ejecutar el Job. Esos conteos no demuestran vehículos ni salidas observadas.
+
+
+### Verificación local de frequencies
+
+Pasaron **42 pruebas seleccionadas en 428,495 segundos, sin fallos ni omisiones**.
+Usé Python 3.10.12, Spark 4.0.1 y Delta 4.0.0 en el entorno Linux offline existente.
+Incluyen trece pruebas nuevas: cuatro de contrato, ocho de reglas Spark y una integración Delta.
+Las otras 29 comprueban configuración, despacho, contratos anteriores y publicación de trips.
+Ejecuté dos integraciones Delta en total. No repetí toda la suite del repositorio.
+
+La integración nueva publicó dos snapshots sintéticos y reintentó uno sin duplicados.
+Conservó exactamente las filas anteriores, incluidos sus campos técnicos.
+Validate no creó Silver ni auditoría. Publish generó cuatro ventanas en total y un esquema de 16 columnas.
+La ausencia de exact_times quedó null y su interpretación efectiva quedó 0.
+Source_columns distinguió ausencia de encabezado y columna presente sin contenido.
+
+Una referencia a trips inexistente quedó en cuarentena con original y motivo.
+Silver conservó las cuatro filas válidas. La auditoría registró el rechazo y las versiones Delta de entrada.
+Las reglas comprobaron horas superiores a 24, desbordamientos, claves conflictivas y colisiones de formato.
+También comprobaron superposiciones contenidas, ventanas contiguas, coherencia de exact_times y límites de horario exacto.
+
+El chequeo inicial de Windows dejó dos errores porque faltaba langcodes en ese Python.
+No instalé dependencias en Windows. La selección completa pasó después en Docker con los paquetes offline existentes.
+No modifiqué datos de Databricks, archivos recuperados ni Archify.
+
+También comprobé sintaxis, plantilla regenerable y código idéntico a la copia probada.
+Las ocho tareas anteriores y sus parámetros permanecen intactos.
+Notebook 10 conserva sus dos bloques ejecutables. Notebook 16 conserva sus nueve consultas verificadas.
+La primera publicación real de frequencies sigue pendiente.

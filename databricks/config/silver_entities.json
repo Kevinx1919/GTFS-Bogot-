@@ -63,5 +63,13 @@
       "calendar_dates",
       "shape_points"
     ]
+  },
+  "frequencies": {
+    "enabled": true,
+    "validator": "frequencies_v1",
+    "bronze_table": "bronze_gtfs_frequencies",
+    "depends_on": [
+      "trips"
+    ]
   }
 }

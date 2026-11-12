@@ -11,7 +11,7 @@ from .agency_spark import read_and_validate
 from .publication import (
     PublicationTables, _versioned_table, publish_agency, publish_snapshot, quoted_table, simple_identifier,
 )
-from . import routes_spark, stops_spark, calendars_spark, service_dates_spark, shape_points_spark, trips_spark
+from . import routes_spark, stops_spark, calendars_spark, service_dates_spark, shape_points_spark, trips_spark, frequencies_spark
 from .models import DerivedSnapshotSpec, SOURCE_ENTITY_NAMES
 
 REGISTRY_PATH = Path(__file__).resolve().parents[1] / "config" / "silver_entities.json"
@@ -44,7 +44,7 @@ def run_entity(spark, *, catalog: str, schema: str, staging_volume: str,
         return _run_service_dates(spark, catalog, schema, spec, mode, verify_history, run_id)
     validators = {"agency": "agency_v1", "routes": "routes_v1", "stops": "stops_v1",
                   "calendar": "calendar_v1", "calendar_dates": "calendar_dates_v1",
-                  "shape_points": "shape_points_v1", "trips": "trips_v1"}
+                  "shape_points": "shape_points_v1", "trips": "trips_v1", "frequencies": "frequencies_v1"}
     if entity not in validators or configuration["validator"] != validators[entity]:
         raise ValueError("La entidad todavía no tiene procesador implementado.")
     source_entity = SOURCE_ENTITY_NAMES.get(entity, entity)
@@ -63,13 +63,24 @@ def run_entity(spark, *, catalog: str, schema: str, staging_volume: str,
     spec = SnapshotSpec(feed_version, snapshot_sha256, source_path, entity)
     processors = {"routes": routes_spark, "stops": stops_spark,
                   "calendar": calendars_spark, "calendar_dates": calendars_spark,
-                  "shape_points": shape_points_spark, "trips": trips_spark}
+                  "shape_points": shape_points_spark, "trips": trips_spark, "frequencies": frequencies_spark}
     header_reader = read_source_header if entity == "agency" else processors[entity].read_source_header
     columns = header_reader(source_path)
     bronze = f"{catalog}.{schema}.{configuration['bronze_table']}"
     if not spark.catalog.tableExists(quoted_table(bronze)):
         raise ValueError("No existe Bronze para la entidad seleccionada.")
     # Fijar versiones Delta evita que acciones posteriores lean otro estado de entrada.
+    if entity == "frequencies":
+        source, version = _versioned_table(spark, bronze, with_version=True)
+        dependency = f"{catalog}.{schema}.silver_gtfs_trips"
+        if not spark.catalog.tableExists(quoted_table(dependency)):
+            raise ValueError("Publica trips en Silver antes de procesar frequencies.")
+        trips, trips_version = _versioned_table(spark, dependency, with_version=True)
+        result = frequencies_spark.read_and_validate(source, columns, spec, trips)
+        result.reference_versions.update({"bronze_table": bronze, "bronze_delta_version": str(version),
+                                          "trips_table": dependency, "trips_delta_version": str(trips_version)})
+        return publish_snapshot(spark, result, spec, PublicationTables(catalog, schema, entity),
+                                mode=mode, verify_history=verify_history, run_id=run_id)
     if entity == "trips":
         source, version = _versioned_table(spark, bronze, with_version=True)
         inputs, references = _trips_dependencies(spark, catalog, schema, spec)
