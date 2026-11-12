@@ -11,7 +11,7 @@ from .agency_spark import read_and_validate
 from .publication import (
     PublicationTables, _versioned_table, publish_agency, publish_snapshot, quoted_table, simple_identifier,
 )
-from . import routes_spark, stops_spark, calendars_spark, service_dates_spark, shape_points_spark
+from . import routes_spark, stops_spark, calendars_spark, service_dates_spark, shape_points_spark, trips_spark
 from .models import DerivedSnapshotSpec, SOURCE_ENTITY_NAMES
 
 REGISTRY_PATH = Path(__file__).resolve().parents[1] / "config" / "silver_entities.json"
@@ -44,7 +44,7 @@ def run_entity(spark, *, catalog: str, schema: str, staging_volume: str,
         return _run_service_dates(spark, catalog, schema, spec, mode, verify_history, run_id)
     validators = {"agency": "agency_v1", "routes": "routes_v1", "stops": "stops_v1",
                   "calendar": "calendar_v1", "calendar_dates": "calendar_dates_v1",
-                  "shape_points": "shape_points_v1"}
+                  "shape_points": "shape_points_v1", "trips": "trips_v1"}
     if entity not in validators or configuration["validator"] != validators[entity]:
         raise ValueError("La entidad todavía no tiene procesador implementado.")
     source_entity = SOURCE_ENTITY_NAMES.get(entity, entity)
@@ -63,13 +63,20 @@ def run_entity(spark, *, catalog: str, schema: str, staging_volume: str,
     spec = SnapshotSpec(feed_version, snapshot_sha256, source_path, entity)
     processors = {"routes": routes_spark, "stops": stops_spark,
                   "calendar": calendars_spark, "calendar_dates": calendars_spark,
-                  "shape_points": shape_points_spark}
+                  "shape_points": shape_points_spark, "trips": trips_spark}
     header_reader = read_source_header if entity == "agency" else processors[entity].read_source_header
     columns = header_reader(source_path)
     bronze = f"{catalog}.{schema}.{configuration['bronze_table']}"
     if not spark.catalog.tableExists(quoted_table(bronze)):
         raise ValueError("No existe Bronze para la entidad seleccionada.")
     # Fijar versiones Delta evita que acciones posteriores lean otro estado de entrada.
+    if entity == "trips":
+        source, version = _versioned_table(spark, bronze, with_version=True)
+        inputs, references = _trips_dependencies(spark, catalog, schema, spec)
+        result = trips_spark.read_and_validate(source, columns, spec, **inputs)
+        result.reference_versions.update({"bronze_table": bronze, "bronze_delta_version": str(version), **references})
+        return publish_snapshot(spark, result, spec, PublicationTables(catalog, schema, entity),
+                                mode=mode, verify_history=verify_history, run_id=run_id)
     source = _versioned_table(spark, bronze)
     if entity in processors:
         dependencies = []
@@ -137,3 +144,31 @@ def _run_service_dates(spark, catalog, schema, spec, mode, verify_history, run_i
     if spark.catalog.tableExists(quoted_table(tables.name("silver"))):
         service_dates_spark.check_existing_window(_versioned_table(spark, tables.name("silver")), spec)
     return publish_snapshot(spark, result, spec, tables, mode=mode, verify_history=verify_history, run_id=run_id)
+
+
+def _trips_dependencies(spark, catalog, schema, spec):
+    """Resuelve fuentes declaradas y bloquea comportamientos fuera del contrato."""
+    from pyspark.sql import functions as F
+    audit = f"{catalog}.{schema}.audit_gtfs_source_schema_observations"
+    if not spark.catalog.tableExists(quoted_table(audit)):
+        raise ValueError("Falta auditoría de encabezados para trips; ejecuta Bronze 07.")
+    observations = (spark.table(quoted_table(audit))
+                    .filter((F.col("source_feed_version") == spec.feed_version)
+                            & (F.col("source_sha256") == spec.sha256)
+                            & F.col("source_file_name").isin(*sorted(trips_spark.SCOPE_FILES)))
+                    .select("source_file_name", "source_columns_json").distinct().limit(6).collect())
+    published = trips_spark.validate_scope_headers([(r.source_file_name, r.source_columns_json) for r in observations])
+    inputs = {"calendar_df": None, "calendar_dates_df": None, "shape_points_df": None}
+    references = {}
+    for entity, filename in (("routes", "routes.txt"), ("calendar", "calendar.txt"),
+                             ("calendar_dates", "calendar_dates.txt"), ("shape_points", "shapes.txt")):
+        if filename not in published:
+            continue
+        table = f"{catalog}.{schema}.silver_gtfs_{entity}"
+        if not spark.catalog.tableExists(quoted_table(table)):
+            raise ValueError(f"Publica primero {entity}_v1 del mismo snapshot antes de trips.")
+        frame, version = _versioned_table(spark, table, with_version=True)
+        inputs[entity + "_df"] = frame
+        references[entity + "_table"] = table
+        references[entity + "_delta_version"] = str(version)
+    return inputs, references

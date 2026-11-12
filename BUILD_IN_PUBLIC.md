@@ -448,6 +448,34 @@ Identifiqué una limitación del Job: las listas de versión/hash son fijas. Un 
 
 El siguiente paso es perfilar trips. Relacionará viajes con rutas, servicios y trazados dentro del mismo snapshot. Primero revisaré campos, claves, ausencias y referencias; no implementaré reglas nuevas antes de entender los resultados. Archify permanece fuera de este cierre.
 
+### Hito 32 — Perfil de trips y comparación del destino con Staging
+
+**Fecha:** 11 de noviembre de 2026. Después del push 9735d2a comencé trips, orden 6. Conservé diez consultas definitivas y 112 filas estructuradas completas. La exploración solo lee metadata, Bronze, dependencias Silver y un TXT Staging. No modifiqué datos ni preparé otro entorno de pruebas.
+
+Encontré 107.162 / 181.060 trip_id únicos. Los cuatro IDs publicados están completos. No encontré copias, conflictos ni errores de procedencia en los controles ejecutados. Las referencias a rutas, servicios y trazados resuelven. Los joins mantienen el conteo fuente.
+
+El hallazgo principal es trip_headsign. No existe en el encabezado 2025. Existe en 2026, pero Bronze contiene 181.060 nulls. Comparé directamente el TXT Staging: devuelve las mismas filas y ningún texto no blanco. Conservo esa ausencia y no fabrico un destino desde routes.
+
+También encontré 2 / 14 trip_id relacionados con frequencies. No los cuento automáticamente como salidas individuales. Los calendarios contienen siete servicios, pero trips usa tres por snapshot. El catálogo de servicios no depende del horizonte de service_dates.
+
+Consulté shape_points Silver como dependencia. Confirmé 909.878 / 926.501 puntos, claves únicas y 676 / 1.045 trazados. Esos conteos actuales complementan el cierre funcional anterior. No demuestran otra reejecución ni nuevos conteos de advertencias.
+
+Dejé el [notebook 15](databricks/notebooks/silver/15_profile_gtfs_trips.ipynb), el [informe](docs/trips_profile_2025_2026.md) y una [propuesta trips_v1](docs/contracts/trips.md). Todavía no implementé el procesador ni su tarea. Las 36 pruebas anteriores pertenecen a shape_points; no las presento como pruebas de trips. El planificador sigue pendiente 8b. Archify permanece sin cambios.
+
+### Hito 33 — Implementar trips sin multiplicar viajes ni inventar destinos
+
+**Fecha:** 11 de noviembre de 2026. Después de revisar el perfil implementé trips_v1. Los cinco campos de negocio permanecen string. La clave conserva versión, hash y trip_id. Trip_headsign ausente queda null con evidencia del encabezado.
+
+El procesador valida rutas, servicios y trazados del mismo snapshot. Usa catálogos únicos para evitar multiplicidad por puntos o excepciones. No utiliza service_dates para reconocer un service_id. Las referencias no resueltas conservan originales en cuarentena y bloquean el snapshot completo.
+
+La metadata determina los archivos de calendario y shapes publicados. Las columnas de servicio continuo requieren revisar el alcance antes de publicar. La falta de metadata o sus variantes ambiguas bloquean la preparación. El proceso fija y registra versiones Delta de Bronze y dependencias.
+
+Reutilicé notebook 10 y el escritor. La plantilla añade publish_trips como octava tarea. Las siete tareas anteriores permanecen intactas. El planificador automático sigue pendiente 8b. No introduje otra etapa de exploración obligatoria ni dependencias nuevas.
+
+Pasaron **37 pruebas seleccionadas en 325,531 segundos, sin omisiones**. Incluyen catorce nuevas y regresiones de contratos, despacho, configuración y lector versionado. Dos integraciones Delta comprobaron publicación local. La nueva preservó dos snapshots, reintentó sin duplicar y conservó Silver ante una referencia no resuelta. La [guía](docs/silver_execution.md#verificación-local-de-trips) conserva el detalle. No repetí los 140 casos definidos por la suite completa.
+
+Reutilicé el entorno offline y datos sintéticos. No modifiqué Raw, Bronze, archivos recuperados ni Archify. La primera publicación de trips en Databricks sigue pendiente. El [contrato](docs/contracts/trips.md) y el [despliegue](docs/silver_execution.md#despliegue-de-trips_v1) separan código probado y resultado real pendiente.
+
 ## Qué no publicar
 
 - Access tokens, secretos, archivos `.env`, cookies, hostnames privados o identificadores de cuenta.

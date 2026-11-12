@@ -440,3 +440,115 @@ El flujo de shape_points ya funciona en Workspace. El cierre siguiente registra 
 Registro el alcance exacto de esta confirmación. Aquí no adjunto IDs de runs, resúmenes de iteraciones ni nuevos conteos de Silver por snapshot. Los 909.878 / 926.501 candidatos y las 439 / 30.208 advertencias anteriores siguen siendo resultados esperados del perfil. No los convierto en una nueva salida medida de Workspace. Las 36 pruebas locales permanecen como evidencia separada.
 
 El Job conserva listas manuales de versión/hash. Una versión nueva todavía requiere configurar su trabajo. Registré el [planificador pendiente](silver_design.md#automatización-pendiente-selección-de-snapshots-silver) como orden 8b, después de los contratos iniciales y antes de programar ejecuciones automáticas. No añadí esa tarea al Job actual.
+
+
+## Comprobación posterior de shape_points mediante Genie
+
+Después del cierre funcional consulté Silver para preparar las dependencias de trips. La consulta está en el bloque 3 del [notebook 15](../databricks/notebooks/silver/15_profile_gtfs_trips.ipynb). Recuperé dos filas estructuradas completas.
+
+| Snapshot | Filas | Claves distintas | Trazados | Distancias informadas | Regla incorrecta |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| 2025-10-28 | 909.878 | 909.878 | 676 | 0 | 0 |
+| 2026-09-29 | 926.501 | 926.501 | 1.045 | 0 | 0 |
+
+Usé los hashes ya documentados. Los resultados coinciden con los conteos esperados. Todas las filas consultadas tienen shape_points_v1. Esta medición no demuestra una segunda ejecución ni nuevos conteos de advertencias. La consulta no modificó la tabla.
+
+
+## Despliegue de trips_v1
+
+**Fecha:** 11 de noviembre de 2026. **Estado:** implementación local preparada. Las 37 pruebas seleccionadas pasaron sin omisiones. La primera publicación de trips en Databricks sigue pendiente.
+
+El [contrato](contracts/trips.md) conserva los cinco campos de negocio como string. Los IDs relacionan entidades; no representan cantidades. Las ausencias opcionales permanecen null. El procesador no genera destinos ni expande frecuencias.
+
+### Dependencias y alcance
+
+Necesito routes Silver del mismo snapshot. Los calendarios publicados requieren sus tablas Silver correspondientes. Shapes publicado requiere shape_points Silver. Los catálogos eliminan multiplicidad antes del join. La existencia de un servicio no depende de service_dates.
+
+La auditoría de encabezados proviene de Bronze 07. Exijo rutas, horarios y al menos un calendario. Las columnas continuous_pickup o continuous_drop_off requieren revisar el contrato. Esta v1 bloquea ese alcance antes de publicar. No crea registros de cuarentena para una preparación que no llegó a obtener candidatos.
+
+El procesador fija versiones Delta de Bronze y dependencias. La auditoría conserva sus tablas y versiones. Los errores de filas conservan originales en cuarentena. Un rechazo bloquea el snapshot completo.
+
+### Resultados esperados del perfil
+
+| Snapshot | Filas candidatas esperadas | Rechazos esperados | Advertencias esperadas |
+| --- | ---: | ---: | ---: |
+| 2025-10-28 | 107.162 | 0 | 0 |
+| 2026-09-29 | 181.060 | 0 | 0 |
+
+Estos valores proceden del perfil, no de una publicación del procesador en Workspace. Trip_headsign quedará null en ambos snapshots. Source_columns distinguirá ausencia de columna en 2025 y columna publicada sin contenido en 2026.
+
+### Octava tarea preparada
+
+Después de sincronizar el código, añadiré trips_work_items en Job parameters:
+
+```json
+[
+  {
+    "entity": "trips",
+    "feed_version": "2025-10-28",
+    "snapshot_sha256": "07ba2ba9bb3b5bc1e38357355956757ce84fc68e6d05b74577bf017e189ab952"
+  },
+  {
+    "entity": "trips",
+    "feed_version": "2026-09-29",
+    "snapshot_sha256": "08d14e0b3a5b9caa5451b722659871fd554e3273b94bdd770fdf81a26bf02097"
+  }
+]
+```
+
+Guardaré ese parámetro antes de configurar el For each. La tarea exterior se llama publish_trips. Depende de publish_shape_points. Usa {{job.parameters.trips_work_items}} y concurrency=1. La tarea interna process_trips_snapshot usa notebook 10.
+
+| Parámetro interno | Valor |
+| --- | --- |
+| repo_root | La misma raíz Workspace de las tareas existentes. |
+| catalog | {{job.parameters.catalog}} |
+| schema | {{job.parameters.schema}} |
+| staging_volume | {{job.parameters.staging_volume}} |
+| mode | {{job.parameters.mode}} |
+| verify_history | {{job.parameters.verify_history}} |
+| entity | {{input.entity}} |
+| feed_version | {{input.feed_version}} |
+| snapshot_sha256 | {{input.snapshot_sha256}} |
+
+Seleccionaré únicamente publish_trips con Run now with different settings. Primero ejecutaré mode=validate. Revisaré el resultado. Después ejecutaré mode=publish. No necesito volver a cargar Bronze ni ejecutar el notebook 15 como paso previo.
+
+### Comprobación de publicación
+
+Después de publicar consultaré:
+
+```sql
+select source_feed_version,source_sha256,
+  count(*) as filas,
+  count(distinct trip_id) as claves_distintas,
+  count(distinct route_id) as rutas,
+  count(distinct service_id) as servicios,
+  count(distinct shape_id) as trazados,
+  count(trip_headsign) as destinos_informados
+from workspace.gtfs_bogota.silver_gtfs_trips
+where (source_feed_version='2025-10-28'
+       and source_sha256='07ba2ba9bb3b5bc1e38357355956757ce84fc68e6d05b74577bf017e189ab952')
+   or (source_feed_version='2026-09-29'
+       and source_sha256='08d14e0b3a5b9caa5451b722659871fd554e3273b94bdd770fdf81a26bf02097')
+group by source_feed_version,source_sha256
+order by source_feed_version;
+```
+
+Espero 107.162 / 181.060 filas y claves únicas. Espero 672 / 1.045 rutas y trazados, tres servicios por snapshot y cero destinos informados. Registraré los resultados reales después de ejecutar. Estas cifras no demuestran buses operados ni corrigen el alcance temporal de 2025.
+
+### Verificación local de trips
+
+Pasaron **37 pruebas seleccionadas en 325,531 segundos, sin fallos ni omisiones**. Usé Python 3.10.12, Spark 4.0.1 y Delta 4.0.0 en Linux.
+
+Incluyen catorce pruebas nuevas: seis de contrato, siete de reglas Spark y una integración Delta. Las otras 23 cubren despacho, configuración, contratos anteriores y lector versionado. Ejecuté dos integraciones Delta en total. La suite completa define 140 casos; no afirmo haberlos repetido todos.
+
+La integración nueva publicó dos snapshots sintéticos y repitió uno sin duplicados. Conservó exactamente el snapshot anterior. Los joins mantuvieron dos viajes por snapshot, aunque las dependencias contenían varios puntos y excepciones. La ausencia de headsign no generó texto ni advertencias artificiales.
+
+Una referencia de ruta no resuelta quedó en cuarentena. Silver conservó sus cuatro filas publicadas. El control de columnas de servicio continuo bloqueó otra preparación. El destino permaneció intacto. La auditoría registró las versiones Delta de Bronze y dependencias.
+
+Las reglas también cubren calendarios sin service_dates y excepciones de otro año. Los servicios siguen siendo válidos como identificadores fuera del horizonte. Las dependencias duplicadas, equivocadas o con tipos incompatibles bloquean la preparación.
+
+Reutilicé el entorno offline existente. El contenedor mantuvo el código como lectura y usó datos sintéticos temporales. No descargué Spark ni modifiqué archivos recuperados. Las pruebas no escribieron en Databricks.
+
+También comprobé compilación, plantilla regenerable y código idéntico al probado. Las siete tareas previas permanecen intactas. Notebook 10 conserva sus dos bloques ejecutables. Notebook 15 conserva sus diez consultas verificadas.
+
+La primera publicación real de trips sigue pendiente. Los conteos esperados del perfil no sustituyen esa ejecución.

@@ -375,3 +375,41 @@ Mantengo los dos bloques ejecutables. El bloque 1 conserva los parámetros exist
 La plantilla añade publish_shape_points como séptima tarea serial. shape_points_work_items contiene ambos snapshots. La tarea interna process_shape_points_snapshot usa notebook 10. Sus parámetros mantienen entidad, versión y hash; no requieren horizonte de fechas.
 
 El notebook 14 conserva el perfil de lectura. No se añade al Job. Las 36 pruebas seleccionadas pasaron sin omisiones. La [guía](silver_execution.md#verificación-local-de-shape_points) conserva los resultados. El despliegue funcional de shape_points en Workspace ya está comprobado. El [cierre](silver_execution.md#cierre-de-la-ejecución-de-shape_points) registra el alcance disponible.
+
+
+## Notebook 15 — silver/15_profile_gtfs_trips — 11 de noviembre de 2026
+
+**Propósito:** entender viajes y referencias antes de implementar trips_v1. Conservo diez consultas definitivas ejecutadas mediante Genie. Recuperé 112 filas estructuradas completas. El cuaderno no tiene una ejecución completa documentada como notebook. Todas las celdas son de lectura.
+
+| Bloque | Entradas y pregunta | Salida comprobada | Efectos y límites |
+| --- | --- | --- | --- |
+| 1 / esquema | Trips/frequencies Bronze y cuatro dependencias Silver. | 77 campos. | Metadata; no modifica tipos. |
+| 2 / encabezados | Seis archivos por versión/hash. | 12 observaciones. | Versión final ampliada. Distingue campos ausentes y comportamiento continuo no publicado. |
+| 3 / shape_points | Tabla Silver recién desplegada. | 2 resúmenes: 909.878 / 926.501 puntos y claves únicas. | Confirma publicación actual. No demuestra reintento ni nuevos conteos de advertencias. |
+| 4 / completitud | Cinco campos de negocio, según encabezado. | 10 filas; IDs completos. Headsign ausente en 2025 y todo null en 2026. | Las métricas de un campo ausente quedan no aplicables. |
+| 5 / identidad | Filas por hash, IDs y procedencia. | 2 resúmenes: 107.162 / 181.060 claves únicas. | invalid_shape_id_rows es diagnóstico; no define obligatoriedad universal. |
+| 6 / duplicados | Filas de negocio sin columnas técnicas. | 2 resúmenes; cero copias o conflictos. | No deduplica viajes por ruta, servicio y trazado. |
+| 7 / referencias | Catálogos únicos de rutas, servicios y trazados. | 2 resúmenes; cero referencias no resueltas. | Los joins mantienen filas. No usa service_dates ni expande puntos. |
+| 8 / grano | Agrupaciones por ruta y por ruta/servicio/trazado. | 2 resúmenes; 1.641 / 2.427 grupos. | Compartir atributos no implica duplicidad de trip_id. |
+| 9 / frecuencias | IDs de frequencies contra trips. | 2 resúmenes; 2 / 14 IDs relacionados y cero huérfanos. | No valida horarios ni calcula salidas. |
+| 10 / Staging | Único TXT trips de 2026 con read_files. | 1 resumen; 181.060 filas y headsign null en todas. | CSV string, encabezado y FAILFAST. No escribe archivos ni demuestra igualdad completa de columnas. |
+
+Los hashes y nombres son valores actuales del proyecto. Las consultas no fijan versiones Delta ni una transacción conjunta. El bloque 10 infiere nombres del encabezado; desactiva inferencia de tipos. Esa exploración no cambia el esquema explícito del pipeline.
+
+El [informe](trips_profile_2025_2026.md) conserva hallazgos y reconciliaciones. La [propuesta de contrato](contracts/trips.md) mantiene los cinco campos publicados como string. Todavía no añadí procesador, pruebas de transformación ni tarea de trips. El planificador de snapshots permanece pendiente 8b.
+
+
+## Notebook 10 — Entrada de trips_v1 — 11 de noviembre de 2026
+
+Mantengo los dos bloques ejecutables. No añado widgets ni otro notebook de publicación. El bloque 1 importa los módulos actualizados. El bloque 2 llama al mismo run_entity con entity=trips.
+
+| Bloque | Entradas | Salidas y efectos | Controles |
+| --- | --- | --- | --- |
+| 1 / configuración | Repositorio y parámetros existentes del snapshot. | Importa trips_v1. No escribe tablas. | Mantiene dependencias del entorno actual. |
+| 2 / ejecución | Bronze, encabezado trips y metadata de fuentes publicadas. | Validate devuelve métricas sin escribir. Publish usa escritor, auditoría y cuarentena. | Referencias únicas del mismo snapshot y control de columnas de servicio continuo. |
+
+La auditoría debe contener routes.txt, stop_times.txt y al menos un calendario. Los archivos de calendario y shapes publicados requieren sus dependencias Silver. Los valores originales y los IDs permanecen como string. Trip_headsign ausente queda null, sin completar desde routes.
+
+La plantilla añade publish_trips como octava tarea después de publish_shape_points. Su For each usa trips_work_items y concurrency=1. La tarea interna process_trips_snapshot ejecuta notebook 10. No necesita horizonte de fechas.
+
+El notebook 15 conserva el perfil y no se añade al Job. Las 37 pruebas seleccionadas pasaron sin omisiones. La primera publicación en Databricks sigue pendiente. El planificador 8b permanece sin implementar.

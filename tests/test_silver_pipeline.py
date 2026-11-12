@@ -100,7 +100,7 @@ class SilverPipelineTests(unittest.TestCase):
                 pipeline.run_entity(spark,**self.parameters("calendar_dates"))
 
     def test_unknown_entity_or_invalid_mode_stops_before_source_access(self):
-        for parameters in (self.parameters("trips"), {**self.parameters("routes"), "mode": "overwrite_all"}):
+        for parameters in (self.parameters("frequencies"), {**self.parameters("routes"), "mode": "overwrite_all"}):
             spark = MagicMock()
             with self.subTest(parameters=parameters), self.assertRaises(ValueError):
                 pipeline.run_entity(spark, **parameters)

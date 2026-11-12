@@ -53,7 +53,7 @@ class ServiceDatesContractTests(unittest.TestCase):
 
     def test_template_selects_only_2026_and_does_not_add_window_refs_to_source_tasks(self):
         job=build_job("/Workspace/Shared/example-project")
-        self.assertEqual(len(job["tasks"]),7)
+        self.assertEqual(len(job["tasks"]),8)
         task=next(t for t in job["tasks"] if t["task_key"]=="publish_service_dates")
         self.assertEqual(task["task_key"],"publish_service_dates")
         self.assertEqual(task["depends_on"],[{"task_key":"publish_calendar_dates"}])

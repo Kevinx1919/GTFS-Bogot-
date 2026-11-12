@@ -50,5 +50,18 @@
     "validator": "shape_points_v1",
     "bronze_table": "bronze_gtfs_shapes",
     "depends_on": []
+  },
+  "trips": {
+    "enabled": true,
+    "validator": "trips_v1",
+    "bronze_table": "bronze_gtfs_trips",
+    "depends_on": [
+      "routes"
+    ],
+    "depends_on_if_published": [
+      "calendar",
+      "calendar_dates",
+      "shape_points"
+    ]
   }
 }

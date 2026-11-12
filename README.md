@@ -199,3 +199,16 @@ La implementación de shape_points pasó 36 pruebas seleccionadas sin omisiones.
 
 
 El siguiente paso es trips, antes de frequencies y stop_times. Registré la [selección automática de snapshots](docs/silver_design.md#automatización-pendiente-selección-de-snapshots-silver) como pendiente 8b. Las listas actuales siguen siendo manuales. Una versión nueva todavía requiere configurar su trabajo.
+
+
+### Trips: perfil inicial antes de implementar
+
+Completé el [perfil de trips](docs/trips_profile_2025_2026.md). Hay 107.162 / 181.060 claves únicas y las referencias resuelven. El [notebook 15](databricks/notebooks/silver/15_profile_gtfs_trips.ipynb) conserva diez consultas verificadas. El [contrato](docs/contracts/trips.md) mantiene IDs y texto como string.
+
+La fuente 2025 no publica trip_headsign. La fuente 2026 lo publica sin contenido no blanco, según la comparación Staging/Bronze. No fabricaré destinos ni interpretaré cada fila como un bus físico. Trips ya tiene procesador local; su primera publicación Silver sigue pendiente.
+
+
+Implementé trips_v1 con referencias a rutas, servicios y trazados del mismo snapshot. La plantilla incorpora una octava tarea y mantiene las siete anteriores. Notebook 10 conserva sus dos bloques ejecutables. Las 37 pruebas seleccionadas pasaron sin omisiones. La [guía](docs/silver_execution.md#despliegue-de-trips_v1) separa implementación local y publicación pendiente.
+
+
+La implementación de trips pasó 37 pruebas seleccionadas sin omisiones. Incluyen catorce nuevas y dos integraciones Delta en total. La primera publicación en Workspace sigue pendiente.
