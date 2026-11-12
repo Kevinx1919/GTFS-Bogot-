@@ -440,6 +440,14 @@ Pasaron **36 pruebas seleccionadas en 491,759 segundos, sin omisiones**. Incluye
 
 Reutilicé el entorno offline existente. No modifiqué Raw, Bronze, archivos recuperados ni Archify. La primera publicación de shape_points en Databricks sigue pendiente. El [contrato](docs/contracts/shape_points.md) y los [pasos de despliegue](docs/silver_execution.md#despliegue-de-shape_points_v1) separan implementación y ejecución real.
 
+### Hito 31 — Shape_points funciona y registro la automatización pendiente
+
+**Fecha:** 11 de noviembre de 2026. Después de sincronizar a25773a comprobé que el flujo de shape_points funciona en Databricks. Cierro su despliegue funcional. No adjunto conteos nuevos, IDs de ejecución ni resultados de reintento en Workspace. El [cierre](docs/silver_execution.md#cierre-de-la-ejecución-de-shape_points) separa esa confirmación del perfil y las 36 pruebas locales.
+
+Identifiqué una limitación del Job: las listas de versión/hash son fijas. Un snapshot nuevo no entra automáticamente. Registré plan_silver como [pendiente 8b](docs/silver_design.md#automatización-pendiente-selección-de-snapshots-silver), después de los contratos iniciales y antes de programar el Job. Leerá metadata y auditoría para generar listas dinámicas. Mantendrá reprocesamiento explícito, dependencias, reintentos, salida sin novedades y horizonte de service_dates. Todavía no existe esa tarea.
+
+El siguiente paso es perfilar trips. Relacionará viajes con rutas, servicios y trazados dentro del mismo snapshot. Primero revisaré campos, claves, ausencias y referencias; no implementaré reglas nuevas antes de entender los resultados. Archify permanece fuera de este cierre.
+
 ## Qué no publicar
 
 - Access tokens, secretos, archivos `.env`, cookies, hostnames privados o identificadores de cuenta.

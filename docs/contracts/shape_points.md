@@ -1,6 +1,6 @@
 # Mi contrato Silver shape_points_v1
 
-**Fecha:** 11 de noviembre de 2026. **Estado:** reglas revisadas e implementación local preparada. Las 36 pruebas seleccionadas pasaron sin omisiones. La primera publicación en Databricks sigue pendiente. El [perfil](../shape_points_profile_2025_2026.md) conserva las mediciones de Bronze. No las presento como resultados de Silver.
+**Fecha:** 11 de noviembre de 2026. **Estado:** reglas revisadas e implementación local preparada. Las 36 pruebas seleccionadas pasaron sin omisiones. El despliegue funcional de shape_points en Databricks ya está comprobado. El [cierre](../silver_execution.md#cierre-de-la-ejecución-de-shape_points) conserva el alcance de esa confirmación. El [perfil](../shape_points_profile_2025_2026.md) conserva las mediciones de Bronze. Los conteos del perfil no sustituyen una consulta posterior de Silver.
 
 ## Qué representa e identidad
 

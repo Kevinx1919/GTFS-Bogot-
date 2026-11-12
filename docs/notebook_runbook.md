@@ -374,4 +374,4 @@ Mantengo los dos bloques ejecutables. El bloque 1 conserva los parámetros exist
 
 La plantilla añade publish_shape_points como séptima tarea serial. shape_points_work_items contiene ambos snapshots. La tarea interna process_shape_points_snapshot usa notebook 10. Sus parámetros mantienen entidad, versión y hash; no requieren horizonte de fechas.
 
-El notebook 14 conserva el perfil de lectura. No se añade al Job. Las 36 pruebas seleccionadas pasaron sin omisiones. La [guía](silver_execution.md#verificación-local-de-shape_points) conserva los resultados. La primera publicación en Workspace sigue pendiente.
+El notebook 14 conserva el perfil de lectura. No se añade al Job. Las 36 pruebas seleccionadas pasaron sin omisiones. La [guía](silver_execution.md#verificación-local-de-shape_points) conserva los resultados. El despliegue funcional de shape_points en Workspace ya está comprobado. El [cierre](silver_execution.md#cierre-de-la-ejecución-de-shape_points) registra el alcance disponible.

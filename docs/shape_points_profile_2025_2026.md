@@ -1,6 +1,6 @@
 # Mi perfil de shape_points de 2025 y 2026
 
-**Fecha:** 11 de noviembre de 2026. **Estado:** perfil de lectura completado. El contrato ya tiene implementación local. Las 36 pruebas seleccionadas pasaron sin omisiones. La publicación Silver sigue pendiente. Las fuentes son shapes Bronze y, para contexto, trips Bronze y routes Silver. La exploración no modificó tablas, Raw, el Job de Workspace ni Archify.
+**Fecha:** 11 de noviembre de 2026. **Estado:** perfil de lectura completado. El contrato ya tiene implementación local. Las 36 pruebas seleccionadas pasaron sin omisiones. El despliegue funcional Silver ya está comprobado; el cierre conserva el alcance de esa confirmación. Las fuentes son shapes Bronze y, para contexto, trips Bronze y routes Silver. La exploración no modificó tablas, Raw, el Job de Workspace ni Archify.
 
 ## Alcance y evidencia
 
@@ -76,4 +76,4 @@ Usé IDs de trazado distintos dentro de versión/hash para no multiplicar viajes
 
 Conservaré las coordenadas y el orden publicados. Los puntos consecutivos iguales generarán advertencia, sin eliminarse; las revisitas y los trazados sin referencias serán información. Las claves conflictivas o conversiones obligatorias inválidas llevarán evidencia a cuarentena y bloquearán la publicación completa según el contrato. La distancia ausente permanecerá null con source_columns como evidencia de ausencia.
 
-Dejé estas decisiones como [contrato shape_points_v1](contracts/shape_points.md), con implementación local y publicación pendiente. El [plan](shape_points_plan.md) registra las etapas completadas y el despliegue pendiente. La implementación posterior añade el procesador, la tarea de plantilla y las pruebas. Todavía no publiqué la tabla. La siguiente relación a preparar después será trips.
+Dejé estas decisiones como [contrato shape_points_v1](contracts/shape_points.md), con implementación y despliegue funcional comprobados. El [plan](shape_points_plan.md) registra las etapas completadas y el despliegue pendiente. La implementación posterior añade el procesador, la tarea de plantilla y las pruebas. El [cierre posterior](silver_execution.md#cierre-de-la-ejecución-de-shape_points) registra su funcionamiento en Databricks. La siguiente relación a preparar después será trips.

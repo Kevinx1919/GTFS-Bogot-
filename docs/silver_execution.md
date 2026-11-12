@@ -1,6 +1,6 @@
 # Mi ejecución Silver por entidad y snapshot
 
-**Estado actualizado al 11 de noviembre de 2026:** agency, routes, stops, calendar, calendar_dates y service_dates están publicadas en Silver; service_dates está comprobada para el horizonte anual 2026. Ejecuté el Job ampliado y comprobé las tablas; para stops también consulté sus datos. El [cierre de ejecución](#cierre-de-la-ejecución-de-stops) distingue esta comprobación de los conteos del perfil fuente y de las pruebas locales. Ejecuté las dos tareas nuevas de calendarios y comprobé sus tablas y datos; también publiqué service_dates para 2026 y comprobé sus datos; el siguiente paso del plan es shape_points.
+**Estado actualizado al 11 de noviembre de 2026:** agency, routes, stops, calendar, calendar_dates, service_dates y shape_points tienen despliegue funcional en Silver; service_dates está comprobada para el horizonte anual 2026. Ejecuté el Job ampliado y comprobé las tablas; para stops también consulté sus datos. El [cierre de ejecución](#cierre-de-la-ejecución-de-stops) distingue esta comprobación de los conteos del perfil fuente y de las pruebas locales. Ejecuté las dos tareas nuevas de calendarios y comprobé sus tablas y datos; también publiqué service_dates para 2026 y comprobé sus datos; shape_points ya funciona y el siguiente paso del plan es trips.
 
 ## Mi recorrido habitual
 
@@ -337,7 +337,7 @@ Cierro la primera derivación Silver y continúo con shape_points, orden 5 del p
 
 ## Despliegue de shape_points_v1
 
-**Fecha:** 11 de noviembre de 2026. **Estado:** implementación local preparada. Las 36 pruebas seleccionadas pasaron sin omisiones. La primera publicación de shape_points en Databricks sigue pendiente.
+**Fecha:** 11 de noviembre de 2026. **Estado:** implementación local preparada. Las 36 pruebas seleccionadas pasaron sin omisiones. El despliegue funcional de shape_points en Databricks ya está comprobado.
 
 El procesador conserva la identidad de cada punto. Usa versión + hash + shape_id + shape_pt_sequence. El alias shape_points resuelve shapes.txt y bronze_gtfs_shapes. No renombra Bronze ni requiere un archivo nuevo.
 
@@ -430,4 +430,13 @@ Reutilicé la imagen y las librerías offline existentes. El contenedor mantuvo 
 
 También comprobé compilación, igualdad entre código local y probado, enlaces y plantilla regenerable. Las seis tareas previas permanecen idénticas. Los dos bloques ejecutables del notebook 10 permanecen intactos. El notebook 14 conserva sus nueve consultas verificadas.
 
-La primera ejecución del procesador en Workspace sigue pendiente. Los conteos esperados del perfil no sustituyen esa comprobación.
+El flujo de shape_points ya funciona en Workspace. El cierre siguiente registra esa confirmación. Los conteos esperados del perfil no se presentan como nuevas mediciones de Silver.
+
+
+## Cierre de la ejecución de shape_points
+
+**Fecha:** 11 de noviembre de 2026. Después de sincronizar a25773a comprobé que el flujo de shape_points funciona en Databricks. Cierro su despliegue funcional y continúo con trips, orden 6 del plan.
+
+Registro el alcance exacto de esta confirmación. Aquí no adjunto IDs de runs, resúmenes de iteraciones ni nuevos conteos de Silver por snapshot. Los 909.878 / 926.501 candidatos y las 439 / 30.208 advertencias anteriores siguen siendo resultados esperados del perfil. No los convierto en una nueva salida medida de Workspace. Las 36 pruebas locales permanecen como evidencia separada.
+
+El Job conserva listas manuales de versión/hash. Una versión nueva todavía requiere configurar su trabajo. Registré el [planificador pendiente](silver_design.md#automatización-pendiente-selección-de-snapshots-silver) como orden 8b, después de los contratos iniciales y antes de programar ejecuciones automáticas. No añadí esa tarea al Job actual.

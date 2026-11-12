@@ -1,6 +1,6 @@
 # Mi plan para shape_points
 
-**Fecha:** 11 de noviembre de 2026. **Estado:** perfil y revisión completados. Implementé shape_points_v1 localmente. Las 36 pruebas seleccionadas pasaron sin omisiones. La publicación en Databricks sigue pendiente. El [informe](shape_points_profile_2025_2026.md) conserva el perfil. El [contrato](contracts/shape_points.md) define las reglas implementadas. La [guía](silver_execution.md#despliegue-de-shape_points_v1) conserva los pasos de despliegue.
+**Fecha:** 11 de noviembre de 2026. **Estado:** perfil y revisión completados. Implementé shape_points_v1 localmente. Las 36 pruebas seleccionadas pasaron sin omisiones. El despliegue funcional en Databricks ya está comprobado. El [informe](shape_points_profile_2025_2026.md) conserva el perfil. El [contrato](contracts/shape_points.md) define las reglas implementadas. La [guía](silver_execution.md#despliegue-de-shape_points_v1) conserva los pasos de despliegue.
 
 ## Qué representa y por qué sigue ahora
 
@@ -52,7 +52,7 @@ Para validar referencias de trips usaré un conjunto único de shape_id dentro d
 
 Usaré fixtures pequeñas para claves compuestas, casts, coordenadas inválidas, secuencias con saltos, bucles, copias y conflictos. Incluiré distancia ausente y, si está publicada, sus errores y orden. La integración Delta comprobará validación sin escritura, publicación, reintento sin duplicados, conservación de otro snapshot y rechazo sin alterar Silver.
 
-Reutilicé el entorno local de Spark/Delta. Las 36 pruebas seleccionadas pasaron sin omisiones. La plantilla ya incorpora la séptima tarea. Sigue pendiente sincronizar el código y validar/publicar ambos snapshots en Databricks. Después comprobaré conteos y claves reales. El Job de Workspace todavía necesita incorporar esta tarea.
+Reutilicé el entorno local de Spark/Delta. Las 36 pruebas seleccionadas pasaron sin omisiones. La plantilla ya incorpora la séptima tarea. El flujo de shape_points ya funciona en Databricks. El [cierre](silver_execution.md#cierre-de-la-ejecución-de-shape_points) registra la confirmación funcional. Los conteos concretos de Workspace siguen sin adjuntarse en este cierre. El siguiente paso es trips.
 
 ## Qué sigue y qué podrá analizarse
 

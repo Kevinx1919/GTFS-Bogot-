@@ -162,7 +162,7 @@ El [contrato stops_v1](docs/contracts/stops.md) ya convierte coordenadas a doubl
 
 Cada futura tabla Gold completará seis respuestas de negocio: pregunta, grano, ubicaciones, ausencias, claves y limitaciones que debe mostrar Power BI. Dejé la [ficha obligatoria en el plan](docs/silver_design.md#definición-de-negocio-obligatoria-para-cada-futura-tabla-gold).
 
-El [siguiente bloque del plan](docs/silver_design.md#siguiente-bloque-calendar-y-calendar_dates) es calendar y calendar_dates: ya perfilé el patrón semanal y las excepciones e implementé sus procesadores localmente. Ya ejecuté sus tareas y comprobé las tablas y sus datos en Databricks. Service_dates ya está publicada y consultada para 2026; la siguiente entidad del plan es shape_points.
+El [siguiente bloque del plan](docs/silver_design.md#siguiente-bloque-calendar-y-calendar_dates) es calendar y calendar_dates: ya perfilé el patrón semanal y las excepciones e implementé sus procesadores localmente. Ya ejecuté sus tareas y comprobé las tablas y sus datos en Databricks. Service_dates ya está publicada y consultada para 2026; shape_points ya funciona y la siguiente entidad del plan es trips.
 
 ### Calendarios: perfil inicial y alcance temporal
 
@@ -189,10 +189,13 @@ La verificación de service_dates terminó con 24 pruebas seleccionadas aprobada
 
 Completé el [perfil de shapes de ambos snapshots](docs/shape_points_profile_2025_2026.md): 909.878 / 926.501 puntos para 676 / 1.045 trazados. Conservé nueve consultas definitivas en el [notebook 14](databricks/notebooks/silver/14_profile_gtfs_shape_points.ipynb). Las claves y conversiones revisadas no presentan errores; sí hay puntos consecutivos de igual coordenada y cuatro trazados sin referencias desde trips en 2025, que no elimino como si fueran filas duplicadas.
 
-El [contrato shape_points_v1](docs/contracts/shape_points.md) distingue reglas, advertencias y limitaciones; el [plan](docs/shape_points_plan.md) conserva el estado de cada etapa. La implementación posterior habilita el procesador y amplía la plantilla del Job. Su publicación en Workspace sigue pendiente.
+El [contrato shape_points_v1](docs/contracts/shape_points.md) distingue reglas, advertencias y limitaciones; el [plan](docs/shape_points_plan.md) conserva el estado de cada etapa. La implementación posterior habilita el procesador y amplía la plantilla del Job. El despliegue funcional de shape_points en Workspace ya está comprobado.
 
 
-Implementé shape_points_v1 con Spark nativo. Conserva puntos repetidos y genera advertencias. Los errores obligatorios bloquean el snapshot completo. Reutiliza notebook 10 y el escritor existente. La plantilla incorpora una séptima tarea para ambos snapshots. La [guía](docs/silver_execution.md#despliegue-de-shape_points_v1) distingue implementación local y publicación pendiente.
+Implementé shape_points_v1 con Spark nativo. Conserva puntos repetidos y genera advertencias. Los errores obligatorios bloquean el snapshot completo. Reutiliza notebook 10 y el escritor existente. La plantilla incorpora una séptima tarea para ambos snapshots. La [guía](docs/silver_execution.md#despliegue-de-shape_points_v1) distingue pruebas locales y despliegue funcional comprobado.
 
 
-La implementación de shape_points pasó 36 pruebas seleccionadas sin omisiones. Incluyen trece nuevas y tres integraciones Delta en total. La primera publicación en Databricks sigue pendiente.
+La implementación de shape_points pasó 36 pruebas seleccionadas sin omisiones. Incluyen trece nuevas y tres integraciones Delta en total. El flujo de shape_points ya funciona en Databricks. El [cierre](docs/silver_execution.md#cierre-de-la-ejecución-de-shape_points) registra la evidencia disponible.
+
+
+El siguiente paso es trips, antes de frequencies y stop_times. Registré la [selección automática de snapshots](docs/silver_design.md#automatización-pendiente-selección-de-snapshots-silver) como pendiente 8b. Las listas actuales siguen siendo manuales. Una versión nueva todavía requiere configurar su trabajo.

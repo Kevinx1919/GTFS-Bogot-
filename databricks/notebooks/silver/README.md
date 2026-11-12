@@ -57,11 +57,11 @@ Elegí comenzar por 2026. El procesador y la sexta tarea del Job están implemen
 
 El [notebook 14](14_profile_gtfs_shape_points.ipynb) conserva nueve consultas definitivas de lectura, ejecutadas mediante Genie. El [informe](../../../docs/shape_points_profile_2025_2026.md) registra 909.878 / 926.501 puntos y 676 / 1.045 trazados. Los controles no encontraron errores de claves o conversiones, pero sí coordenadas consecutivas iguales y cuatro trazados sin viajes referenciados en 2025. El [contrato](../../../docs/contracts/shape_points.md) explica por qué se conservan.
 
-Implementé shape_points localmente. Sus pruebas nativas están en ejecución y la publicación sigue pendiente. El notebook de perfilado no se añade al Job. La ejecución de las consultas está comprobada por separado; no afirmo haber ejecutado el cuaderno completo. El [plan](../../../docs/shape_points_plan.md) mantiene el mapeo shapes.txt/Bronze → shape_points Silver y los pasos de pruebas/publicación pendientes.
+Implementé shape_points localmente. Las 36 pruebas seleccionadas pasaron sin omisiones y el despliegue funcional en Databricks ya está comprobado. El notebook de perfilado no se añade al Job. La ejecución de las consultas está comprobada por separado; no afirmo haber ejecutado el cuaderno completo. El [plan](../../../docs/shape_points_plan.md) mantiene el mapeo shapes.txt/Bronze → shape_points Silver y la evidencia local y el cierre de despliegue.
 
 
 ## Publicación preparada de shape_points
 
 El procesador shape_points_spark.py conserva puntos y valida claves compuestas. El alias usa shapes.txt y bronze_gtfs_shapes. Notebook 10 mantiene sus dos bloques ejecutables. La plantilla añade publish_shape_points después de service_dates. No necesita un horizonte de fechas.
 
-La [guía de despliegue](../../../docs/silver_execution.md#despliegue-de-shape_points_v1) contiene parámetros y resultados esperados. El [contrato](../../../docs/contracts/shape_points.md) define advertencias y bloqueos. La primera ejecución en Workspace sigue pendiente.
+La [guía de despliegue](../../../docs/silver_execution.md#despliegue-de-shape_points_v1) contiene parámetros y resultados esperados. El [contrato](../../../docs/contracts/shape_points.md) define advertencias y bloqueos. El flujo ya funciona en Workspace. El [cierre](../../../docs/silver_execution.md#cierre-de-la-ejecución-de-shape_points) conserva el alcance de la confirmación. Ahora comienzo trips.
