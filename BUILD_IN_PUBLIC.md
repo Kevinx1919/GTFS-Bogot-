@@ -650,6 +650,25 @@ La ejecución real de notebook 11 y los ciclos vacíos del Job siguen pendientes
 No actualicé Jobs remotos, no habilité horarios y no cambié Archify.
 La ingesta dinámica y el Job principal serán incrementos posteriores.
 
+### Hito 44 — Recuperar intentos abandonados sin perder evidencia
+
+**Fecha:** 13 de noviembre de 2026. La vista previa del planificador detectó dos bloqueos operativos.
+Agency 2025 conserva siete filas publicadas, pero un intento posterior quedó RUNNING sin cierre.
+Otro STARTED combina la fecha de 2026 con el hash que las fuentes verificadas vinculan a 2025.
+Ese intento no guardó checks; no conozco el origen exacto del cruce de parámetros.
+Confirmé que las ejecuciones ya terminaron o fueron detenidas.
+
+Contrasté los hechos con seis consultas acotadas mediante Genie y conservé el SQL en notebook 08 raíz.
+Los bloqueos de routes, trips, frequencies y stop_times de 2025 dependen de agency.
+Los diez destinos del snapshot correcto de 2026 aparecen COMPLETE.
+
+Implementé [recuperación explícita](docs/planner_recovery.md) con vista previa y resoluciones en una auditoría separada.
+Conservo los intentos originales y la publicación anterior verificada.
+Si un intento cambia o termina, la resolución deja de excluirlo.
+No marco un intento inconcluso como SUCCEEDED ni elimino su historia.
+Pasaron 113 pruebas unitarias y cuatro integraciones seleccionadas con Spark y Delta reales.
+La recuperación está implementada localmente; todavía no está aplicada en Workspace.
+
 ## Qué no publicar
 
 - Access tokens, secretos, archivos `.env`, cookies, hostnames privados o identificadores de cuenta.

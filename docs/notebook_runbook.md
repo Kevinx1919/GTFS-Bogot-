@@ -572,3 +572,28 @@ La [guía del planificador](silver_planner.md) define reglas, estados y límites
 La variante del Job añade una tarea inicial y conserva los diez ciclos seriales.
 El modo de generación por defecto continúa siendo manual.
 La vista previa no instala dependencias, no lanza Jobs ni modifica tablas.
+
+## Notebook 18 — Recuperación manual de intentos — 13 de noviembre de 2026
+
+**Estado:** implementación local; aplicación en Workspace pendiente.
+La [guía de recuperación](planner_recovery.md) documenta evidencia y parámetros concretos.
+
+| Bloque | Propósito e inputs | Outputs y efectos | Validación y decisión |
+| --- | --- | --- | --- |
+| 1 / solicitudes | Repo, catálogo, schema y JSON de intentos concretos. | Parámetros en memoria; modo preview por defecto. | Una a veinte solicitudes; identidad y motivo explícitos. |
+| 2 / evidencia | Auditoría y destinos actuales. | Propuestas sin escrituras. | Comprobar todos los casos antes de aplicar. |
+| 3 / aplicación | Mismas solicitudes, mode=apply y ejecuciones detenidas. | Solo audit_gtfs_attempt_resolutions; cada caso tiene su propia transacción. | Evidencia revalidada, idempotencia y resultados mostrados individualmente. No borrar ni republicar datos. |
+
+### Notebook 08 raíz — Consultas adicionales de diagnóstico
+
+| Bloque | Entradas | Resultado verificado mediante Genie | Efectos |
+| --- | --- | --- | --- |
+| 5 | Eventos Bronze para las parejas conocidas. | Ocho eventos; pareja incompatible sin CLOSED y dos cierres correctos. | Solo lectura. |
+| 6 | Silver agency de 2025. | Un grupo de siete filas del último SUCCEEDED conservado. | Solo lectura. |
+| 7 | Últimos intentos agency 2025. | Cinco intentos; el más reciente quedó RUNNING. | Solo lectura. |
+| 8 | Procedencia Bronze agency del hash de 2025. | Siete filas vinculadas a versión y ruta de 2025. | Solo lectura. |
+| 9 | Encabezados del mismo hash. | Once archivos observados únicamente bajo 2025. | Solo lectura. |
+| 10 | Checks del intento Bronze incompatible. | Cero registros. | Solo lectura. |
+
+Notebook 11 incorpora las resoluciones explícitas vigentes y muestra RESOLVED.
+Si el intento cambia o termina, vuelve a evaluarse sin esa exclusión.

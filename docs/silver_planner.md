@@ -224,3 +224,12 @@ Luego adapto notebook 06 para descubrimiento y selección de ingesta.
 La prueba pendiente de las guardas Bronze 02–05 permanece antes de habilitar ingesta automática.
 La exportación completa del Job Bronze sigue pendiente.
 El Job principal y Archify no cambian durante este incremento.
+
+## Recuperación explícita de intentos abandonados
+
+El primer ensayo en Workspace detectó un RUNNING antiguo de agency y una pareja Bronze incompatible sin cierre.
+La [guía de recuperación](planner_recovery.md) documenta las verificaciones realizadas mediante Genie.
+Notebook 18 prepara y aplica resoluciones operativas sin modificar los registros originales.
+El planificador incorpora únicamente las decisiones explícitas que siguen coincidiendo con el intento observado.
+Muestra RESOLVED y vuelve a evaluar la evidencia si el intento cambia o termina.
+No equivale a ignorar automáticamente todos los RUNNING ni a declarar exitoso un intento fallido.

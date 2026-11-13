@@ -184,6 +184,15 @@ class SilverPlannerTests(unittest.TestCase):
         spark.read.option.assert_called_once_with("versionAsOf",7)
         spark.sql.assert_not_called()
 
+    def test_recovery_apply_requires_stopped_executions_before_io(self):
+        from gtfs_silver.planner_recovery import resolve_attempt
+        spark=MagicMock()
+        with self.assertRaisesRegex(ValueError,"terminado"):
+            resolve_attempt(spark,catalog="spark_catalog",schema="fixture",layer="silver",entity="agency",
+                            feed_version=VERSION,sha256=HASH,attempt_run_id="fixture",reason="Fixture sin cierre",
+                            mode="apply",executions_stopped=False)
+        spark.sql.assert_not_called()
+
     def test_empty_plan_emits_empty_lists_and_stale_rule_stops_before_reads(self):
         result=plan(ev=[],targets={});dbutils=SimpleNamespace(jobs=SimpleNamespace(taskValues=Mock()))
         emit_plan(dbutils,result)
@@ -293,3 +302,57 @@ class SilverPlannerDeltaTests(unittest.TestCase):
         frame.write.format("delta").mode("append").saveAsTable(table)
         self.assertEqual(_read_bronze(self.spark,table,version).count(),1)
         self.assertEqual(self.spark.table(table).count(),2)
+
+    def test_invalid_bronze_pair_resolution_keeps_evidence_and_expires_on_close(self):
+        from gtfs_silver.planner_recovery import resolve_attempt
+        first=events("2025-10-28",HASH,schema=self.schema)
+        second=events(VERSION,"b"*64,schema=self.schema)
+        wrong={**first[0],"quality_run_id":"invalid-version-pair","source_feed_version":VERSION,
+               "started_at_utc":STAMP+timedelta(hours=1)}
+        self.spark.createDataFrame(first+second+[wrong],CLOSURE_DDL).write.format("delta").mode("overwrite").saveAsTable(self.closure)
+        args=dict(catalog="spark_catalog",schema=self.schema,layer="bronze",entity="*",feed_version=VERSION,
+                  sha256=HASH,attempt_run_id=wrong["quality_run_id"],reason="Identidad incorrecta; sin ejecución activa.")
+        resolution_table=f"spark_catalog.{self.schema}.audit_gtfs_attempt_resolutions"
+        # Compruebo el notebook manual completo en preview.
+        nb=json.loads((ROOT/"databricks/notebooks/silver/18_recover_pipeline_attempts.ipynb").read_text(encoding="utf-8"))
+        values={"repo_root":str(ROOT),"catalog":"spark_catalog","schema":self.schema,
+                "resolutions_json":json.dumps([{k:v for k,v in args.items() if k not in {"catalog","schema"}}])}
+        class Widgets:
+            def text(self,key,default,*unused):values.setdefault(key,default)
+            def get(self,key):return values[key]
+        namespace={"spark":self.spark,"dbutils":SimpleNamespace(widgets=Widgets())}
+        for cell in nb["cells"]:
+            if cell["cell_type"]=="code":exec("".join(cell["source"]),namespace)
+        self.assertFalse(self.spark.catalog.tableExists(resolution_table))
+        for _ in range(2):resolve_attempt(self.spark,**args,mode="apply",executions_stopped=True)
+        self.assertEqual(self.spark.table(resolution_table).count(),1)
+        self.assertEqual(self.spark.table(self.closure).count(),5)
+        result=create_plan(self.spark,catalog="spark_catalog",schema=self.schema,registry=self.registry)
+        self.assertEqual(result["status"],"READY");self.assertEqual(result["counts"]["RESOLVED"],1)
+        closed={**wrong,"event_type":"CLOSED","status":"FAILED","blocking_failures":1,"total_checks":1,
+                "validation_completed":True,"ready_for_silver":False,"completed_at_utc":STAMP+timedelta(hours=2)}
+        self.spark.createDataFrame([closed],CLOSURE_DDL).write.format("delta").mode("append").saveAsTable(self.closure)
+        self.assertEqual(create_plan(self.spark,catalog="spark_catalog",schema=self.schema,registry=self.registry)["status"],"BLOCKED")
+
+    def test_silver_resolution_preserves_previous_publication_and_expires_on_change(self):
+        from gtfs_silver.planner_recovery import resolve_attempt
+        self.publish_fixture()
+        audit_table=f"spark_catalog.{self.schema}.audit_gtfs_silver_runs"
+        old,_=completed(schema=self.schema,names=["agency"])
+        running={**old[0],"silver_run_id":"abandoned-agency","status":"RUNNING","silver_committed":False,
+                 "started_at_utc":STAMP+timedelta(days=1),"finished_at_utc":None}
+        self.spark.createDataFrame([running],self.spark.table(audit_table).schema).write.format("delta").mode("append").saveAsTable(audit_table)
+        args=dict(catalog="spark_catalog",schema=self.schema,layer="silver",entity="agency",feed_version=VERSION,
+                  sha256=HASH,attempt_run_id="abandoned-agency",reason="Sin ejecución activa; destino anterior verificado.")
+        preview=resolve_attempt(self.spark,**args)
+        self.assertFalse(preview["persisted"]);self.assertEqual(preview["evidence"]["verified_rows"],1)
+        resolve_attempt(self.spark,**args,mode="apply",executions_stopped=True)
+        result=create_plan(self.spark,catalog="spark_catalog",schema=self.schema,registry=self.registry)
+        self.assertEqual(result["decisions"][0]["status"],"COMPLETE")
+        self.assertEqual(result["counts"]["RESOLVED"],1)
+        rows=self.spark.table(f"spark_catalog.{self.schema}.silver_gtfs_agency").collect()
+        self.assertEqual(len(rows),1);self.assertEqual(rows[0]["silver_run_id"],"agency-run")
+        self.assertEqual(self.spark.table(audit_table).filter("silver_run_id='abandoned-agency'").first()["status"],"RUNNING")
+        self.spark.sql(f"update {audit_table} set status='FAILED', finished_at_utc=current_timestamp() where silver_run_id='abandoned-agency'")
+        result=create_plan(self.spark,catalog="spark_catalog",schema=self.schema,registry=self.registry)
+        self.assertEqual(result["status"],"BLOCKED");self.assertEqual(result["counts"]["RESOLVED"],0)

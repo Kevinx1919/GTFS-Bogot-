@@ -222,3 +222,11 @@ La [evidencia de cierre](bronze_automation.md#cierre-comprobado-en-workspace--13
 El 13 de noviembre implementé plan_silver, notebook 11 y la variante optativa del Job.
 Pasaron 112 pruebas unitarias y cuatro integraciones nativas del planificador.
 Primero comprobaré la vista previa; la ingesta automática y el Job principal permanecen pendientes.
+
+## Primer ensayo del planificador y recuperación pendiente
+
+La vista previa en Workspace encontró intentos sin cierre que bloquean la promoción automática.
+El [diagnóstico y recuperación](planner_recovery.md) conserva la evidencia verificada con Genie.
+La recuperación explícita está implementada y probada localmente; aún no está aplicada en Workspace.
+Antes de conectar el Job, revisaré sus propuestas y volveré a ejecutar notebook 11.
+No eliminaré auditorías ni forzaré estados satisfactorios.

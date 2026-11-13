@@ -27,7 +27,8 @@ def bounded_rows(frame: Any, limit: int, label: str) -> list[dict]:
     return [row.asDict(recursive=True) for row in rows]
 
 
-def read_bronze_events(spark: Any, table: str, *, limit: int, feed_from: str = "", feed_to: str = "", hash_filter: str = "") -> tuple[list[dict], int]:
+def read_bronze_events(spark: Any, table: str, *, limit: int, feed_from: str = "", feed_to: str = "", hash_filter: str = "", resolutions: Any | None = None,
+                       applied_resolutions: list[dict] | None = None) -> tuple[list[dict], int]:
     from pyspark.sql import functions as F
     from pyspark.sql.window import Window
     if not spark.catalog.tableExists(quoted_table(table)):
@@ -37,6 +38,10 @@ def read_bronze_events(spark: Any, table: str, *, limit: int, feed_from: str = "
     if hash_filter: starts = starts.filter(F.col("source_sha256") == hash_filter)
     if feed_from: starts = starts.filter(F.col("source_feed_version") >= feed_from)
     if feed_to: starts = starts.filter(F.col("source_feed_version") <= feed_to)
+    from .planner_recovery import exclude_resolved
+    starts, applied = exclude_resolved(starts, resolutions, layer="bronze",
+                                      closed=frame.filter(F.col("event_type") == "CLOSED"), limit=limit)
+    if applied_resolutions is not None: applied_resolutions.extend(applied)
     window = Window.partitionBy("source_feed_version", "source_sha256").orderBy(F.col("started_at_utc").desc())
     latest = starts.withColumn("_rank", F.dense_rank().over(window)).filter(F.col("_rank") == 1)
     rows = bounded_rows(latest.select(*BRONZE_FIELDS), limit, "Intentos Bronze")
@@ -46,12 +51,16 @@ def read_bronze_events(spark: Any, table: str, *, limit: int, feed_from: str = "
     return rows + bounded_rows(closed.select(*BRONZE_FIELDS), limit, "Cierres Bronze"), version
 
 
-def _read_audits(spark: Any, table: str, scopes: Any, limit: int) -> tuple[list[dict], int | None]:
+def _read_audits(spark: Any, table: str, scopes: Any, limit: int, resolutions: Any | None = None,
+                 applied_resolutions: list[dict] | None = None) -> tuple[list[dict], int | None]:
     from pyspark.sql import functions as F
     from pyspark.sql.window import Window
     if not spark.catalog.tableExists(quoted_table(table)): return [], None
     frame, version = _versioned_table(spark, table, with_version=True)
     scoped = frame.join(scopes, ["source_feed_version", "source_sha256"], "inner")
+    from .planner_recovery import exclude_resolved
+    scoped, applied = exclude_resolved(scoped, resolutions, layer="silver", limit=limit)
+    if applied_resolutions is not None: applied_resolutions.extend(applied)
     window = Window.partitionBy("entity", "source_feed_version", "source_sha256").orderBy(F.col("started_at_utc").desc())
     latest = scoped.withColumn("_rank", F.dense_rank().over(window)).filter(F.col("_rank") == 1)
     return bounded_rows(latest.select(*AUDIT_FIELDS), limit, "Últimos intentos Silver"), version
@@ -119,17 +128,28 @@ def create_plan(spark: Any, *, catalog: str, schema: str, registry: dict, servic
     spark.conf.set("spark.sql.session.timeZone", "UTC")
     policy = service_dates if service_dates is not None else json.loads(PLANNER_CONFIG.read_text(encoding="utf-8"))["service_dates"]
     bronze_table = f"{catalog}.{schema}.audit_gtfs_bronze_snapshot_runs"
+    from .planner_recovery import load_resolutions
+    resolutions, resolution_version = load_resolutions(spark, catalog, schema, max_metadata_rows)
+    applied = []
     events, bronze_version = read_bronze_events(spark, bronze_table, limit=max_metadata_rows,
-                                               feed_from=feed_version_from, feed_to=feed_version_to)
+                                               feed_from=feed_version_from, feed_to=feed_version_to,
+                                               resolutions=resolutions, applied_resolutions=applied)
     ready = [entry for entry in bronze_snapshots(events) if not entry["reason"]]
     audits, targets, versions, audit_version = [], {}, {}, None
     if ready:
         scope_schema = StructType([StructField(name, StringType(), False) for name in ("source_feed_version", "source_sha256")])
         scopes = spark.createDataFrame([entry["key"] for entry in ready], scope_schema)
-        audits, audit_version = _read_audits(spark, f"{catalog}.{schema}.audit_gtfs_silver_runs", scopes, max_metadata_rows)
+        audits, audit_version = _read_audits(spark, f"{catalog}.{schema}.audit_gtfs_silver_runs", scopes, max_metadata_rows, resolutions, applied)
         targets, versions = _target_states(spark, scopes, registry, catalog, schema, max_metadata_rows)
     plan = build_plan(events, audits, targets, registry, policy, catalog=catalog, schema=schema, max_snapshots=max_snapshots)
-    plan["input_versions"] = {"bronze_closure": bronze_version, "silver_audit": audit_version, "targets": versions}
+    for resolution in applied:
+        plan["decisions"].append({"entity": resolution["entity"], "feed_version": resolution["source_feed_version"],
+                                  "snapshot_sha256": resolution["source_sha256"], "status": "RESOLVED",
+                                  "reason": resolution["resolution_kind"], "resolution_id": resolution["resolution_id"],
+                                  "attempt_run_id": resolution["attempt_run_id"]})
+    plan["counts"]["RESOLVED"] = len(applied)
+    plan["input_versions"] = {"bronze_closure": bronze_version, "silver_audit": audit_version,
+                               "targets": versions, "resolutions": resolution_version}
     return plan
 
 
