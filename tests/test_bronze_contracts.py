@@ -11,6 +11,10 @@ import unittest
 from unittest.mock import Mock, patch
 import zipfile
 
+import sys
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "databricks"))
+from gtfs_bronze.runtime import read_gtfs_header
+
 from notebook_test_support import (
     Frame, Functions, LocalVolume, SparkDouble,
     cell_source, execute_function, spark_type_stubs,
@@ -138,7 +142,7 @@ class ReferenceContractTests(unittest.TestCase):
         entity = next(item for item in namespace["reference_entities"] if item["file_name"] == "calendar.txt")
         helper_source = cell_source(REFERENCES, "BLOQUE 3 —")
         namespace["csv"] = csv
-        execute_function(helper_source, "read_gtfs_header", namespace)
+        namespace["read_gtfs_header"] = read_gtfs_header
         execute_function(helper_source, "load_entity_to_bronze", namespace)
         with TemporaryDirectory() as temporary:
             namespace["staging_snapshot_path"] = temporary
@@ -157,6 +161,14 @@ class QualityContractTests(unittest.TestCase):
             "spark": SparkDouble(tables), "F": Functions, "add_check": lambda *args: checks.append(args),
             "quality_rows": checks, "quality_audit_schema": None, "display": lambda frame: None,
         }
+        # Estos dobles solo ejercitan el control del notebook; Spark nativo se prueba aparte.
+        namespace["pinned_table"] = lambda spark, table: (spark.table(table), 4)
+        namespace["snapshot_metrics"] = lambda frame, version, sha: (
+            sum(row.get("source_sha256") == sha for row in frame.rows),
+            sum(row.get("source_sha256") == sha and row.get("source_feed_version") != version for row in frame.rows),
+        )
+        namespace["read_gtfs_header"] = lambda path: ["fixture"]
+        namespace["source_frame"] = lambda *args: Frame([{"fixture": "one"}])
         exec(cell_source(QUALITY, "BLOQUE 2 —"), namespace)
         return namespace, checks
 

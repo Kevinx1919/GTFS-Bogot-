@@ -490,3 +490,52 @@ Mantengo los dos bloques ejecutables anteriores. Cambio la documentación de ent
 La plantilla incorpora publish_stop_times después de publish_frequencies, con concurrencia 1.
 Stop_times_work_items pertenece a los parámetros generales del Job, no a los parámetros internos del notebook.
 El procesador está implementado y stop_times ya tiene despliegue funcional confirmado en Workspace.
+
+## Notebook 08 — Revisión de Bronze para automatización — 12 de noviembre de 2026
+
+**Estado:** cuatro consultas verificadas individualmente mediante Genie; notebook completo todavía sin ejecución documentada.
+Este notebook raíz es independiente de los perfiles 08 de la carpeta Silver.
+Solo lee auditorías y catálogo. No forma parte del Job Bronze y no guarda outputs.
+
+| Bloque | Entradas | Salidas verificadas | Efectos y decisión |
+| --- | --- | --- | --- |
+| 1 / duplicación de auditoría | Checks agrupados por corrida, nombre, entidad y severidad. | Nueve filas; dos corridas con 57 copias adicionales cada una. | Ninguna escritura. No implica duplicados de negocio Bronze. |
+| 2 / resumen de calidad | Auditoría completa, últimos diez grupos disponibles. | Nueve filas; últimas validaciones de 2025 y 2026 sin fallos bloqueantes. | WARN representa advertencias; severity WARNING también puede pasar. |
+| 3 / catálogo | Control completo, agregado antes de cualquier límite. | Una fila; 161 elementos y versiones. | Catálogo descubierto, no snapshots cargados ni verificación actual del portal. |
+| 4 / encabezados | Observaciones por versión y hash. | Dos filas; once archivos por snapshot. | Inventario observado, no comprobante de carga completa. |
+
+Conservo el SQL exacto de las cuatro consultas ejecutadas.
+El [diagnóstico](bronze_review_2026_11_12.md) documenta la revisión del Job y los notebooks 01–07.
+
+## Preparación Bronze v2 — 12 de noviembre de 2026
+
+**Estado:** implementación local; validación en Workspace pendiente.
+La [guía de preparación](bronze_automation.md) sustituye las instrucciones históricas incompatibles para este incremento.
+No reutilizo los conteos antiguos como prueba del nuevo cierre.
+
+| Notebook / bloque | Propósito e inputs | Outputs y efectos persistentes | Validación y decisiones |
+| --- | --- | --- | --- |
+| 02 / 1 | Localizar repo_root y resolver catálogo, schema, raw_volume y versión. | Variables de sesión; sin datos nuevos. | Repositorio completo; identificadores simples; require_task_values configurable. |
+| 02 / 2 | Descargar la URL controlada con reintentos temporales. | Payload y metadata en memoria. | Tres intentos acotados; 404 sin reintento. |
+| 02 / 4 | Verificar contenido antes de conservar o reutilizar Raw. | ZIP y manifiesto nuevos; existentes inmutables. | Hash real; no sobrescribir corrupción; task values obligatorios si se configura. |
+| 03 / precondición y 1 | Usar un volumen ya aprovisionado y configuración del entorno. | Variables; no crear infraestructura por ingesta. | Raw/Staging existentes; show_diagnostics=false por defecto. |
+| 03 / 2 | Verificar el ZIP y los TXT reutilizados. | Solo nuevas copias Staging y manifiesto de extracción. | Hash Raw y contenido del miembro ZIP; detener copia derivada inconsistente. |
+| 03 / 3 | Leer routes con esquema string explícito. | DataFrame fuente, sin conteo diagnóstico repetido. | Encabezado y contrato mínimo. |
+| 03 / 4 | Cargar routes con el cargador compartido. | Append Delta solo cuando no hay evidencia. | Conteo fuente, procedencia, lectura posterior y protección txnAppId/txnVersion. |
+| 03 / 4A y consultas finales | Mostrar detalles de aprendizaje bajo show_diagnostics. | Sin escrituras. | No forma parte de la compuerta obligatoria. |
+| 04 / 1 y 3 | Configurar el entorno y reutilizar carga común. | Variables y funciones; cargas en bloque 4. | Sin persist obligatorio; conserva mínimos de cada entidad y columnas fuente string. |
+| 04 / 3A y 5 | Diagnósticos opcionales de esquema y stops. | Solo lectura si show_diagnostics=true. | Notebook 07 conserva controles obligatorios. |
+| 05 / 1 y 3 | Configurar el entorno y reutilizar carga común. | Variables y funciones; cargas en bloques 4/5. | Carga parcial bloqueada antes de añadir filas. |
+| 05 / 4 y 5 | Cargar shapes y stop_times. | Tablas existentes append-only y resumen por entidad. | Reutilización si conteos y versión coinciden; confirmación posterior si escribe. |
+| 05 / 6 y 7 | Diagnósticos opcionales. | Sin escritura. | No duplicar sus conteos por defecto. |
+| 07 / 1 | Identificar snapshot, reglas y corrida. | Evento STARTED en audit_gtfs_bronze_snapshot_runs. | Inicio visible aunque falle después; repositorio completo y UTC. |
+| 07 / 2 y 3 | Definir contratos, esquemas y acumuladores. | Memoria de esta evaluación. | Doce entidades y controles esperados; no representa cierre. |
+| 07 / 4 | Fijar entradas Delta y reconciliar fuente/Bronze. | Checks de presencia, conteo y procedencia. | Invalida controles posteriores; archivos opcionales ausentes válidos. |
+| 07 / 5 | Validar IDs y relaciones. | Checks de validez y referencias. | Invalida evolución de esquema anterior al recalcular. |
+| 07 / 6 | Comparar encabezados y registrar observaciones. | Auditoría de esquema existente. | Marca el bloque completo solo al terminar. |
+| 07 / 7 | Persistir checks canónicos y cerrar la evaluación completa. | Checks insert-only, evento CLOSED y task values. | Repetición sin copias; contradicción bloqueada; FAIL detiene Job; WARNING conserva contratos Silver. |
+
+El grano de la nueva tabla es quality_run_id + event_type.
+No hay una transacción global entre checks y cierre.
+Un STARTED sin CLOSED es incompleto y bloquea su selección automática.
+La [guía](bronze_automation.md) contiene parámetros, SQL de comprobación y pasos de despliegue.

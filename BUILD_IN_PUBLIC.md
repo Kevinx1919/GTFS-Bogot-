@@ -591,6 +591,30 @@ La clasificación de cobertura para métricas Gold permanece planificada.
 Actualicé los cinco diagramas con el cierre y la relación entre viajes, visitas y paradas.
 Las cinco vistas pasaron controles automáticos de navegador; no hice una nueva revisión visual de capturas.
 
+### Hito 41 — Preparar Bronze para seleccionar versiones automáticamente
+
+**Fecha:** 12 de noviembre de 2026. Contrasté el Job Bronze con metadata de Genie y revisé notebooks 01–07.
+Confirmé cinco tareas y el paralelo entre referencias y operativas.
+La revisión encontró registros de auditoría repetidos y una selección de pendientes basada solamente en rutas.
+Es como marcar todo un pedido como entregado después de recibir una sola caja.
+
+Implementé [preparación Bronze v2](docs/bronze_automation.md) antes de crear el planificador.
+Los notebooks 03–05 comparten el cargador y rechazan conteos parciales sin añadir otra copia completa.
+Notebook 02 reintenta errores temporales y verifica el ZIP existente.
+Notebook 03 verifica Raw y las copias Staging reutilizadas.
+Notebook 07 reconcilia conteos, fija entradas Delta y registra STARTED/CLOSED.
+El cierre exige todos los bloques y conserva una versión explícita de reglas.
+Repetir su persistencia con el mismo resultado no duplica checks.
+Las advertencias mantienen su visibilidad; Silver conserva sus propios contratos.
+
+Pasaron 97 pruebas unitarias del proyecto y tres integraciones Bronze con Spark y Delta reales.
+La prueba integral ejecutó notebook 07 completo con archivos sintéticos.
+La suite ampliada en Windows encontró incompatibilidad local de Java/Hadoop.
+Limité la verificación nativa Linux a Bronze; no presento la suite nativa Silver completa como aprobada en este incremento.
+La comprobación en Workspace sigue pendiente y no la sustituyo con pruebas locales.
+No cambié Archify ni lancé Jobs de Databricks.
+La exportación completa del Job Bronze, el planificador 8b y el Job principal siguen pendientes.
+
 ## Qué no publicar
 
 - Access tokens, secretos, archivos `.env`, cookies, hostnames privados o identificadores de cuenta.

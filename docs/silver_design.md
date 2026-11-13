@@ -285,6 +285,11 @@ El planificador automático 8b es el siguiente incremento operativo, antes de pr
 
 ## Automatización pendiente: selección de snapshots Silver
 
+El [análisis de orquestación](orchestration_plan.md) conecta el planificador 8b con el Job principal propuesto.
+
+La [preparación Bronze v2](bronze_automation.md) está implementada localmente y espera comprobación en Workspace.
+Necesito ese cierre completo antes de seleccionar pendientes automáticamente.
+
 **Estado:** pendiente, sin implementación. **Orden:** 8b, después de trips, frequencies y stop_times. Lo completaré antes de programar el Job automáticamente. Durante el desarrollo conservaré las listas manuales para ejecuciones controladas.
 
 El Job actual usa listas fijas con versión/hash. Una versión nueva no entra automáticamente. El procesador acepta nuevos snapshots compatibles; la limitación actual está en seleccionar y entregar el trabajo.

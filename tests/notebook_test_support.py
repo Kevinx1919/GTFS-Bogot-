@@ -95,6 +95,7 @@ class Functions:
 class Frame:
     def __init__(self, rows):
         self.rows = list(rows)
+        self.columns = list(dict.fromkeys(key for row in self.rows for key in row))
 
     def filter(self, expression):
         return Frame(row for row in self.rows if expression.evaluate(row) is True)
