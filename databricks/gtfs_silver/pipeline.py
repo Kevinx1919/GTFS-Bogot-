@@ -11,7 +11,7 @@ from .agency_spark import read_and_validate
 from .publication import (
     PublicationTables, _versioned_table, publish_agency, publish_snapshot, quoted_table, simple_identifier,
 )
-from . import routes_spark, stops_spark, calendars_spark, service_dates_spark, shape_points_spark, trips_spark, frequencies_spark
+from . import routes_spark, stops_spark, calendars_spark, service_dates_spark, shape_points_spark, trips_spark, frequencies_spark, stop_times_spark
 from .models import DerivedSnapshotSpec, SOURCE_ENTITY_NAMES
 
 REGISTRY_PATH = Path(__file__).resolve().parents[1] / "config" / "silver_entities.json"
@@ -44,7 +44,7 @@ def run_entity(spark, *, catalog: str, schema: str, staging_volume: str,
         return _run_service_dates(spark, catalog, schema, spec, mode, verify_history, run_id)
     validators = {"agency": "agency_v1", "routes": "routes_v1", "stops": "stops_v1",
                   "calendar": "calendar_v1", "calendar_dates": "calendar_dates_v1",
-                  "shape_points": "shape_points_v1", "trips": "trips_v1", "frequencies": "frequencies_v1"}
+                  "shape_points": "shape_points_v1", "trips": "trips_v1", "frequencies": "frequencies_v1", "stop_times": "stop_times_v1"}
     if entity not in validators or configuration["validator"] != validators[entity]:
         raise ValueError("La entidad todavía no tiene procesador implementado.")
     source_entity = SOURCE_ENTITY_NAMES.get(entity, entity)
@@ -63,13 +63,28 @@ def run_entity(spark, *, catalog: str, schema: str, staging_volume: str,
     spec = SnapshotSpec(feed_version, snapshot_sha256, source_path, entity)
     processors = {"routes": routes_spark, "stops": stops_spark,
                   "calendar": calendars_spark, "calendar_dates": calendars_spark,
-                  "shape_points": shape_points_spark, "trips": trips_spark, "frequencies": frequencies_spark}
+                  "shape_points": shape_points_spark, "trips": trips_spark, "frequencies": frequencies_spark, "stop_times": stop_times_spark}
     header_reader = read_source_header if entity == "agency" else processors[entity].read_source_header
     columns = header_reader(source_path)
     bronze = f"{catalog}.{schema}.{configuration['bronze_table']}"
     if not spark.catalog.tableExists(quoted_table(bronze)):
         raise ValueError("No existe Bronze para la entidad seleccionada.")
     # Fijar versiones Delta evita que acciones posteriores lean otro estado de entrada.
+    if entity == "stop_times":
+        source, version = _versioned_table(spark, bronze, with_version=True)
+        inputs, references = _stop_times_dependencies(spark, catalog, schema, spec)
+        persist_result = configuration.get("persist_result", False)
+        if type(persist_result) is not bool:
+            raise ValueError("persist_result debe ser booleano en el registro de stop_times.")
+        result = stop_times_spark.read_and_validate(source, columns, spec, **inputs, persist_result=persist_result)
+        try:
+            result.reference_versions.update({"bronze_table": bronze, "bronze_delta_version": str(version), **references})
+            return publish_snapshot(spark, result, spec, PublicationTables(catalog, schema, entity),
+                                    mode=mode, verify_history=verify_history, run_id=run_id)
+        finally:
+            cached = result.frames.get("_checked")
+            if cached is not None:
+                cached.unpersist()
     if entity == "frequencies":
         source, version = _versioned_table(spark, bronze, with_version=True)
         dependency = f"{catalog}.{schema}.silver_gtfs_trips"
@@ -178,6 +193,34 @@ def _trips_dependencies(spark, catalog, schema, spec):
         table = f"{catalog}.{schema}.silver_gtfs_{entity}"
         if not spark.catalog.tableExists(quoted_table(table)):
             raise ValueError(f"Publica primero {entity}_v1 del mismo snapshot antes de trips.")
+        frame, version = _versioned_table(spark, table, with_version=True)
+        inputs[entity + "_df"] = frame
+        references[entity + "_table"] = table
+        references[entity + "_delta_version"] = str(version)
+    return inputs, references
+
+
+def _stop_times_dependencies(spark, catalog, schema, spec):
+    """Frequencies es opcional en GTFS; su encabezado auditado decide la dependencia."""
+    from pyspark.sql import functions as F
+    audit = f"{catalog}.{schema}.audit_gtfs_source_schema_observations"
+    if not spark.catalog.tableExists(quoted_table(audit)):
+        raise ValueError("Falta auditoría de encabezados para stop_times; ejecuta Bronze 07.")
+    observations = (spark.table(quoted_table(audit))
+                    .filter((F.col("source_feed_version") == spec.feed_version)
+                            & (F.col("source_sha256") == spec.sha256)
+                            & F.col("source_file_name").isin("stop_times.txt", "frequencies.txt"))
+                    .select("source_file_name").distinct().limit(2).collect())
+    published = {row.source_file_name for row in observations}
+    if "stop_times.txt" not in published:
+        raise ValueError("La auditoría no declara stop_times.txt para este snapshot.")
+    inputs = {"frequencies_df": None}
+    references = {"frequencies_source_published": str("frequencies.txt" in published).lower()}
+    entities = ["trips", "stops"] + (["frequencies"] if "frequencies.txt" in published else [])
+    for entity in entities:
+        table = f"{catalog}.{schema}.silver_gtfs_{entity}"
+        if not spark.catalog.tableExists(quoted_table(table)):
+            raise ValueError(f"Publica primero {entity}_v1 del mismo snapshot antes de stop_times.")
         frame, version = _versioned_table(spark, table, with_version=True)
         inputs[entity + "_df"] = frame
         references[entity + "_table"] = table

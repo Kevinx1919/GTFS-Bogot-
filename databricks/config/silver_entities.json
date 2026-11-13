@@ -71,5 +71,18 @@
     "depends_on": [
       "trips"
     ]
+  },
+  "stop_times": {
+    "enabled": true,
+    "validator": "stop_times_v1",
+    "bronze_table": "bronze_gtfs_stop_times",
+    "depends_on": [
+      "trips",
+      "stops"
+    ],
+    "depends_on_if_published": [
+      "frequencies"
+    ],
+    "persist_result": false
   }
 }

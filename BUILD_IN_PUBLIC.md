@@ -542,6 +542,40 @@ El recorrido incorpora nueve tareas. El modelo incluye todas las columnas y dife
 Mantengo service_dates limitada a 2026. Identifico stop_times, Gold y el planificador como pendientes.
 Los diagramas documentan código; no son monitoreo en vivo ni otra ejecución del Job.
 
+### Hito 38 — Planificar visitas y horarios antes de perfilar millones de filas
+
+**Fecha:** 12 de noviembre de 2026. Tras cerrar frequencies preparé el [plan de stop_times](docs/stop_times_plan.md).
+Una fila representa una visita planificada. Una parada repetida puede ser válida cuando cambia la secuencia.
+La clave conservará versión, hash, trip_id y secuencia convertida.
+
+Consulté solamente metadata mediante Genie. Recuperé 58 campos físicos y dos encabezados completos.
+El [notebook 17](databricks/notebooks/silver/17_profile_gtfs_stop_times.ipynb) conserva las dos consultas correctas.
+El archivo 2025 publica seis campos. El archivo 2026 añade stop_headsign y shape_dist_traveled.
+Todavía no medí nulos, duplicados, tiempos ni referencias en sus registros de negocio.
+
+El plan separa perfil, revisión del contrato, implementación, pruebas y publicación.
+Preveo controles agrupados, joins sin multiplicación y ventanas ordenadas solamente cuando resulten necesarias.
+Distinguiré horarios exactos, estimados y plantillas por frecuencia antes de construir métricas Gold.
+
+No implementé el procesador ni añadí su tarea. No cambié Archify ni ejecuté Jobs.
+Las referencias históricas de volumen siguen siendo antecedentes. No las presento como nuevos conteos.
+
+### Hito 39 — Implementar visitas planificadas sin esconder cobertura incompleta
+
+**Fecha:** 12 de noviembre de 2026. Completé el [perfil de stop_times](docs/stop_times_profile_2025_2026.md).
+Medí 5.698.892 visitas en 2025 y 9.408.893 visitas en 2026.
+Encontré 61 viajes de una visita y 739 viajes sin visitas en 2026.
+Conservo esas diferencias como advertencia y diagnóstico, sin inventar recorridos ni explicar causas sin evidencia.
+
+Implementé [stop_times_v1](docs/contracts/stop_times.md) con Spark nativo, clave compuesta y horas superiores a 24.
+La validación reconoce visitas repetidas y saltos de secuencia válidos.
+Agrupo las ventanas de frecuencia antes del join para evitar multiplicar visitas.
+Preparé reutilización optativa del resultado. La dejo desactivada para conservar compatibilidad con Serverless 4.
+La plantilla añade la décima tarea con notebook 10 y el escritor común.
+
+Pasaron 56 pruebas seleccionadas y ocho comprobaciones finales, sin omisiones.
+La guía de ejecución conserva su alcance. La publicación en Databricks sigue pendiente. No actualicé Archify ni ejecuté Jobs desde el agente.
+
 ## Qué no publicar
 
 - Access tokens, secretos, archivos `.env`, cookies, hostnames privados o identificadores de cuenta.

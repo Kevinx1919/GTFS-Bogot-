@@ -721,3 +721,123 @@ Las 42 pruebas locales mantienen su evidencia independiente.
 Con frequencies completo nueve entidades Silver con despliegue funcional. El siguiente incremento es stop_times, orden 8.
 Actualizo también la documentación visual basada en el código de 34e3769.
 Los diagramas explican el flujo y sus claves; no consultan Databricks ni representan telemetría en vivo.
+
+## Despliegue de stop_times_v1
+
+**Estado:** procesador y plantilla preparados localmente. Publicación en Databricks pendiente.
+El [contrato](contracts/stop_times.md) define reglas y cobertura. El [perfil](stop_times_profile_2025_2026.md) conserva los resultados medidos.
+No necesito recargar Bronze ni ejecutar notebook 17 como paso previo obligatorio.
+Reutilizo notebook 10 y el entorno existente, sin instalar paquetes dentro de cada iteración.
+
+Primero sincronizo el código completo del repositorio en Databricks.
+Si reutilizo una sesión Python anterior al Pull, la reinicio y ejecuto desde el bloque 1.
+Los Jobs usan una sesión nueva; no instalo ni reinicio dentro de cada iteración.
+Ejecuto notebook 10 con entity=stop_times y mode=validate para 2025 y después 2026.
+Verifico reconciled=true, ready_for_publication=true y rejected_rows=0.
+Los valores siguientes son expectativas del perfil, no resultados de publicación real:
+
+| Snapshot | input_rows / candidate_rows esperados | warning_rows esperados | trips_without_visits esperado |
+| --- | ---: | ---: | ---: |
+| 2025-10-28 | 5.698.892 | 0 | 0 |
+| 2026-09-29 | 9.408.893 | 61 | 739 |
+
+Conservo las visitas aisladas con advertencia. No convierto viajes sin visitas en filas de cuarentena.
+Si aparece un rechazo, reviso su causa antes de publicar.
+Si los conteos difieren, no los fuerzo para coincidir con el perfil anterior.
+
+Para la tarea nueva guardo primero este parámetro general del Job:
+
+**Key:** stop_times_work_items
+
+```json
+[
+  {
+    "entity": "stop_times",
+    "feed_version": "2025-10-28",
+    "snapshot_sha256": "07ba2ba9bb3b5bc1e38357355956757ce84fc68e6d05b74577bf017e189ab952"
+  },
+  {
+    "entity": "stop_times",
+    "feed_version": "2026-09-29",
+    "snapshot_sha256": "08d14e0b3a5b9caa5451b722659871fd554e3273b94bdd770fdf81a26bf02097"
+  }
+]
+```
+
+La tarea publish_stop_times usa For each, Inputs={{job.parameters.stop_times_work_items}} y concurrency=1.
+Depende del éxito de publish_frequencies en la plantilla serial existente.
+Su tarea interna process_stop_times_snapshot ejecuta databricks/notebooks/silver/10_publish_gtfs_entity.ipynb desde Workspace.
+Conservo Serverless y el entorno compartido.
+No uso window_start ni window_end para esta entidad.
+
+| Parámetro interno | Valor |
+| --- | --- |
+| repo_root | Ruta real del repositorio completo en /Workspace, igual que las tareas anteriores. |
+| catalog | {{job.parameters.catalog}} |
+| schema | {{job.parameters.schema}} |
+| staging_volume | {{job.parameters.staging_volume}} |
+| mode | {{job.parameters.mode}} |
+| verify_history | {{job.parameters.verify_history}} |
+| entity | {{input.entity}} |
+| feed_version | {{input.feed_version}} |
+| snapshot_sha256 | {{input.snapshot_sha256}} |
+
+El parámetro general mode controla las tareas que lo referencian.
+No confundo parámetros generales del Job con parámetros internos del notebook.
+La plantilla generada contiene la misma configuración y conserva las nueve tareas anteriores.
+Con mode=publish espero SUCCEEDED, persisted=true y history_checked=true.
+
+Después de publicar compruebo el resultado con SQL:
+
+```sql
+select source_feed_version, source_sha256,
+       count(*) as filas,
+       count(distinct struct(trip_id, stop_sequence)) as claves_distintas,
+       count(distinct trip_id) as viajes_con_visitas,
+       min(arrival_time_seconds) as primera_hora_segundos,
+       max(departure_time_seconds) as ultima_hora_segundos,
+       count_if(is_frequency_template) as visitas_de_plantillas_por_frecuencia
+from workspace.gtfs_bogota.silver_gtfs_stop_times
+group by source_feed_version, source_sha256
+order by source_feed_version;
+```
+
+Espero una clave distinta por fila y ambos snapshots preservados.
+Las visitas de plantillas no equivalen a salidas expandidas ni vehículos observados.
+Registro la duración de validate y publish. Reviso almacenamiento temporal antes de ajustar el diseño físico.
+La publicación de nueve millones de filas todavía no tiene un benchmark documentado.
+El planificador automático 8b y la actualización posterior de Archify permanecen pendientes.
+
+La [documentación oficial de caché Serverless](https://docs.databricks.com/aws/en/compute/serverless/dataframe-cache) exige entorno 5 o superior.
+No cambié la versión 4 del Job ni sus dependencias. Esta optimización queda desactivada por defecto.
+
+
+### Verificación local de stop_times
+
+La selección de 56 pruebas pasó en 783,127 segundos, sin fallos ni omisiones.
+Incluye las reglas de stop_times, las reglas de frequencies y regresiones de configuración y despacho.
+Incluye dos integraciones Delta: stop_times y frequencies.
+No ejecuté toda la suite del repositorio.
+
+Usé el entorno Docker existente con Python 3.10.12, Spark 4.0.1 y Delta 4.0.0.
+El contenedor no tuvo red y montó el repositorio en lectura.
+Los paquetes y JARs procedieron de la caché offline existente.
+Los archivos temporales quedaron fuera de OneDrive. No modifiqué los directorios recuperados.
+
+Las primeras comprobaciones detectaron un hostname local sin resolución y expectativas antiguas de nueve tareas.
+Corregí la configuración del contenedor y las expectativas del Job antes de repetir la selección.
+La documentación oficial también mostró el requisito de entorno 5 para caché en Serverless.
+Por eso mantengo persist_result=false en el registro definitivo y conservo el entorno 4.
+
+La integración comprobó validate sin tablas nuevas, publicación de dos snapshots y reintento sin duplicados.
+También comprobó tipos físicos, veinte columnas y preservación exacta del histórico anterior.
+Un conflicto conservó tres filas originales en cuarentena y mantuvo Silver sin cambios.
+La auditoría registró reglas, versiones Delta, diagnóstico de cobertura y rechazo sin commit Silver.
+Las pruebas locales no sustituyen validate/publish con los millones de filas reales.
+
+
+La verificación final repitió ocho pruebas en 255,199 segundos, sin fallos ni omisiones.
+Incluyó los cuatro contratos de stop_times, tres casos Spark y su integración Delta completa.
+Probé la configuración definitiva con persist_result=false, sin exigir cambiar Serverless 4.
+También probé casos inválidos con claves independientes, para evitar rechazos accidentales por una clave compartida.
+Esta selección comprueba los últimos ajustes; no representa ocho pruebas nuevas adicionales.

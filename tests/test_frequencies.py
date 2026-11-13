@@ -84,8 +84,8 @@ class FrequenciesContractTests(unittest.TestCase):
 
     def test_job_adds_ninth_task_for_two_snapshots_without_horizon(self):
         job = build_job("/Workspace/Shared/example-project")
-        self.assertEqual(len(job["tasks"]), 9)
-        task = job["tasks"][-1]
+        self.assertEqual(len(job["tasks"]), 10)
+        task = job["tasks"][8]
         self.assertEqual(task["task_key"], "publish_frequencies")
         self.assertEqual(task["depends_on"], [{"task_key": "publish_trips"}])
         self.assertEqual(task["for_each_task"]["inputs"], "{{job.parameters.frequencies_work_items}}")

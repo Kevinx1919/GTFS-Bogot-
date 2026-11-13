@@ -12,7 +12,7 @@ if TYPE_CHECKING:
 
 def prepare_source(
     bronze_df: "DataFrame", published: Sequence[str], business_types: Mapping[str, str],
-    identifier: str | Sequence[str], spec: SnapshotSpec,
+    identifier: str | Sequence[str], spec: SnapshotSpec, *, track_variants: bool = True,
 ) -> "DataFrame":
     """Comprueba tipos Bronze y conserva huellas fuente antes de normalizar."""
     from pyspark.sql import functions as F, Window
@@ -39,6 +39,8 @@ def prepare_source(
         "original_row_json", F.to_json(F.struct(*[F.col(name) for name in (*published, *TECHNICAL_FIELDS)]),
                                        {"ignoreNullFields": "false"}),
     )
+    if not track_variants:
+        return selected
     keys = (identifier,) if isinstance(identifier, str) else tuple(identifier)
     by_id = Window.partitionBy(*keys)
     return (selected.withColumn("_variant_min", F.min("_business_json").over(by_id))
@@ -49,6 +51,7 @@ def finish_validation(
     selected: "DataFrame", published: Sequence[str], spec: SnapshotSpec,
     identifier: str | Sequence[str], rule_version: str, errors: Sequence["Column"], warnings: Sequence["Column"],
     expressions: Sequence["Column"], *, extra_metrics: Mapping[str, "Column"] | None = None,
+    persist_result: bool = False,
 ) -> PreparedSnapshot:
     """Reconcilia entradas y copias sin traer registros de negocio al driver."""
     from pyspark.sql import functions as F, Window
@@ -63,17 +66,28 @@ def finish_validation(
     )
     checked = checked.withColumn("_copy_rank", F.row_number().over(copies))
     candidate = F.col("_is_valid") & (F.col("_copy_rank") == 1)
-    metrics = checked.agg(
-        F.count("*").alias("input_rows"),
-        F.sum(F.when(candidate, 1).otherwise(0)).alias("candidate_rows"),
-        F.sum(F.when(~F.col("_is_valid"), 1).otherwise(0)).alias("rejected_rows"),
-        F.sum(F.when(F.col("_is_valid") & (F.col("_copy_rank") > 1), 1).otherwise(0))
-         .alias("identical_copies_consolidated"),
-        F.sum(F.when(F.size("warning_codes") > 0, 1).otherwise(0)).alias("warning_rows"),
-        *[F.sum(F.when(candidate & condition, 1).otherwise(0)).alias(name)
-          for name, condition in (extra_metrics or {}).items()],
-    ).first()
+    # stop_times reutiliza esta salida en varios controles y escrituras del mismo run.
+    if persist_result:
+        from pyspark import StorageLevel
+        checked = checked.persist(StorageLevel.DISK_ONLY)
+    try:
+        metrics = checked.agg(
+            F.count("*").alias("input_rows"),
+            F.sum(F.when(candidate, 1).otherwise(0)).alias("candidate_rows"),
+            F.sum(F.when(~F.col("_is_valid"), 1).otherwise(0)).alias("rejected_rows"),
+            F.sum(F.when(F.col("_is_valid") & (F.col("_copy_rank") > 1), 1).otherwise(0))
+             .alias("identical_copies_consolidated"),
+            F.sum(F.when(F.size("warning_codes") > 0, 1).otherwise(0)).alias("warning_rows"),
+            *[F.sum(F.when(candidate & condition, 1).otherwise(0)).alias(name)
+              for name, condition in (extra_metrics or {}).items()],
+        ).first()
+    except Exception:
+        if persist_result:
+            checked.unpersist()
+        raise
     if not metrics["input_rows"]:
+        if persist_result:
+            checked.unpersist()
         raise ValueError(f"El snapshot de {spec.entity} está vacío; revisa versión y hash.")
     summary = {key: int(value) for key, value in metrics.asDict().items()}
     summary.update(
@@ -92,5 +106,19 @@ def finish_validation(
         F.lit(rule_version).alias("silver_rule_version"),
     )
     warning_frame = checked.filter(F.size("warning_codes") > 0).select(*keys, "warning_codes")
-    return PreparedSnapshot({"candidates": candidates, "rejected": rejected, "warnings": warning_frame},
-                            summary, {})
+    frames = {"candidates": candidates, "rejected": rejected, "warnings": warning_frame}
+    if persist_result:
+        frames["_checked"] = checked
+    return PreparedSnapshot(frames, summary, {})
+
+
+def service_time_seconds(field: str) -> "Column":
+    """El decimal intermedio admite la aritmética sin desbordar antes de probar long."""
+    from pyspark.sql import functions as F
+
+    parts = F.split(F.col(field), ":")
+    hours = F.get(parts, 0).try_cast("decimal(20,0)")
+    minutes = F.get(parts, 1).try_cast("int")
+    seconds = F.get(parts, 2).try_cast("int")
+    value = (hours * 3600 + minutes * 60 + seconds).try_cast("long")
+    return F.when(F.col(field).rlike(r"^[0-9]+:[0-5][0-9]:[0-5][0-9]$"), value)

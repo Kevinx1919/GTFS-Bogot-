@@ -456,3 +456,37 @@ La plantilla añade publish_frequencies después de publish_trips. El For each u
 Process_frequencies_snapshot ejecuta notebook 10 con entidad, versión y hash.
 No necesita horizonte de fechas. El notebook 16 continúa como perfil de lectura independiente.
 La [guía](silver_execution.md#despliegue-de-frequencies_v1) separa código local y despliegue funcional confirmado.
+
+
+## Notebook 17 — Perfil de stop_times — 12 de noviembre de 2026
+
+**Estado:** siete consultas verificadas por separado mediante Genie; notebook completo sin ejecución documentada.
+Recuperé 91 filas estructuradas completas: 60 de metadata y 31 agregados/ejemplos seleccionados.
+El cuaderno solo lee. No conserva resultados de ejecución en Git.
+
+| Bloque | Propósito y entradas | Salida comprobada | Efectos persistentes | Validación y decisión |
+| --- | --- | --- | --- | --- |
+| 1 / esquema | Information_schema de Bronze stop_times y Silver trips/stops/frequencies. | 58 campos físicos. | Ninguno. | Nombres y tipos; no demuestra calidad de valores. |
+| 2 / encabezados | Auditoría de stop_times.txt para ambas parejas versión/hash. | 2 observaciones; seis y ocho campos. | Ninguno. | Distinguir ausencia de encabezado y campo publicado. |
+| 3 / horas y timepoint | Bronze filtrado por ambos S. | 6 agregados de formatos y dominio. | Ninguno. | Horas superiores a 24 válidas; códigos 0/1. |
+| 4 / visitas y orden | Bronze completo; referencias a stops y contexto frequencies. | 2 filas agregadas. | Ninguno. | Claves convertidas, visitas aisladas, ubicación usada y tiempos. Bloque 6 completa NaN/Infinity y comparación temporal. |
+| 5 / cobertura | IDs de Bronze y dependencias Silver del mismo S. | 11 agregados. | Ninguno. | Referencias resueltas; 739 viajes sin visitas en 2026. location_types describe todo el catálogo, no solo ubicaciones usadas. |
+| 6 / control final | Horas como segundos, distancia y campos fuente. | 2 agregados; cero anomalías en controles ejecutados. | Ninguno. | isnan/Infinity, Unicode y menor hora actual contra máximo previo. |
+| 7 / ejemplos | Viajes con una visita en 2026. | 10 ejemplos limitados. | Ninguno. | No atribuir la parada ni una causa a todos los casos desde una muestra. |
+
+No fijé versiones Delta en las consultas exploratorias. El pipeline sí fija sus entradas.
+El [perfil](stop_times_profile_2025_2026.md) y el [contrato](contracts/stop_times.md) explican las decisiones.
+No necesito ejecutar notebook 17 antes de cada run del Job.
+
+### Notebook 10 — Entrada de stop_times_v1
+
+Mantengo los dos bloques ejecutables anteriores. Cambio la documentación de entidades habilitadas.
+
+| Bloque | Entradas | Salidas y efectos | Validación y decisión |
+| --- | --- | --- | --- |
+| 1 / parámetros | Entity=stop_times, versión, hash, catálogo, schema, volumen y mode. | Parámetros en sesión; sin escritura de tablas. | Repositorio completo y dependencias del entorno antes de ejecutar. |
+| 2 / pipeline | Bronze stop_times, encabezado Staging, trips/stops Silver y frequencies cuando está publicada. | Validate devuelve resumen sin escritura. Publish escribe Silver, cuarentena y auditoría. | Versiones Delta fijas, clave compuesta, horas y cobertura. Persistencia optativa desactivada para Serverless 4; liberación en finally cuando se activa. |
+
+La plantilla incorpora publish_stop_times después de publish_frequencies, con concurrencia 1.
+Stop_times_work_items pertenece a los parámetros generales del Job, no a los parámetros internos del notebook.
+El procesador está implementado localmente. La publicación de stop_times en Workspace permanece pendiente.

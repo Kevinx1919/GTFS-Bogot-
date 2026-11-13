@@ -91,7 +91,7 @@ class ShapePointsContractTests(unittest.TestCase):
     def test_job_preserves_six_tasks_and_adds_serial_shapes_for_both_snapshots(self):
         job = build_job("/Workspace/Shared/example-project")
         self.assertEqual([t["task_key"] for t in job["tasks"]], ["publish_snapshots", "publish_routes", "publish_stops",
-                         "publish_calendar", "publish_calendar_dates", "publish_service_dates", "publish_shape_points", "publish_trips", "publish_frequencies"])
+                         "publish_calendar", "publish_calendar_dates", "publish_service_dates", "publish_shape_points", "publish_trips", "publish_frequencies", "publish_stop_times"])
         task = next(t for t in job["tasks"] if t["task_key"] == "publish_shape_points")
         self.assertEqual(task["depends_on"], [{"task_key": "publish_service_dates"}])
         self.assertEqual(task["for_each_task"]["concurrency"], 1)

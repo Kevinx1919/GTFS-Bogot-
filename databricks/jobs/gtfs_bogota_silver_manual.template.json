@@ -61,6 +61,10 @@
     {
       "name": "frequencies_work_items",
       "default": "[{\"entity\":\"frequencies\",\"feed_version\":\"2025-10-28\",\"snapshot_sha256\":\"07ba2ba9bb3b5bc1e38357355956757ce84fc68e6d05b74577bf017e189ab952\"},{\"entity\":\"frequencies\",\"feed_version\":\"2026-09-29\",\"snapshot_sha256\":\"08d14e0b3a5b9caa5451b722659871fd554e3273b94bdd770fdf81a26bf02097\"}]"
+    },
+    {
+      "name": "stop_times_work_items",
+      "default": "[{\"entity\":\"stop_times\",\"feed_version\":\"2025-10-28\",\"snapshot_sha256\":\"07ba2ba9bb3b5bc1e38357355956757ce84fc68e6d05b74577bf017e189ab952\"},{\"entity\":\"stop_times\",\"feed_version\":\"2026-09-29\",\"snapshot_sha256\":\"08d14e0b3a5b9caa5451b722659871fd554e3273b94bdd770fdf81a26bf02097\"}]"
     }
   ],
   "environments": [
@@ -376,6 +380,40 @@
       "depends_on": [
         {
           "task_key": "publish_trips"
+        }
+      ]
+    },
+    {
+      "task_key": "publish_stop_times",
+      "for_each_task": {
+        "inputs": "{{job.parameters.stop_times_work_items}}",
+        "concurrency": 1,
+        "task": {
+          "task_key": "process_stop_times_snapshot",
+          "notebook_task": {
+            "notebook_path": "/Workspace/REPO_ROOT/databricks/notebooks/silver/10_publish_gtfs_entity.ipynb",
+            "source": "WORKSPACE",
+            "base_parameters": {
+              "repo_root": "/Workspace/REPO_ROOT",
+              "catalog": "{{job.parameters.catalog}}",
+              "schema": "{{job.parameters.schema}}",
+              "staging_volume": "{{job.parameters.staging_volume}}",
+              "mode": "{{job.parameters.mode}}",
+              "verify_history": "{{job.parameters.verify_history}}",
+              "entity": "{{input.entity}}",
+              "feed_version": "{{input.feed_version}}",
+              "snapshot_sha256": "{{input.snapshot_sha256}}"
+            }
+          },
+          "environment_key": "silver",
+          "timeout_seconds": 1800,
+          "max_retries": 1,
+          "min_retry_interval_millis": 60000
+        }
+      },
+      "depends_on": [
+        {
+          "task_key": "publish_frequencies"
         }
       ]
     }

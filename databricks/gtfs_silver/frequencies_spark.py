@@ -5,7 +5,7 @@ import csv
 from typing import TYPE_CHECKING, Sequence
 
 from .models import PreparedSnapshot, SnapshotSpec
-from .spark_validation import finish_validation, prepare_source
+from .spark_validation import finish_validation, prepare_source, service_time_seconds as _service_seconds
 
 if TYPE_CHECKING:
     from pyspark.sql import Column, DataFrame
@@ -32,18 +32,6 @@ def validate_header(columns: Sequence[str]) -> tuple[str, ...]:
 def read_source_header(path: str) -> tuple[str, ...]:
     with open(path, "r", encoding="utf-8-sig", newline="") as handle:
         return validate_header(next(csv.reader(handle), ()))
-
-
-def _service_seconds(field: str) -> "Column":
-    """El decimal intermedio admite la aritmética sin desbordar antes de probar long."""
-    from pyspark.sql import functions as F
-
-    parts = F.split(F.col(field), ":")
-    hours = F.get(parts, 0).try_cast("decimal(20,0)")
-    minutes = F.get(parts, 1).try_cast("int")
-    seconds = F.get(parts, 2).try_cast("int")
-    value = (hours * 3600 + minutes * 60 + seconds).try_cast("long")
-    return F.when(F.col(field).rlike(r"^[0-9]+:[0-5][0-9]:[0-5][0-9]$"), value)
 
 
 def _trip_ids(frame: "DataFrame", spec: SnapshotSpec) -> "DataFrame":

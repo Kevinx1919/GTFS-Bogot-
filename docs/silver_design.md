@@ -267,11 +267,21 @@ Stop_times seguirá después, en el orden 8. El planificador de snapshots perman
 
 ## Siguiente incremento: stop_times
 
-Continúo con el orden 8 después de confirmar frequencies publicada.
-Primero perfilaré visitas planificadas, secuencias, horas extendidas y referencias a trips y stops dentro del mismo snapshot.
-Revisaré tiempos ausentes, timepoint, repeticiones y coherencia temporal antes de implementar reglas.
-Las visitas de una plantilla por frecuencia necesitan una interpretación distinta de horarios exactos al construir Gold.
-No comenzaré Gold antes de cerrar este contrato. El planificador automático sigue pendiente 8b.
+**Estado:** perfil completado y procesador local implementado. La publicación en Workspace permanece pendiente.
+El [plan detallado](stop_times_plan.md), el [perfil](stop_times_profile_2025_2026.md) y el [contrato](contracts/stop_times.md) conservan las decisiones.
+El [notebook 17](../databricks/notebooks/silver/17_profile_gtfs_stop_times.ipynb) contiene siete consultas verificadas de lectura.
+
+Medí 5.698.892 visitas de 2025 y 9.408.893 visitas de 2026.
+Conservo 61 visitas aisladas con advertencia. Registro 739 viajes sin visitas de 2026 como limitación de cobertura.
+No invento paradas ni causas. No renumero secuencias válidas.
+El contrato tipa campos, valida relaciones y compara horas como segundos del día de servicio.
+Las frecuencias aportan contexto por viaje sin multiplicar las visitas.
+
+La plantilla añade publish_stop_times como décima tarea. Reutilizo notebook 10, auditoría y escritor compartidos.
+Las nueve tareas anteriores mantienen su configuración. El Job existente requiere actualización manual.
+La [guía de despliegue](silver_execution.md#despliegue-de-stop_times_v1) explica validate y publish.
+Archify conserva la revisión de las nueve entidades publicadas.
+El planificador automático sigue pendiente 8b, después de comprobar este despliegue y antes de programar ejecuciones.
 
 ## Automatización pendiente: selección de snapshots Silver
 
@@ -309,3 +319,12 @@ Por ejemplo, un futuro conteo de ubicaciones publicadas por tipo tendría una fi
 En Power BI lo presentaría como catálogo publicado; la diferencia entre versiones no demostraría por sí sola expansión física o servicio efectivamente operado. Un análisis de accesibilidad explicaría que el archivo de 2025 no publicó ese campo. Este ejemplo es una propuesta de diseño: todavía no implementé una tabla Gold.
 
 Las métricas de GTFS estático no tienen obligatoriamente grano de cinco minutos. Cada ficha define su grano; las futuras métricas operativas podrán usar esas franjas cuando la fuente y la pregunta lo permitan.
+
+### Cobertura de viajes antes de calcular métricas Gold
+
+Prepararé la clasificación de cobertura antes de las primeras métricas Gold, después de verificar stop_times Silver.
+El [plan de cobertura](stop_times_plan.md#clasificación-de-cobertura-antes-de-las-métricas-gold) define sus reglas propuestas.
+Conservaré una fila por viaje declarado y snapshot mediante trips y un left join con visitas agregadas.
+Distinguiré sin_visitas, una_visita y varias_visitas. No interpretaré varias visitas como recorrido completo.
+Cada métrica definirá horas necesarias, contexto de frecuencias, exclusiones y denominador.
+Esta clasificación permanece planificada; no añadí una entidad Gold al registro Silver ni al Job.

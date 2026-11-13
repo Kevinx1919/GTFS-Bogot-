@@ -85,7 +85,7 @@ class SilverConfigurationTests(unittest.TestCase):
 
     def test_only_implemented_entity_is_enabled(self):
         registry = load_registry()
-        self.assertEqual(list(registry), ["agency", "routes", "stops", "calendar", "calendar_dates", "service_dates", "shape_points", "trips", "frequencies"])
+        self.assertEqual(list(registry), ["agency", "routes", "stops", "calendar", "calendar_dates", "service_dates", "shape_points", "trips", "frequencies", "stop_times"])
         self.assertTrue(registry["agency"]["enabled"])
         self.assertEqual(registry["agency"]["depends_on"], [])
         self.assertEqual(registry["routes"]["depends_on"], ["agency"])
@@ -109,7 +109,7 @@ class SilverConfigurationTests(unittest.TestCase):
         self.assertEqual(registry["calendar"]["depends_on"],[])
         self.assertEqual(registry["calendar_dates"]["depends_on"],[])
         self.assertEqual(registry["calendar_dates"]["depends_on_if_published"],["calendar"])
-        self.assertEqual(len(job["tasks"]),9)
+        self.assertEqual(len(job["tasks"]),10)
         parameters={p["name"]:p["default"] for p in job["parameters"]}
         for entity,position,parent in (("calendar",3,"publish_stops"),("calendar_dates",4,"publish_calendar")):
             task=job["tasks"][position]
@@ -432,6 +432,57 @@ class SilverPublicationDeltaTests(unittest.TestCase):
         self.assertTrue(all(r.date=="20230101" for r in rejected))
         self.assertTrue(all("SERVICE_KEY_CONFLICT" in r.error_codes for r in rejected))
         self.assertEqual(len(self.spark.table(f"spark_catalog.{self.namespace}.silver_gtfs_calendar").columns),18)
+
+    def test_stop_times_pipeline_validates_publishes_retries_and_preserves_history_on_rejection(self):
+        from gtfs_silver import pipeline
+        from test_stop_times import COLUMNS as visit_columns, stop_time_spec, stop_time_frame, visit_rows, dependency_frames, fixture
+        common = dict(catalog="spark_catalog", schema=self.namespace, staging_volume="staging", entity="stop_times")
+        bronze = f"spark_catalog.{self.namespace}.bronze_gtfs_stop_times"
+        target = f"spark_catalog.{self.namespace}.silver_gtfs_stop_times"
+        audit = f"spark_catalog.{self.namespace}.audit_gtfs_source_schema_observations"
+        old_rows = None
+        for version, content_hash in [("2025-10-28", "a"*64), ("2026-09-29", "b"*64)]:
+            selected = stop_time_spec(version, content_hash,
+                f"/Volumes/spark_catalog/{self.namespace}/staging/gtfs_static/feed_version={version}/sha256={content_hash}/stop_times.txt")
+            deps = dependency_frames(self.spark, selected)
+            for entity in ("trips", "stops"):
+                deps[entity+"_df"].write.format("delta").mode("append").saveAsTable(f"spark_catalog.{self.namespace}.silver_gtfs_{entity}")
+            self.spark.createDataFrame([(version, content_hash, "stop_times.txt")],
+                "source_feed_version string,source_sha256 string,source_file_name string").write.format("delta").mode("append").saveAsTable(audit)
+            columns = visit_columns if old_rows is None else (*visit_columns, "shape_dist_traveled", "stop_headsign")
+            rows = visit_rows(selected); rows.append(dict(rows[1]))
+            stop_time_frame(self.spark, selected, rows, columns).write.format("delta").option("mergeSchema", "true").mode("append").saveAsTable(bronze)
+            args = {**common, "feed_version": version, "snapshot_sha256": content_hash}
+            with patch.object(pipeline.stop_times_spark, "read_source_header", return_value=columns):
+                preview = pipeline.run_entity(self.spark, **args, mode="validate")
+                self.assertFalse(preview["persisted"])
+                if old_rows is None:
+                    self.assertFalse(self.spark.catalog.tableExists(target))
+                    self.assertFalse(self.spark.catalog.tableExists(f"spark_catalog.{self.namespace}.audit_gtfs_silver_runs"))
+                result = pipeline.run_entity(self.spark, **args)
+            self.assertEqual((result["candidate_rows"], result["rejected_rows"], result["identical_copies_consolidated"]), (3, 0, 1))
+            if old_rows is None:
+                old_rows = self.spark.table(target).orderBy("stop_sequence").collect()
+        with patch.object(pipeline.stop_times_spark, "read_source_header", return_value=columns):
+            self.assertEqual(pipeline.run_entity(self.spark, **args)["status"], "SUCCEEDED")
+            output = self.spark.table(target)
+            self.assertEqual(output.count(), 6)
+            self.assertEqual(len(output.columns), 20)
+            self.assertEqual(output.schema["stop_sequence"].dataType.simpleString(), "int")
+            self.assertEqual(output.schema["arrival_time_seconds"].dataType.simpleString(), "bigint")
+            self.assertEqual(output.filter("source_feed_version='2025-10-28'").orderBy("stop_sequence").collect(), old_rows)
+            # Un conflicto conserva las dos copias y la nueva variante; no sustituye Silver.
+            stop_time_frame(self.spark, selected, [fixture(selected, stop_sequence="5", stop_id="A")], columns).write.format("delta").mode("append").saveAsTable(bronze)
+            with self.assertRaises(SnapshotRejectedError): pipeline.run_entity(self.spark, **args)
+        self.assertEqual(self.spark.table(target).count(), 6)
+        rejected = self.spark.table(f"spark_catalog.{self.namespace}.quarantine_gtfs_stop_times").collect()
+        self.assertEqual(sum(r.input_copies for r in rejected), 3)
+        self.assertTrue(all(r.stop_sequence == "5" and "VISIT_KEY_CONFLICT" in r.error_codes for r in rejected))
+        records = self.spark.table(f"spark_catalog.{self.namespace}.audit_gtfs_silver_runs").collect()
+        self.assertTrue(any(r.status == "REJECTED" and not r.silver_committed for r in records))
+        versions = [json.loads(r.reference_versions_json) for r in records if r.status == "SUCCEEDED"]
+        self.assertTrue(any(r["bronze_delta_version"] == "1" and r["stops_delta_version"] == "1"
+                            and r["diagnostic_trips_without_visits"] == "0" for r in versions))
 
     def test_frequencies_pipeline_publishes_typed_windows_retries_and_preserves_history_on_rejection(self):
         from gtfs_silver import pipeline

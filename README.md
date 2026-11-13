@@ -227,3 +227,16 @@ La [guía de despliegue](docs/silver_execution.md#despliegue-de-frequencies_v1) 
 
 La implementación de frequencies pasó 42 pruebas seleccionadas sin omisiones, incluidas trece nuevas y dos integraciones Delta en total.
 Frequencies ya está publicada en Workspace. El siguiente incremento es stop_times, orden 8 del plan.
+
+
+### Stop_times: implementación Silver preparada
+
+Completé el [perfil](docs/stop_times_profile_2025_2026.md) y el [contrato stop_times_v1](docs/contracts/stop_times.md).
+Una fila representa una visita planificada de un viaje a una parada.
+El [notebook 17](databricks/notebooks/silver/17_profile_gtfs_stop_times.ipynb) conserva siete consultas verificadas de lectura.
+El procesador Spark tipa campos, comprueba horas y referencias, y reutiliza notebook 10.
+La plantilla añade publish_stop_times como décima tarea; las nueve anteriores conservan su configuración.
+
+Conservo 61 visitas aisladas con advertencia y registro 739 viajes sin visitas en 2026.
+La publicación de stop_times en Databricks sigue pendiente. Las nueve entidades anteriores ya tienen despliegue funcional.
+El [despliegue](docs/silver_execution.md#despliegue-de-stop_times_v1) separa validate, publish y comprobación final.

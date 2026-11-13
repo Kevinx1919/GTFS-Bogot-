@@ -108,7 +108,7 @@ class TripsContractTests(unittest.TestCase):
 
     def test_job_appends_trips_for_two_snapshots_without_date_horizon(self):
         job=build_job("/Workspace/Shared/example-project")
-        self.assertEqual(len(job["tasks"]),9)
+        self.assertEqual(len(job["tasks"]),10)
         task=job["tasks"][7]
         self.assertEqual(task["task_key"],"publish_trips")
         self.assertEqual(task["depends_on"],[{"task_key":"publish_shape_points"}])

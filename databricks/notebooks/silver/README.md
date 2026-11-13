@@ -99,3 +99,16 @@ El notebook de perfilado solo lee. Notebook 10 ejecuta frequencies_v1 mediante e
 Frequencies_v1 pasó 42 pruebas seleccionadas sin omisiones. Incluyen trece nuevas y dos integraciones Delta en total.
 La [guía](../../../docs/silver_execution.md#despliegue-de-frequencies_v1) conserva parámetros y comprobaciones.
 Las ocho tareas anteriores permanecen iguales. Frequencies ya está publicada en Workspace. El siguiente incremento es stop_times.
+
+
+## Stop_times: perfil y contrato implementado
+
+El [notebook 17](17_profile_gtfs_stop_times.ipynb) conserva siete consultas verificadas de lectura.
+Los bloques 1 y 2 exploran metadata. Los bloques 3 a 6 muestran agregados completos; el bloque 7 muestra diez ejemplos.
+El [perfil](../../../docs/stop_times_profile_2025_2026.md) separa resultados, muestra y límites de cada control.
+El [contrato](../../../docs/contracts/stop_times.md) define tipado, ausencias, tiempos y relaciones.
+
+Notebook 10 ejecuta el procesador compartido. No necesito ejecutar notebook 17 antes de cada publicación.
+La plantilla añade publish_stop_times después de publish_frequencies.
+La publicación de stop_times en Databricks permanece pendiente de validate y publish.
+La [guía](../../../docs/silver_execution.md#despliegue-de-stop_times_v1) conserva parámetros y comprobaciones.
