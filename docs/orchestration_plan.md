@@ -1,7 +1,8 @@
 # Mi plan de automatización: selección Silver y Job principal
 
-**Estado:** preparación Bronze implementada localmente; validación en Workspace pendiente.
-Planificador y Job principal todavía propuestos.
+**Estado:** cierre Bronze v2 comprobado en Workspace para 2025 y 2026.
+La prueba de despliegue de los cargadores 02–05 sigue pendiente.
+Planificador implementado localmente; comprobación en Workspace pendiente. Job principal todavía propuesto.
 La [guía Bronze v2](bronze_automation.md) describe el incremento actual.
 **Fecha:** 12 de noviembre de 2026.
 Este diseño desarrolla el pendiente 8b del [plan Silver](silver_design.md#automatización-pendiente-selección-de-snapshots-silver).
@@ -63,7 +64,8 @@ La fecha de modificación del portal puede orientar esa decisión; no sustituye 
 
 ## Pieza 1: planificador de Silver
 
-Añadiré una tarea inicial plan_silver al Job Silver.
+Implementé localmente la tarea inicial plan_silver y una variante optativa del Job Silver.
+La [guía del planificador](silver_planner.md) conserva decisiones, límites y pasos de comprobación.
 La lógica Python comparará evidencia Bronze completa con audit_gtfs_silver_runs y disponibilidad del destino.
 El registro silver_entities.json seguirá definiendo contratos y dependencias.
 
@@ -97,7 +99,7 @@ La [guía del contrato](bronze_automation.md) define eventos STARTED/CLOSED, con
 Conserva corrida, versión, hash, inicio/fin UTC, reglas Bronze y resultado terminal.
 Relaciona el resultado con inventario de entidades, observaciones y checks persistidos.
 Incluye el identificador del coordinador cuando corresponda.
-La comprobación en Workspace sigue pendiente.
+El cierre de notebook 07 está comprobado para ambos snapshots; las pruebas de los cargadores siguen pendientes.
 
 Solo una evaluación completa y sin fallos bloqueantes habilitará el intento Silver.
 Una advertencia Bronze no aprobará automáticamente un contrato Silver incompatible.
@@ -161,10 +163,10 @@ No necesito fusionar notebooks ni duplicar las transformaciones.
 ## Orden de implementación
 
 1. Exportar la configuración real del Job Bronze y guardar una plantilla portable sin rutas personales ni IDs del entorno.
-2. Comprobar en Workspace el cierre bronze_snapshot_v2 implementado en notebook 07. Revisar ambos históricos y sus eventos STARTED/CLOSED.
-3. Probar en Workspace los cambios de integridad y carga común implementados en notebooks 02–05.
-4. Implementar y probar plan_silver con pendientes, dependencias, reglas y listas vacías.
-5. Conectar el planificador con los diez bucles Silver, manteniendo notebook 10 y sus contratos.
+2. Cierre bronze_snapshot_v2 comprobado: 2025 PASSED y 2026 WARNING con cinco advertencias, ambos sin fallos bloqueantes. La lectura independiente de eventos será parte de la comprobación del planificador.
+3. Probar en Workspace los cambios de integridad y carga común de notebooks 02–05 antes de habilitar ingesta automática. No requiere posponer la implementación de plan_silver sobre los cierres existentes.
+4. Plan_silver implementado y probado localmente. Comprobar primero notebook 11 en vista previa en Workspace.
+5. Revisar y probar la variante del Job que conecta el planificador con los diez bucles Silver. No se actualizó el Job desplegado.
 6. Adaptar el descubrimiento y plan de ingesta de notebook 06, con ausencia de novedades como resultado normal.
 7. Crear la plantilla del Job principal y pasar parámetros explícitos a los Jobs existentes.
 8. Ejecutar un piloto manual y comprobar recuperación, auditoría, histórico y ausencia de duplicados.
@@ -213,3 +215,10 @@ Los STARTED/CLOSED registran intentos completos o incompletos sin modificar evid
 Mantengo un solo escritor; no hay bloqueo distribuido entre Jobs.
 Los avisos pasan a Silver bajo la política existente; sus contratos siguen siendo obligatorios.
 La exportación completa del Job Bronze sigue pendiente.
+
+El 13 de noviembre comprobé notebook 07 en Workspace con ambas versiones.
+La [evidencia de cierre](bronze_automation.md#cierre-comprobado-en-workspace--13-de-noviembre-de-2026) precisa los resultados y su alcance.
+
+El 13 de noviembre implementé plan_silver, notebook 11 y la variante optativa del Job.
+Pasaron 112 pruebas unitarias y cuatro integraciones nativas del planificador.
+Primero comprobaré la vista previa; la ingesta automática y el Job principal permanecen pendientes.

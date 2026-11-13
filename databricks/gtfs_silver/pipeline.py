@@ -12,7 +12,7 @@ from .publication import (
     PublicationTables, _versioned_table, publish_agency, publish_snapshot, quoted_table, simple_identifier,
 )
 from . import routes_spark, stops_spark, calendars_spark, service_dates_spark, shape_points_spark, trips_spark, frequencies_spark, stop_times_spark
-from .models import DerivedSnapshotSpec, SOURCE_ENTITY_NAMES
+from .models import DerivedSnapshotSpec, PreparedSnapshot, SOURCE_ENTITY_NAMES
 
 REGISTRY_PATH = Path(__file__).resolve().parents[1] / "config" / "silver_entities.json"
 
@@ -24,16 +24,76 @@ def load_registry(path: Path = REGISTRY_PATH) -> dict[str, Any]:
     return registry
 
 
-def run_entity(spark, *, catalog: str, schema: str, staging_volume: str,
+
+def run_entity(spark: Any, **parameters: Any) -> dict[str, Any]:
+    """Registra el intento planificado antes de preparar datos; el modo manual sigue compatible."""
+    if not parameters.get("bronze_quality_run_id") and not parameters.get("bronze_result_sha256"):
+        return _run_entity(spark, **parameters)
+    from datetime import datetime, timezone
+    from uuid import uuid4
+    from .publication import _audit
+    from .models import SnapshotSpec as SourceSpec
+    import re
+    catalog, schema, entity = (parameters[key] for key in ("catalog", "schema", "entity"))
+    tables = PublicationTables(catalog, schema, entity)
+    cfg = load_registry().get(entity)
+    if not cfg or not cfg.get("enabled") or parameters.get("expected_rule_version") != cfg["validator"]:
+        raise ValueError("La regla cambió o falta en el plan; genera un plan nuevo.")
+    if parameters.get("mode", "publish") != "publish":
+        raise ValueError("Las tareas planificadas requieren mode=publish. Usa notebook 11 para vista previa.")
+    if not parameters.get("bronze_quality_run_id") or not parameters.get("bronze_result_sha256"):
+        raise ValueError("Falta identidad del cierre Bronze en el plan.")
+    version, sha = parameters["feed_version"], parameters["snapshot_sha256"]
+    if entity == "service_dates":
+        spec = DerivedSnapshotSpec(version, sha, parameters.get("window_start", ""), parameters.get("window_end", ""))
+    else:
+        volume = simple_identifier(parameters["staging_volume"])
+        source = SOURCE_ENTITY_NAMES.get(entity, entity)
+        spec = SourceSpec(version, sha, f"/Volumes/{catalog}/{schema}/{volume}/gtfs_static/feed_version={version}/sha256={sha}/{source}.txt", entity)
+    run_id = parameters.get("run_id") or str(uuid4())
+    if not re.fullmatch(r"[A-Za-z0-9_.:-]{1,128}", run_id): raise ValueError("run_id inválido.")
+    started = datetime.now(timezone.utc)
+    empty = PreparedSnapshot({}, {"rule_version": cfg["validator"], **{key: 0 for key in (
+        "input_rows", "candidate_rows", "rejected_rows", "identical_copies_consolidated", "warning_rows",
+    )}}, {"bronze_quality_run_id": parameters["bronze_quality_run_id"], "bronze_result_sha256": parameters["bronze_result_sha256"]})
+    spark.conf.set("spark.sql.session.timeZone", "UTC")
+    _audit(spark, tables, spec, empty, run_id, "RUNNING", started, False)
+    try:
+        return _run_entity(spark, **{**parameters, "run_id": run_id})
+    except Exception as error:
+        # Si el publicador ya registró su resultado, conservo sus conteos y estado.
+        from pyspark.sql import functions as F
+        current = (spark.table(quoted_table(tables.name("audit")))
+                   .filter((F.col("entity") == entity) & (F.col("source_feed_version") == version)
+                           & (F.col("source_sha256") == sha) & (F.col("silver_run_id") == run_id))
+                   .select("status", "input_rows").first())
+        if current is not None and current["status"] == "RUNNING" and current["input_rows"] == 0:
+            _audit(spark, tables, spec, empty, run_id, "FAILED", started, False, str(error)[:1000])
+        raise
+
+def _run_entity(spark, *, catalog: str, schema: str, staging_volume: str,
                entity: str, feed_version: str, snapshot_sha256: str,
                mode: str = "publish", verify_history: bool = True,
                window_start: str = "", window_end: str = "",
-               run_id: str | None = None) -> dict[str, Any]:
+               run_id: str | None = None, expected_rule_version: str = "",
+               bronze_quality_run_id: str = "", bronze_result_sha256: str = "",
+               bronze_delta_version: str = "") -> dict[str, Any]:
     for value in (catalog, schema, staging_volume, entity):
         simple_identifier(value)
     configuration = load_registry().get(entity)
     if not configuration or not configuration["enabled"]:
         raise ValueError(f"No hay un contrato habilitado para {entity}.")
+    # Las listas planificadas fijan regla y evidencia; el modo manual anterior conserva sus defaults.
+    if expected_rule_version and expected_rule_version != configuration["validator"]:
+        raise ValueError("La regla cambió desde la planificación; genera un plan nuevo.")
+    if bool(bronze_quality_run_id) != bool(bronze_result_sha256):
+        raise ValueError("La evidencia del plan requiere corrida Bronze y huella juntas.")
+    if bronze_quality_run_id:
+        from .planner_runtime import assert_bronze_ready
+        spark.conf.set("spark.sql.session.timeZone", "UTC")
+        assert_bronze_ready(spark, catalog=catalog, schema=schema, feed_version=feed_version,
+                            sha256=snapshot_sha256, quality_run_id=bronze_quality_run_id,
+                            result_sha256=bronze_result_sha256, entity=entity, bronze_delta_version=bronze_delta_version)
     if entity == "service_dates":
         if configuration["validator"] != "service_dates_v1":
             raise ValueError("La derivación requiere el contrato service_dates_v1.")
@@ -71,7 +131,7 @@ def run_entity(spark, *, catalog: str, schema: str, staging_volume: str,
         raise ValueError("No existe Bronze para la entidad seleccionada.")
     # Fijar versiones Delta evita que acciones posteriores lean otro estado de entrada.
     if entity == "stop_times":
-        source, version = _versioned_table(spark, bronze, with_version=True)
+        source, version = _read_bronze(spark, bronze, bronze_delta_version, with_version=True)
         inputs, references = _stop_times_dependencies(spark, catalog, schema, spec)
         persist_result = configuration.get("persist_result", False)
         if type(persist_result) is not bool:
@@ -86,7 +146,7 @@ def run_entity(spark, *, catalog: str, schema: str, staging_volume: str,
             if cached is not None:
                 cached.unpersist()
     if entity == "frequencies":
-        source, version = _versioned_table(spark, bronze, with_version=True)
+        source, version = _read_bronze(spark, bronze, bronze_delta_version, with_version=True)
         dependency = f"{catalog}.{schema}.silver_gtfs_trips"
         if not spark.catalog.tableExists(quoted_table(dependency)):
             raise ValueError("Publica trips en Silver antes de procesar frequencies.")
@@ -97,13 +157,13 @@ def run_entity(spark, *, catalog: str, schema: str, staging_volume: str,
         return publish_snapshot(spark, result, spec, PublicationTables(catalog, schema, entity),
                                 mode=mode, verify_history=verify_history, run_id=run_id)
     if entity == "trips":
-        source, version = _versioned_table(spark, bronze, with_version=True)
+        source, version = _read_bronze(spark, bronze, bronze_delta_version, with_version=True)
         inputs, references = _trips_dependencies(spark, catalog, schema, spec)
         result = trips_spark.read_and_validate(source, columns, spec, **inputs)
         result.reference_versions.update({"bronze_table": bronze, "bronze_delta_version": str(version), **references})
         return publish_snapshot(spark, result, spec, PublicationTables(catalog, schema, entity),
                                 mode=mode, verify_history=verify_history, run_id=run_id)
-    source = _versioned_table(spark, bronze)
+    source = _read_bronze(spark, bronze, bronze_delta_version)
     if entity in processors:
         dependencies = []
         if entity == "routes":
@@ -141,6 +201,17 @@ def run_entity(spark, *, catalog: str, schema: str, staging_volume: str,
         mode=mode, verify_history=verify_history, run_id=run_id,
     )
 
+
+
+def _read_bronze(spark: Any, table: str, version: str, *, with_version: bool = False):
+    """Un plan lee la versión Delta que validó Bronze; una entrada manual conserva la lectura actual."""
+    if version == "":
+        return _versioned_table(spark, table, with_version=with_version) if with_version else _versioned_table(spark, table)
+    if not isinstance(version, str) or not version.isdigit():
+        raise ValueError("bronze_delta_version debe ser un entero no negativo del cierre Bronze.")
+    selected = int(version)
+    frame = spark.read.option("versionAsOf", selected).table(quoted_table(table))
+    return (frame, selected) if with_version else frame
 
 def _run_service_dates(spark, catalog, schema, spec, mode, verify_history, run_id):
     """Resuelve fuentes publicadas desde auditoría; la derivación no simula un TXT."""

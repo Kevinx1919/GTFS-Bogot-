@@ -539,3 +539,36 @@ El grano de la nueva tabla es quality_run_id + event_type.
 No hay una transacción global entre checks y cierre.
 Un STARTED sin CLOSED es incompleto y bloquea su selección automática.
 La [guía](bronze_automation.md) contiene parámetros, SQL de comprobación y pasos de despliegue.
+
+### Comprobación de notebook 07 v2 en Workspace — 13 de noviembre de 2026
+
+Ejecuté todos los bloques de notebook 07 para ambos snapshots.
+2025 terminó PASSED: cero fallos bloqueantes, cero advertencias y validación completa.
+2026 terminó WARNING: cero fallos bloqueantes, cinco advertencias y validación completa.
+Ambos resúmenes mostraron elegible para validar Silver=true bajo bronze_snapshot_v2.
+El detalle de 2026 confirmó reconciliación de las once entidades publicadas y referencias sin huérfanos.
+La [guía Bronze](bronze_automation.md) conserva conteos y límites de esta evidencia.
+No extrapolo esta comprobación a las guardas nuevas de notebooks 02–05.
+La repetición aislada del bloque final y la consulta independiente de eventos no tienen confirmación nueva en Workspace.
+
+## Notebook 11 — Planificador Silver — 13 de noviembre de 2026
+
+**Estado:** implementación local; comprobación en Workspace pendiente.
+La [guía del planificador](silver_planner.md) define reglas, estados y límites.
+
+| Bloque | Propósito e inputs | Outputs y efectos | Validación y decisión |
+| --- | --- | --- | --- |
+| 1 / parámetros | Repo completo, catálogo, schema, rango opcional y límites. | Módulos y parámetros en memoria. Sin escrituras. | Raíz válida; contrato de configuración y horizonte explícito. |
+| 2 / plan | Cierres Bronze, último intento Silver y destinos del mismo snapshot. | Decisiones y listas; lecturas Delta fijadas, agregados técnicos acotados. | Último STARTED con CLOSED completo; no esconder fallos recientes ni destinos inconsistentes. |
+| 3 / entrega | Plan calculado y emit_task_values. | Vista previa sin escrituras o task values dentro del Job. | BLOCKED impide entrega; NO_WORK entrega listas vacías; límite por lista. |
+
+### Notebook 10 — Contexto optativo del planificador
+
+| Bloque | Cambio | Efectos y validación |
+| --- | --- | --- |
+| 1 / parámetros | Añade expected_rule_version, bronze_quality_run_id, bronze_result_sha256 y bronze_delta_version vacíos por defecto. | Mantiene entradas manuales existentes. |
+| 2 / ejecución | Verifica regla, cierre vigente y versión fuente fijada cuando recibe un plan. | Registra RUNNING antes de preparar datos; conserva FAILED o RUNNING si no publica. Las escrituras analíticas siguen en el publicador común. |
+
+La variante del Job añade una tarea inicial y conserva los diez ciclos seriales.
+El modo de generación por defecto continúa siendo manual.
+La vista previa no instala dependencias, no lanza Jobs ni modifica tablas.

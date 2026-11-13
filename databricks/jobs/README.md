@@ -20,7 +20,15 @@ Los parámetros por snapshot siguen siendo manuales hasta implementar el planifi
 
 El [análisis del planificador y Job principal](../../docs/orchestration_plan.md) describe el siguiente incremento.
 El Job Bronze creado en la interfaz se llama gtfs_bogota_bronze_manual. Su exportación portable sigue pendiente.
-El coordinador y plan_silver están propuestos; todavía no forman parte de las plantillas ejecutables.
+El coordinador sigue propuesto. Plan_silver ya tiene una plantilla optativa implementada localmente.
 
-La [preparación Bronze v2](../../docs/bronze_automation.md) está implementada localmente.
-Primero comprobaré el cierre en Workspace; el planificador y Job principal siguen pendientes.
+El cierre de [preparación Bronze v2](../../docs/bronze_automation.md) ya está comprobado en Workspace para ambas versiones.
+Los cargadores 02–05 conservan su prueba de despliegue pendiente. El Job principal sigue pendiente.
+
+## Variante optativa con planificador
+
+La [plantilla planificada](gtfs_bogota_silver_planned.template.json) añade plan_silver y conserva los diez ciclos seriales.
+La genero con --selection-mode auto; el modo por defecto y la plantilla manual siguen disponibles.
+Notebook 11 tiene vista previa sin escrituras con emit_task_values=false.
+La [guía](../../docs/silver_planner.md) describe su comprobación antes de cambiar el Job desplegado.
+La variante está probada localmente, pero todavía no está validada en Workspace.

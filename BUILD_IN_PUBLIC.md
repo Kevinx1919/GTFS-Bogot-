@@ -615,6 +615,41 @@ La comprobación en Workspace sigue pendiente y no la sustituyo con pruebas loca
 No cambié Archify ni lancé Jobs de Databricks.
 La exportación completa del Job Bronze, el planificador 8b y el Job principal siguen pendientes.
 
+### Hito 42 — Comprobar el cierre Bronze antes del planificador
+
+**Fecha:** 13 de noviembre de 2026. Ejecuté notebook 07 completo después de sincronizar 1ec01f2.
+2025 terminó PASSED, con cero fallos bloqueantes y cero advertencias.
+2026 terminó WARNING, con cero fallos bloqueantes y las cinco advertencias de esquema conocidas.
+Ambos resultados confirmaron validación completa y elegibilidad para validar Silver con bronze_snapshot_v2.
+El detalle de 2026 mostró igualdad entre conteos Staging y Bronze en las once entidades publicadas.
+Incluye 9.408.893 visitas, 926.501 puntos y 181.060 viajes; no son conteos Silver.
+Las referencias revisadas mostraron cero claves huérfanas.
+
+El [registro de comprobación](docs/bronze_automation.md) distingue las salidas del notebook de una consulta independiente de eventos.
+La repetición aislada del cierre no tiene confirmación nueva en Workspace.
+Tampoco doy por probadas allí las guardas nuevas de notebooks 02–05.
+Puedo comenzar plan_silver sobre la evidencia de cierre existente.
+La exportación completa del Job Bronze y el Job principal continúan pendientes.
+
+### Hito 43 — Implementar el planificador de trabajo Silver
+
+**Fecha:** 13 de noviembre de 2026. Implementé el pendiente operativo 8b en código local.
+Notebook 11 calcula listas desde cierres Bronze, auditoría Silver y comprobaciones técnicas de destino.
+Distingue publicaciones completas, pendientes, bloqueos, archivos no publicados y trabajo aplazado.
+No copia automáticamente todos los snapshots ni usa un éxito antiguo para ocultar fallos recientes.
+Las tareas planificadas conservan la versión Delta validada y registran el intento antes de preparar datos.
+
+Conservo notebook 10, los contratos vigentes y una variante manual del Job.
+La variante optativa añade una tarea inicial antes de los diez ciclos existentes.
+Service_dates mantiene una ventana explícita de 2026 y no deriva fechas para 2025.
+El [diseño y la guía de ejecución](docs/silver_planner.md) explican límites y recuperación.
+
+Pasaron 112 pruebas unitarias y cuatro integraciones del planificador con Spark y Delta reales.
+La vista previa completa se comprobó con fixtures, sin publicaciones analíticas.
+La ejecución real de notebook 11 y los ciclos vacíos del Job siguen pendientes en Workspace.
+No actualicé Jobs remotos, no habilité horarios y no cambié Archify.
+La ingesta dinámica y el Job principal serán incrementos posteriores.
+
 ## Qué no publicar
 
 - Access tokens, secretos, archivos `.env`, cookies, hostnames privados o identificadores de cuenta.

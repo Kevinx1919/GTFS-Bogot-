@@ -76,7 +76,7 @@ Agency, routes y stops ya tienen sus tablas silver_gtfs_* publicadas y su ejecuc
 | 6 | trips | Un viaje o patrón publicado; trip_id | IDs y headsign: string; direction_id, si existe: int | Unicidad y referencias a rutas, servicios y geometrías cuando corresponda; patrones de viaje por ruta. |
 | 7 | frequencies, si existe | Una ventana de un viaje; trip_id + inicio convertido | ID y horas fuente: string; segundos: long; headway_secs y exact_times: int | Ventanas, intervalos y relaciones; distinguir servicio por frecuencia de horarios exactos. |
 | 8 | stop_times | Una visita planificada a una parada; trip_id + stop_sequence | IDs y horas fuente: string; secuencia y códigos: int; segundos: long; distancia: double | Visitas repetidas, conversiones y coherencia temporal; secuencia y horarios planificados por viaje. |
-| 8b (operación) | Planificador de snapshots Silver, pendiente | Un trabajo por entidad + snapshot + regla | Metadata y listas JSON; no crea una entidad analítica | Selección dinámica desde Bronze validado, auditoría, dependencias, reintentos y salida sin novedades. Antes de programar el Job. |
+| 8b (operación) | Planificador de snapshots Silver, implementado localmente | Un trabajo por entidad + snapshot + regla | Metadata y listas JSON; no crea una entidad analítica | Selección dinámica desde Bronze validado, auditoría, dependencias, reintentos y salida sin novedades. Antes de programar el Job. |
 | Después, según pregunta | feed_info y tarifas | feed_info: una fila por snapshot; fare_attributes: fare_id; fare_rules: combinación completa de campos de regla publicados | Metadata y IDs: string; fechas: date; importes: decimal con precisión/escala acordadas; códigos: int | Metadata y reglas tarifarias; no se fabrican filas cuando falta un opcional. No forman parte del primer incremento. |
 
 Revisé siete filas y siete IDs distintos con contenido de agency en ambos snapshots. Ese resultado no implica siete empresas jurídicas ni continuidad de identidad entre años. Si llega un caso válido de agencia única sin ID, ampliaré el contrato antes de procesarlo; la v1 actual requiere ID fuente y no lo fabricará. No se resolverán agencias múltiples mediante nombres parecidos.
@@ -287,10 +287,13 @@ El planificador automático 8b es el siguiente incremento operativo, antes de pr
 
 El [análisis de orquestación](orchestration_plan.md) conecta el planificador 8b con el Job principal propuesto.
 
-La [preparación Bronze v2](bronze_automation.md) está implementada localmente y espera comprobación en Workspace.
-Necesito ese cierre completo antes de seleccionar pendientes automáticamente.
+El cierre de [preparación Bronze v2](bronze_automation.md) ya está comprobado en Workspace para 2025 y 2026.
+Ambos snapshots terminaron sin fallos bloqueantes; 2026 conserva cinco advertencias de esquema.
+Plan_silver ya está implementado localmente. Las nuevas guardas de descarga y carga 02–05 conservan su prueba de despliegue pendiente.
 
-**Estado:** pendiente, sin implementación. **Orden:** 8b, después de trips, frequencies y stop_times. Lo completaré antes de programar el Job automáticamente. Durante el desarrollo conservaré las listas manuales para ejecuciones controladas.
+**Estado:** implementado y probado localmente; comprobación en Workspace pendiente.
+La [guía del planificador](silver_planner.md) contiene la vista previa y la variante optativa del Job.
+**Orden:** 8b, después de trips, frequencies y stop_times. Lo completaré antes de programar el Job automáticamente. Durante el desarrollo conservaré las listas manuales para ejecuciones controladas.
 
 El Job actual usa listas fijas con versión/hash. Una versión nueva no entra automáticamente. El procesador acepta nuevos snapshots compatibles; la limitación actual está en seleccionar y entregar el trabajo.
 

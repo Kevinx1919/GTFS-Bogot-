@@ -1,6 +1,7 @@
 # Mi preparación de Bronze para automatización
 
-**Estado:** código local implementado; prueba en Workspace pendiente.
+**Estado:** cierre de notebook 07 comprobado en Workspace para ambos snapshots.
+Los cambios de descarga y carga de notebooks 02–05 mantienen su prueba de despliegue pendiente.
 **Fecha:** 12 de noviembre de 2026.
 Este incremento prepara el pendiente 8b. Todavía no instala el planificador ni el Job principal.
 
@@ -191,6 +192,51 @@ where a.position = 1;
 Esta consulta nueva es una guía local; todavía no tiene ejecución documentada en Workspace.
 El planificador comprobará además regla vigente, dependencias y estado del destino.
 
+## Cierre comprobado en Workspace — 13 de noviembre de 2026
+
+Ejecuté notebook 07 completo para ambos snapshots con bronze_snapshot_v2.
+Obtuve estos resultados después de la persistencia del cierre:
+
+| Snapshot | Resultado | Fallos bloqueantes | Advertencias | Validación completa | Elegible para validar Silver |
+| --- | --- | --- | --- | --- | --- |
+| 2025-10-28 | PASSED | 0 | 0 | true | true |
+| 2026-09-29 | WARNING | 0 | 5 | true | true |
+
+Ambas salidas identifican workspace.gtfs_bogota.audit_gtfs_bronze_snapshot_runs como destino del cierre.
+En 2026 comprobé también el detalle de source_row_count_matches:
+
+| Entidad | Conteo Bronze reconciliado con Staging |
+| --- | ---: |
+| agency | 7 |
+| calendar | 7 |
+| calendar_dates | 133 |
+| fare_attributes | 1 |
+| feed_info | 1 |
+| frequencies | 14 |
+| routes | 1.045 |
+| shapes | 926.501 |
+| stop_times | 9.408.893 |
+| stops | 8.314 |
+| trips | 181.060 |
+
+Fare_rules no está publicado en este snapshot; su ausencia aparece como NOT_APPLICABLE.
+Las cinco advertencias de esquema afectan agency, routes, stop_times, stops y trips.
+Los controles de referencias mostrados terminan en PASS con cero claves huérfanas.
+Severity=WARNING no representa una advertencia efectiva cuando status=PASS.
+El contador usa status=WARN.
+
+Conservo el alcance de esta comprobación:
+
+- Confirma la ejecución completa del nuevo notebook 07 y su resumen de cierre en Workspace.
+- El detalle de reconciliación corresponde a 2026; para 2025 conservo el resumen final.
+- No incluye una consulta independiente de los eventos STARTED/CLOSED ni sus quality_run_id.
+- No confirma todavía la repetición aislada del bloque final sin nuevas filas.
+- No comprueba los cambios de descarga, extracción y carga de notebooks 02–05.
+
+La prueba del cierre permite iniciar el planificador 8b.
+No necesito ejecutar otra vez una validación correcta solo para repetir estas salidas.
+La consulta directa de auditoría puede formar parte de la comprobación de lectura del planificador.
+
 ## Verificación local y alcance
 
 Pasaron 97 pruebas unitarias del proyecto y tres pruebas de integración Bronze con Spark/Delta reales.
@@ -210,7 +256,7 @@ Sus archivos y dependencias quedaron fuera de OneDrive.
 El intento ampliado en Windows falló al preparar Spark por incompatibilidad Java/Hadoop, antes de ejecutar esos casos.
 Detuve deliberadamente la ampliación nativa Linux sobre entidades Silver sin cambios.
 La verificación final se limita a las 97 pruebas unitarias y las tres integraciones Bronze aprobadas.
-Ninguno de estos resultados demuestra todavía ejecución en Databricks Serverless.
+Estas pruebas locales no sustituyen la comprobación de Workspace descrita en la sección anterior.
 
 Comando unitario para Raw/Bronze sin Spark:
 
@@ -231,7 +277,7 @@ Necesito incluir tests y las dependencias en PYTHONPATH, como describe la guía 
 
 ## Qué sigue
 
-Después de comprobar el cierre en Workspace, implemento plan_silver.
+El cierre ya está comprobado para ambos snapshots; el siguiente incremento es implementar plan_silver.
 Ese planificador leerá los intentos, sus cierres y la auditoría Silver.
 Sustituirá las listas fijas por pendientes calculados.
 Después adaptaré notebook 06 y crearé el Job principal.

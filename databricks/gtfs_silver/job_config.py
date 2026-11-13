@@ -15,7 +15,9 @@ SNAPSHOTS = [
 ]
 
 
-def build_job(repo_root: str, *, environment_version: str = "4") -> dict:
+def build_job(repo_root: str, *, environment_version: str = "4", selection_mode: str = "manual") -> dict:
+    if selection_mode not in {"manual", "auto"}:
+        raise ValueError("selection_mode debe ser manual o auto.")
     root = PurePosixPath(repo_root)
     if (not repo_root.startswith("/Workspace/") or ".." in root.parts
             or "\\" in repo_root or "\n" in repo_root or "\r" in repo_root):
@@ -107,16 +109,49 @@ def build_job(repo_root: str, *, environment_version: str = "4") -> dict:
         task["for_each_task"]["inputs"] = "{{job.parameters." + parameter + "}}"
         task["for_each_task"]["task"]["task_key"] = f"process_{entity}_snapshot"
         job["tasks"].append(task)
-    return job
+    return _with_planner(job, root) if selection_mode == "auto" else job
 
+
+
+def _with_planner(job: dict, root: PurePosixPath) -> dict:
+    """Variante optativa: conserva los diez ciclos y cambia su fuente de listas."""
+    job["description"] = "Planifica pendientes desde Bronze validado y publica Silver. Lanzamiento manual, sin schedule."
+    job["parameters"] = [p for p in job["parameters"] if not p["name"].endswith("work_items")]
+    job["parameters"] += [
+        {"name": "feed_version_from", "default": ""}, {"name": "feed_version_to", "default": ""},
+        {"name": "max_snapshots", "default": "20"}, {"name": "max_metadata_rows", "default": "5000"},
+    ]
+    for task in job["tasks"]:
+        loop = task["for_each_task"]
+        parameter = loop["inputs"].removeprefix("{{job.parameters.").removesuffix("}}")
+        loop["inputs"] = "{{tasks.plan_silver.values." + parameter + "}}"
+        base = loop["task"]["notebook_task"]["base_parameters"]
+        base.update({key: "{{input." + key + "}}" for key in (
+            "expected_rule_version", "bronze_quality_run_id", "bronze_result_sha256", "bronze_delta_version",
+        )})
+    job["tasks"][0]["depends_on"] = [{"task_key": "plan_silver"}]
+    job["tasks"].insert(0, {
+        "task_key": "plan_silver", "environment_key": "silver", "timeout_seconds": 1800,
+        "notebook_task": {
+            "notebook_path": str(root / "databricks/notebooks/silver/11_plan_silver.ipynb"),
+            "source": "WORKSPACE", "base_parameters": {
+                "repo_root": str(root), "emit_task_values": "true",
+                **{key: "{{job.parameters." + key + "}}" for key in (
+                    "catalog", "schema", "feed_version_from", "feed_version_to", "max_snapshots", "max_metadata_rows",
+                )},
+            },
+        },
+    })
+    return job
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--repo-root", required=True, help="Ruta absoluta del repositorio en Workspace.")
     parser.add_argument("--environment-version", default="4", help="Versión serverless disponible en el workspace.")
+    parser.add_argument("--selection-mode", choices=("manual", "auto"), default="manual", help="Listas fijas o planificador de pendientes.")
     parser.add_argument("--output", type=Path, help="Archivo JSON de salida; si se omite, imprime JSON.")
     args = parser.parse_args()
-    result = json.dumps(build_job(args.repo_root, environment_version=args.environment_version),
+    result = json.dumps(build_job(args.repo_root, environment_version=args.environment_version, selection_mode=args.selection_mode),
                         ensure_ascii=False, indent=2) + "\n"
     if args.output:
         args.output.write_text(result, encoding="utf-8")

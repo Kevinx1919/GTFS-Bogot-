@@ -1,0 +1,461 @@
+{
+  "name": "gtfs_bogota_silver_manual",
+  "description": "Planifica pendientes desde Bronze validado y publica Silver. Lanzamiento manual, sin schedule.",
+  "max_concurrent_runs": 1,
+  "queue": {
+    "enabled": true
+  },
+  "parameters": [
+    {
+      "name": "catalog",
+      "default": "workspace"
+    },
+    {
+      "name": "schema",
+      "default": "gtfs_bogota"
+    },
+    {
+      "name": "staging_volume",
+      "default": "staging_gtfs"
+    },
+    {
+      "name": "mode",
+      "default": "publish"
+    },
+    {
+      "name": "verify_history",
+      "default": "true"
+    },
+    {
+      "name": "feed_version_from",
+      "default": ""
+    },
+    {
+      "name": "feed_version_to",
+      "default": ""
+    },
+    {
+      "name": "max_snapshots",
+      "default": "20"
+    },
+    {
+      "name": "max_metadata_rows",
+      "default": "5000"
+    }
+  ],
+  "environments": [
+    {
+      "environment_key": "silver",
+      "spec": {
+        "environment_version": "4",
+        "dependencies": [
+          "langcodes==3.5.1",
+          "tzdata==2026.6"
+        ]
+      }
+    }
+  ],
+  "tasks": [
+    {
+      "task_key": "plan_silver",
+      "environment_key": "silver",
+      "timeout_seconds": 1800,
+      "notebook_task": {
+        "notebook_path": "/Workspace/REPO_ROOT/databricks/notebooks/silver/11_plan_silver.ipynb",
+        "source": "WORKSPACE",
+        "base_parameters": {
+          "repo_root": "/Workspace/REPO_ROOT",
+          "emit_task_values": "true",
+          "catalog": "{{job.parameters.catalog}}",
+          "schema": "{{job.parameters.schema}}",
+          "feed_version_from": "{{job.parameters.feed_version_from}}",
+          "feed_version_to": "{{job.parameters.feed_version_to}}",
+          "max_snapshots": "{{job.parameters.max_snapshots}}",
+          "max_metadata_rows": "{{job.parameters.max_metadata_rows}}"
+        }
+      }
+    },
+    {
+      "task_key": "publish_snapshots",
+      "for_each_task": {
+        "inputs": "{{tasks.plan_silver.values.work_items}}",
+        "concurrency": 1,
+        "task": {
+          "task_key": "process_entity_snapshot",
+          "notebook_task": {
+            "notebook_path": "/Workspace/REPO_ROOT/databricks/notebooks/silver/10_publish_gtfs_entity.ipynb",
+            "source": "WORKSPACE",
+            "base_parameters": {
+              "repo_root": "/Workspace/REPO_ROOT",
+              "catalog": "{{job.parameters.catalog}}",
+              "schema": "{{job.parameters.schema}}",
+              "staging_volume": "{{job.parameters.staging_volume}}",
+              "mode": "{{job.parameters.mode}}",
+              "verify_history": "{{job.parameters.verify_history}}",
+              "entity": "{{input.entity}}",
+              "feed_version": "{{input.feed_version}}",
+              "snapshot_sha256": "{{input.snapshot_sha256}}",
+              "expected_rule_version": "{{input.expected_rule_version}}",
+              "bronze_quality_run_id": "{{input.bronze_quality_run_id}}",
+              "bronze_result_sha256": "{{input.bronze_result_sha256}}",
+              "bronze_delta_version": "{{input.bronze_delta_version}}"
+            }
+          },
+          "environment_key": "silver",
+          "timeout_seconds": 1800,
+          "max_retries": 1,
+          "min_retry_interval_millis": 60000
+        }
+      },
+      "depends_on": [
+        {
+          "task_key": "plan_silver"
+        }
+      ]
+    },
+    {
+      "task_key": "publish_routes",
+      "for_each_task": {
+        "inputs": "{{tasks.plan_silver.values.routes_work_items}}",
+        "concurrency": 1,
+        "task": {
+          "task_key": "process_routes_snapshot",
+          "notebook_task": {
+            "notebook_path": "/Workspace/REPO_ROOT/databricks/notebooks/silver/10_publish_gtfs_entity.ipynb",
+            "source": "WORKSPACE",
+            "base_parameters": {
+              "repo_root": "/Workspace/REPO_ROOT",
+              "catalog": "{{job.parameters.catalog}}",
+              "schema": "{{job.parameters.schema}}",
+              "staging_volume": "{{job.parameters.staging_volume}}",
+              "mode": "{{job.parameters.mode}}",
+              "verify_history": "{{job.parameters.verify_history}}",
+              "entity": "{{input.entity}}",
+              "feed_version": "{{input.feed_version}}",
+              "snapshot_sha256": "{{input.snapshot_sha256}}",
+              "expected_rule_version": "{{input.expected_rule_version}}",
+              "bronze_quality_run_id": "{{input.bronze_quality_run_id}}",
+              "bronze_result_sha256": "{{input.bronze_result_sha256}}",
+              "bronze_delta_version": "{{input.bronze_delta_version}}"
+            }
+          },
+          "environment_key": "silver",
+          "timeout_seconds": 1800,
+          "max_retries": 1,
+          "min_retry_interval_millis": 60000
+        }
+      },
+      "depends_on": [
+        {
+          "task_key": "publish_snapshots"
+        }
+      ]
+    },
+    {
+      "task_key": "publish_stops",
+      "for_each_task": {
+        "inputs": "{{tasks.plan_silver.values.stops_work_items}}",
+        "concurrency": 1,
+        "task": {
+          "task_key": "process_stops_snapshot",
+          "notebook_task": {
+            "notebook_path": "/Workspace/REPO_ROOT/databricks/notebooks/silver/10_publish_gtfs_entity.ipynb",
+            "source": "WORKSPACE",
+            "base_parameters": {
+              "repo_root": "/Workspace/REPO_ROOT",
+              "catalog": "{{job.parameters.catalog}}",
+              "schema": "{{job.parameters.schema}}",
+              "staging_volume": "{{job.parameters.staging_volume}}",
+              "mode": "{{job.parameters.mode}}",
+              "verify_history": "{{job.parameters.verify_history}}",
+              "entity": "{{input.entity}}",
+              "feed_version": "{{input.feed_version}}",
+              "snapshot_sha256": "{{input.snapshot_sha256}}",
+              "expected_rule_version": "{{input.expected_rule_version}}",
+              "bronze_quality_run_id": "{{input.bronze_quality_run_id}}",
+              "bronze_result_sha256": "{{input.bronze_result_sha256}}",
+              "bronze_delta_version": "{{input.bronze_delta_version}}"
+            }
+          },
+          "environment_key": "silver",
+          "timeout_seconds": 1800,
+          "max_retries": 1,
+          "min_retry_interval_millis": 60000
+        }
+      },
+      "depends_on": [
+        {
+          "task_key": "publish_routes"
+        }
+      ]
+    },
+    {
+      "task_key": "publish_calendar",
+      "for_each_task": {
+        "inputs": "{{tasks.plan_silver.values.calendar_work_items}}",
+        "concurrency": 1,
+        "task": {
+          "task_key": "process_calendar_snapshot",
+          "notebook_task": {
+            "notebook_path": "/Workspace/REPO_ROOT/databricks/notebooks/silver/10_publish_gtfs_entity.ipynb",
+            "source": "WORKSPACE",
+            "base_parameters": {
+              "repo_root": "/Workspace/REPO_ROOT",
+              "catalog": "{{job.parameters.catalog}}",
+              "schema": "{{job.parameters.schema}}",
+              "staging_volume": "{{job.parameters.staging_volume}}",
+              "mode": "{{job.parameters.mode}}",
+              "verify_history": "{{job.parameters.verify_history}}",
+              "entity": "{{input.entity}}",
+              "feed_version": "{{input.feed_version}}",
+              "snapshot_sha256": "{{input.snapshot_sha256}}",
+              "expected_rule_version": "{{input.expected_rule_version}}",
+              "bronze_quality_run_id": "{{input.bronze_quality_run_id}}",
+              "bronze_result_sha256": "{{input.bronze_result_sha256}}",
+              "bronze_delta_version": "{{input.bronze_delta_version}}"
+            }
+          },
+          "environment_key": "silver",
+          "timeout_seconds": 1800,
+          "max_retries": 1,
+          "min_retry_interval_millis": 60000
+        }
+      },
+      "depends_on": [
+        {
+          "task_key": "publish_stops"
+        }
+      ]
+    },
+    {
+      "task_key": "publish_calendar_dates",
+      "for_each_task": {
+        "inputs": "{{tasks.plan_silver.values.calendar_dates_work_items}}",
+        "concurrency": 1,
+        "task": {
+          "task_key": "process_calendar_dates_snapshot",
+          "notebook_task": {
+            "notebook_path": "/Workspace/REPO_ROOT/databricks/notebooks/silver/10_publish_gtfs_entity.ipynb",
+            "source": "WORKSPACE",
+            "base_parameters": {
+              "repo_root": "/Workspace/REPO_ROOT",
+              "catalog": "{{job.parameters.catalog}}",
+              "schema": "{{job.parameters.schema}}",
+              "staging_volume": "{{job.parameters.staging_volume}}",
+              "mode": "{{job.parameters.mode}}",
+              "verify_history": "{{job.parameters.verify_history}}",
+              "entity": "{{input.entity}}",
+              "feed_version": "{{input.feed_version}}",
+              "snapshot_sha256": "{{input.snapshot_sha256}}",
+              "expected_rule_version": "{{input.expected_rule_version}}",
+              "bronze_quality_run_id": "{{input.bronze_quality_run_id}}",
+              "bronze_result_sha256": "{{input.bronze_result_sha256}}",
+              "bronze_delta_version": "{{input.bronze_delta_version}}"
+            }
+          },
+          "environment_key": "silver",
+          "timeout_seconds": 1800,
+          "max_retries": 1,
+          "min_retry_interval_millis": 60000
+        }
+      },
+      "depends_on": [
+        {
+          "task_key": "publish_calendar"
+        }
+      ]
+    },
+    {
+      "task_key": "publish_service_dates",
+      "for_each_task": {
+        "inputs": "{{tasks.plan_silver.values.service_dates_work_items}}",
+        "concurrency": 1,
+        "task": {
+          "task_key": "process_service_dates_snapshot",
+          "notebook_task": {
+            "notebook_path": "/Workspace/REPO_ROOT/databricks/notebooks/silver/10_publish_gtfs_entity.ipynb",
+            "source": "WORKSPACE",
+            "base_parameters": {
+              "repo_root": "/Workspace/REPO_ROOT",
+              "catalog": "{{job.parameters.catalog}}",
+              "schema": "{{job.parameters.schema}}",
+              "staging_volume": "{{job.parameters.staging_volume}}",
+              "mode": "{{job.parameters.mode}}",
+              "verify_history": "{{job.parameters.verify_history}}",
+              "entity": "{{input.entity}}",
+              "feed_version": "{{input.feed_version}}",
+              "snapshot_sha256": "{{input.snapshot_sha256}}",
+              "window_start": "{{input.window_start}}",
+              "window_end": "{{input.window_end}}",
+              "expected_rule_version": "{{input.expected_rule_version}}",
+              "bronze_quality_run_id": "{{input.bronze_quality_run_id}}",
+              "bronze_result_sha256": "{{input.bronze_result_sha256}}",
+              "bronze_delta_version": "{{input.bronze_delta_version}}"
+            }
+          },
+          "environment_key": "silver",
+          "timeout_seconds": 1800,
+          "max_retries": 1,
+          "min_retry_interval_millis": 60000
+        }
+      },
+      "depends_on": [
+        {
+          "task_key": "publish_calendar_dates"
+        }
+      ]
+    },
+    {
+      "task_key": "publish_shape_points",
+      "for_each_task": {
+        "inputs": "{{tasks.plan_silver.values.shape_points_work_items}}",
+        "concurrency": 1,
+        "task": {
+          "task_key": "process_shape_points_snapshot",
+          "notebook_task": {
+            "notebook_path": "/Workspace/REPO_ROOT/databricks/notebooks/silver/10_publish_gtfs_entity.ipynb",
+            "source": "WORKSPACE",
+            "base_parameters": {
+              "repo_root": "/Workspace/REPO_ROOT",
+              "catalog": "{{job.parameters.catalog}}",
+              "schema": "{{job.parameters.schema}}",
+              "staging_volume": "{{job.parameters.staging_volume}}",
+              "mode": "{{job.parameters.mode}}",
+              "verify_history": "{{job.parameters.verify_history}}",
+              "entity": "{{input.entity}}",
+              "feed_version": "{{input.feed_version}}",
+              "snapshot_sha256": "{{input.snapshot_sha256}}",
+              "expected_rule_version": "{{input.expected_rule_version}}",
+              "bronze_quality_run_id": "{{input.bronze_quality_run_id}}",
+              "bronze_result_sha256": "{{input.bronze_result_sha256}}",
+              "bronze_delta_version": "{{input.bronze_delta_version}}"
+            }
+          },
+          "environment_key": "silver",
+          "timeout_seconds": 1800,
+          "max_retries": 1,
+          "min_retry_interval_millis": 60000
+        }
+      },
+      "depends_on": [
+        {
+          "task_key": "publish_service_dates"
+        }
+      ]
+    },
+    {
+      "task_key": "publish_trips",
+      "for_each_task": {
+        "inputs": "{{tasks.plan_silver.values.trips_work_items}}",
+        "concurrency": 1,
+        "task": {
+          "task_key": "process_trips_snapshot",
+          "notebook_task": {
+            "notebook_path": "/Workspace/REPO_ROOT/databricks/notebooks/silver/10_publish_gtfs_entity.ipynb",
+            "source": "WORKSPACE",
+            "base_parameters": {
+              "repo_root": "/Workspace/REPO_ROOT",
+              "catalog": "{{job.parameters.catalog}}",
+              "schema": "{{job.parameters.schema}}",
+              "staging_volume": "{{job.parameters.staging_volume}}",
+              "mode": "{{job.parameters.mode}}",
+              "verify_history": "{{job.parameters.verify_history}}",
+              "entity": "{{input.entity}}",
+              "feed_version": "{{input.feed_version}}",
+              "snapshot_sha256": "{{input.snapshot_sha256}}",
+              "expected_rule_version": "{{input.expected_rule_version}}",
+              "bronze_quality_run_id": "{{input.bronze_quality_run_id}}",
+              "bronze_result_sha256": "{{input.bronze_result_sha256}}",
+              "bronze_delta_version": "{{input.bronze_delta_version}}"
+            }
+          },
+          "environment_key": "silver",
+          "timeout_seconds": 1800,
+          "max_retries": 1,
+          "min_retry_interval_millis": 60000
+        }
+      },
+      "depends_on": [
+        {
+          "task_key": "publish_shape_points"
+        }
+      ]
+    },
+    {
+      "task_key": "publish_frequencies",
+      "for_each_task": {
+        "inputs": "{{tasks.plan_silver.values.frequencies_work_items}}",
+        "concurrency": 1,
+        "task": {
+          "task_key": "process_frequencies_snapshot",
+          "notebook_task": {
+            "notebook_path": "/Workspace/REPO_ROOT/databricks/notebooks/silver/10_publish_gtfs_entity.ipynb",
+            "source": "WORKSPACE",
+            "base_parameters": {
+              "repo_root": "/Workspace/REPO_ROOT",
+              "catalog": "{{job.parameters.catalog}}",
+              "schema": "{{job.parameters.schema}}",
+              "staging_volume": "{{job.parameters.staging_volume}}",
+              "mode": "{{job.parameters.mode}}",
+              "verify_history": "{{job.parameters.verify_history}}",
+              "entity": "{{input.entity}}",
+              "feed_version": "{{input.feed_version}}",
+              "snapshot_sha256": "{{input.snapshot_sha256}}",
+              "expected_rule_version": "{{input.expected_rule_version}}",
+              "bronze_quality_run_id": "{{input.bronze_quality_run_id}}",
+              "bronze_result_sha256": "{{input.bronze_result_sha256}}",
+              "bronze_delta_version": "{{input.bronze_delta_version}}"
+            }
+          },
+          "environment_key": "silver",
+          "timeout_seconds": 1800,
+          "max_retries": 1,
+          "min_retry_interval_millis": 60000
+        }
+      },
+      "depends_on": [
+        {
+          "task_key": "publish_trips"
+        }
+      ]
+    },
+    {
+      "task_key": "publish_stop_times",
+      "for_each_task": {
+        "inputs": "{{tasks.plan_silver.values.stop_times_work_items}}",
+        "concurrency": 1,
+        "task": {
+          "task_key": "process_stop_times_snapshot",
+          "notebook_task": {
+            "notebook_path": "/Workspace/REPO_ROOT/databricks/notebooks/silver/10_publish_gtfs_entity.ipynb",
+            "source": "WORKSPACE",
+            "base_parameters": {
+              "repo_root": "/Workspace/REPO_ROOT",
+              "catalog": "{{job.parameters.catalog}}",
+              "schema": "{{job.parameters.schema}}",
+              "staging_volume": "{{job.parameters.staging_volume}}",
+              "mode": "{{job.parameters.mode}}",
+              "verify_history": "{{job.parameters.verify_history}}",
+              "entity": "{{input.entity}}",
+              "feed_version": "{{input.feed_version}}",
+              "snapshot_sha256": "{{input.snapshot_sha256}}",
+              "expected_rule_version": "{{input.expected_rule_version}}",
+              "bronze_quality_run_id": "{{input.bronze_quality_run_id}}",
+              "bronze_result_sha256": "{{input.bronze_result_sha256}}",
+              "bronze_delta_version": "{{input.bronze_delta_version}}"
+            }
+          },
+          "environment_key": "silver",
+          "timeout_seconds": 1800,
+          "max_retries": 1,
+          "min_retry_interval_millis": 60000
+        }
+      },
+      "depends_on": [
+        {
+          "task_key": "publish_frequencies"
+        }
+      ]
+    }
+  ]
+}
