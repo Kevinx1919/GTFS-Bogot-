@@ -576,6 +576,20 @@ La plantilla añade la décima tarea con notebook 10 y el escritor común.
 Pasaron 56 pruebas seleccionadas y ocho comprobaciones finales, sin omisiones.
 La guía de ejecución conserva su alcance. La publicación en Databricks sigue pendiente. No actualicé Archify ni ejecuté Jobs desde el agente.
 
+### Hito 40 — Confirmar stop_times en Databricks y cerrar diez entidades Silver
+
+**Fecha:** 12 de noviembre de 2026. Sincronicé af0d9aa, ejecuté stop_times y comprobé la tabla con datos.
+Completo diez entidades Silver con despliegue funcional confirmado durante el desarrollo.
+El error inicial de contrato deshabilitado desapareció después del Pull; no requirió cambiar las reglas.
+
+Distingo esta confirmación de los conteos del perfil y de las pruebas locales.
+No adjunté nuevos resúmenes por iteración, conteos SQL detallados ni tiempos de ejecución.
+Conservo la limitación de cobertura y las advertencias documentadas, sin inventar recorridos.
+
+El siguiente incremento operativo es el planificador 8b.
+La clasificación de cobertura para métricas Gold permanece planificada.
+Actualizaré los cinco diagramas con el cierre y la nueva relación entre viajes, visitas y paradas.
+
 ## Qué no publicar
 
 - Access tokens, secretos, archivos `.env`, cookies, hostnames privados o identificadores de cuenta.

@@ -1,6 +1,6 @@
 # Mi contrato Silver stop_times_v1
 
-**Fecha:** 12 de noviembre de 2026. **Estado:** implementación local verificada; publicación en Databricks pendiente.
+**Fecha:** 12 de noviembre de 2026. **Estado:** implementación local verificada y despliegue funcional confirmado en Databricks.
 El [perfil](../stop_times_profile_2025_2026.md) explica la evidencia y sus límites.
 El [plan](../stop_times_plan.md) conserva el propósito y las etapas.
 
@@ -126,7 +126,7 @@ No fijo particiones, clustering ni caché en memoria sin esas mediciones.
 
 La décima tarea propuesta es publish_stop_times, después de publish_frequencies.
 Reutiliza notebook 10, entorno existente, concurrencia 1 y ambos snapshots.
-La plantilla versionada no modifica automáticamente el Job existente.
+La plantilla versionada documenta el Job. Ya sincronicé el código y ejecuté stop_times en Databricks.
 El notebook 17 conserva consultas de lectura; no constituye una etapa adicional obligatoria.
 
 ## Qué significa para negocio y Gold
@@ -147,3 +147,5 @@ No cambié la versión 4 del Job ni sus dependencias. Esta optimización queda d
 
 Pasaron 56 pruebas seleccionadas y ocho comprobaciones finales de los últimos ajustes, sin omisiones.
 La [guía de ejecución](../silver_execution.md#verificación-local-de-stop_times) conserva tiempos, entorno y alcance.
+
+El [cierre funcional](../silver_execution.md#cierre-de-la-ejecución-de-stop_times) registra la ejecución y sus límites de evidencia.

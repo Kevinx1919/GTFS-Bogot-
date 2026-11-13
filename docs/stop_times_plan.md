@@ -1,7 +1,7 @@
 # Mi plan para stop_times
 
 **Fecha:** 12 de noviembre de 2026. **Estado:** perfil completado y procesador Silver implementado localmente.
-La publicación en Databricks permanece pendiente de validate y publish.
+El despliegue funcional en Databricks ya está confirmado; comprobé la tabla y sus datos.
 El [perfil medido](stop_times_profile_2025_2026.md) y el [contrato vigente](contracts/stop_times.md) cierran las decisiones propuestas aquí.
 El incremento ocupa el orden 8 del [plan Silver](silver_design.md#siguiente-incremento-stop_times).
 Las nueve entidades anteriores tienen despliegue funcional confirmado.
@@ -179,7 +179,7 @@ Reutilizaré el entorno existente de pruebas cuando comience la implementación.
 Publicaré primero mediante validate y después mediante publish.
 Compararé filas, claves y reconciliación con el perfil del mismo snapshot.
 El cierre registrará resultados reales y cualquier limitación pendiente.
-La verificación local queda registrada en la guía de ejecución. Todavía no publiqué esta tabla en Databricks.
+La verificación local queda registrada en la guía de ejecución. Ya ejecuté stop_times en Databricks y comprobé sus datos.
 
 ## Qué habilita para Gold
 
@@ -201,13 +201,13 @@ Mantengo distancias repetidas como advertencia; un descenso produce rechazo. Est
 Mantengo los valores timepoint fuente separados de su interpretación efectiva.
 La persistencia del resultado es optativa y queda desactivada para Serverless 4. Su liberación usa finally cuando la activo.
 La décima tarea reutiliza notebook 10. Las nueve tareas anteriores conservan su configuración.
-La publicación en Workspace y el planificador 8b siguen pendientes. Archify no cambia en este incremento.
+La publicación en Workspace ya está confirmada. El planificador 8b permanece pendiente. La actualización visual se documenta por separado.
 
 ## Clasificación de cobertura antes de las métricas Gold
 
 **Decisión:** conservo las visitas disponibles en Silver y clasifico la cobertura antes de calcular métricas Gold.
 La clasificación todavía no constituye una tabla ni una vista implementada.
-Primero publicaré stop_times y comprobaré ambos snapshots. El planificador 8b mantiene su lugar en el plan.
+El despliegue funcional de stop_times ya está confirmado. El planificador 8b mantiene su lugar en el plan.
 
 Construiré una fila por source_feed_version + source_sha256 + trip_id declarado en trips Silver.
 Agruparé stop_times Silver por esa misma clave antes del left join con trips.

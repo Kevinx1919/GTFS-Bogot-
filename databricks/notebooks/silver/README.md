@@ -110,5 +110,5 @@ El [contrato](../../../docs/contracts/stop_times.md) define tipado, ausencias, t
 
 Notebook 10 ejecuta el procesador compartido. No necesito ejecutar notebook 17 antes de cada publicación.
 La plantilla añade publish_stop_times después de publish_frequencies.
-La publicación de stop_times en Databricks permanece pendiente de validate y publish.
+Stop_times ya tiene despliegue funcional confirmado en Databricks; comprobé la tabla y sus datos.
 La [guía](../../../docs/silver_execution.md#despliegue-de-stop_times_v1) conserva parámetros y comprobaciones.

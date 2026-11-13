@@ -724,7 +724,7 @@ Los diagramas explican el flujo y sus claves; no consultan Databricks ni represe
 
 ## Despliegue de stop_times_v1
 
-**Estado:** procesador y plantilla preparados localmente. Publicación en Databricks pendiente.
+**Estado:** procesador y plantilla implementados; despliegue funcional de stop_times confirmado en Databricks.
 El [contrato](contracts/stop_times.md) define reglas y cobertura. El [perfil](stop_times_profile_2025_2026.md) conserva los resultados medidos.
 No necesito recargar Bronze ni ejecutar notebook 17 como paso previo obligatorio.
 Reutilizo notebook 10 y el entorno existente, sin instalar paquetes dentro de cada iteración.
@@ -841,3 +841,25 @@ Incluyó los cuatro contratos de stop_times, tres casos Spark y su integración 
 Probé la configuración definitiva con persist_result=false, sin exigir cambiar Serverless 4.
 También probé casos inválidos con claves independientes, para evitar rechazos accidentales por una clave compartida.
 Esta selección comprueba los últimos ajustes; no representa ocho pruebas nuevas adicionales.
+
+
+## Cierre de la ejecución de stop_times
+
+**Fecha:** 12 de noviembre de 2026. Después de sincronizar af0d9aa ejecuté stop_times y comprobé la tabla con datos.
+La tabla destino es workspace.gtfs_bogota.silver_gtfs_stop_times.
+Cierro su despliegue funcional y completo diez entidades Silver confirmadas durante el desarrollo.
+
+La configuración contempla los snapshots 2025-10-28 y 2026-09-29.
+Este cierre registra una confirmación funcional general, sin nuevos resúmenes por iteración ni resultados SQL detallados.
+Conservo los conteos del perfil como evidencia exploratoria; no los presento como conteos nuevos de Silver.
+Tampoco atribuyo una duración real al Job sin una medición compartida.
+
+El primer intento mostró que stop_times no tenía contrato habilitado.
+Faltaba hacer Pull en el Git folder de Databricks.
+Después de sincronizar el código, la ejecución funcionó. No fue necesario modificar el procesador.
+
+Mantengo las visitas aisladas con advertencia y el diagnóstico de viajes sin visitas.
+La clasificación cero/una/varias visitas para consumo Gold sigue planificada; no es otra tabla publicada.
+Varias visitas no garantizan un recorrido completo.
+El planificador de snapshots 8b continúa pendiente, antes de programar ejecuciones automáticas.
+La actualización de Archify registrará por separado esta confirmación y las referencias al código.

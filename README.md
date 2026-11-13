@@ -229,7 +229,7 @@ La implementación de frequencies pasó 42 pruebas seleccionadas sin omisiones, 
 Frequencies ya está publicada en Workspace. El siguiente incremento es stop_times, orden 8 del plan.
 
 
-### Stop_times: implementación Silver preparada
+### Stop_times: despliegue funcional confirmado
 
 Completé el [perfil](docs/stop_times_profile_2025_2026.md) y el [contrato stop_times_v1](docs/contracts/stop_times.md).
 Una fila representa una visita planificada de un viaje a una parada.
@@ -238,5 +238,5 @@ El procesador Spark tipa campos, comprueba horas y referencias, y reutiliza note
 La plantilla añade publish_stop_times como décima tarea; las nueve anteriores conservan su configuración.
 
 Conservo 61 visitas aisladas con advertencia y registro 739 viajes sin visitas en 2026.
-La publicación de stop_times en Databricks sigue pendiente. Las nueve entidades anteriores ya tienen despliegue funcional.
+Stop_times ya se ejecutó en Databricks y comprobé sus datos. Completo diez entidades Silver con despliegue funcional.
 El [despliegue](docs/silver_execution.md#despliegue-de-stop_times_v1) separa validate, publish y comprobación final.

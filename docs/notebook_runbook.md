@@ -489,4 +489,4 @@ Mantengo los dos bloques ejecutables anteriores. Cambio la documentación de ent
 
 La plantilla incorpora publish_stop_times después de publish_frequencies, con concurrencia 1.
 Stop_times_work_items pertenece a los parámetros generales del Job, no a los parámetros internos del notebook.
-El procesador está implementado localmente. La publicación de stop_times en Workspace permanece pendiente.
+El procesador está implementado y stop_times ya tiene despliegue funcional confirmado en Workspace.
