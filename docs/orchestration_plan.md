@@ -20,13 +20,14 @@ GTFS-Realtime y demanda mantienen sus propios contratos y cadencias.
 ## Qué tengo hoy
 
 Tengo diez entidades Silver publicadas y el Job gtfs_bogota_silver_manual versionado mediante una plantilla.
-Ese Job usa listas fijas con dos versiones y sus hashes.
+Conservé una plantilla manual con listas fijas y conecté el Job desplegado a plan_silver.
+El piloto NO_WORK ya está comprobado; falta el camino con trabajo nuevo.
 Notebook 10 y los módulos Python ya reciben entidad, versión y hash.
 No necesito reconstruir sus transformaciones para generar listas dinámicas.
 
 Creé gtfs_bogota_bronze_manual directamente en la interfaz de Databricks.
 Contrasté las dependencias mediante Genie en system.lakeflow.
-La asociación con notebooks conserva el diseño registrado durante el desarrollo.
+La exportación del Job confirma también las rutas y los parámetros de sus cinco notebooks.
 El [diagnóstico Bronze](bronze_review_2026_11_12.md) precisa evidencia y límites.
 La topología es:
 
@@ -40,8 +41,10 @@ staging_y_rutas          → notebook 03
 validar_bronze           → notebook 07
 ```
 
-Todavía no contrasté ni versioné su configuración JSON exportada del workspace.
-Notebook 06 descubre y selecciona versiones, pero actualmente no pertenece a ese Job.
+Contrasté el JSON exportado y guardé una [plantilla portable](bronze_job_configuration.md).
+Conservé el grafo y sustituí únicamente la raíz personal del repositorio.
+Notebook 06 ya tiene selección local basada en cierres completos, límites y resultado NO_WORK.
+Todavía no pertenece al Job desplegado; falta comprobarlo en Workspace.
 Conservaré el paralelo entre referencias y operativas mientras respete los límites de concurrencia.
 
 ## Hallazgos que afectan la automatización
@@ -163,12 +166,12 @@ No necesito fusionar notebooks ni duplicar las transformaciones.
 
 ## Orden de implementación
 
-1. Exportar la configuración real del Job Bronze y guardar una plantilla portable sin rutas personales ni IDs del entorno.
+1. Completado: contrasté la exportación real del Job Bronze y guardé una plantilla sin la raíz personal del repositorio.
 2. Cierre bronze_snapshot_v2 comprobado: 2025 PASSED y 2026 WARNING con cinco advertencias, ambos sin fallos bloqueantes. La lectura independiente de eventos será parte de la comprobación del planificador.
 3. Probar en Workspace los cambios de integridad y carga común de notebooks 02–05 antes de habilitar ingesta automática. No requiere posponer la implementación de plan_silver sobre los cierres existentes.
 4. Vista previa de plan_silver comprobada en Workspace: diecinueve COMPLETE, un OUT_OF_SCOPE y dos RESOLVED; sin bloqueos ni pendientes.
 5. Variante conectada y piloto NO_WORK comprobado en Workspace. Falta una corrida con trabajo nuevo.
-6. Adaptar el descubrimiento y plan de ingesta de notebook 06, con ausencia de novedades como resultado normal.
+6. Implementado localmente: adaptar notebook 06 con cierres completos, selección explícita y NO_WORK. Falta comprobarlo en Workspace.
 7. Crear la plantilla del Job principal y pasar parámetros explícitos a los Jobs existentes.
 8. Ejecutar un piloto manual y comprobar recuperación, auditoría, histórico y ausencia de duplicados.
 9. Habilitar programación según la cadencia de publicación, después de aprobar el piloto.
@@ -199,7 +202,7 @@ No activo una programación automática como parte de esta propuesta.
 El código de notebooks 02–07 respalda los hallazgos de ingesta y Bronze.
 Job_config.py y silver_entities.json respaldan la configuración actual de Silver.
 Las dependencias del Job Bronze están contrastadas mediante metadata histórica de Genie.
-Las rutas y la configuración completa todavía requieren su exportación.
+La [revisión de la exportación](bronze_job_configuration.md) confirma rutas, parámetros y campos incluidos en el JSON.
 
 - [Run Job](https://docs.databricks.com/aws/en/jobs/tasks/run-job): llamada a Jobs existentes y parámetros.
 - [Task values](https://docs.databricks.com/aws/en/jobs/task-values): valores entre tareas del mismo Job y límite de tamaño.
@@ -215,7 +218,7 @@ Las observaciones iniciales de este documento describen el código anterior y mo
 Los STARTED/CLOSED registran intentos completos o incompletos sin modificar evidencia histórica.
 Mantengo un solo escritor; no hay bloqueo distribuido entre Jobs.
 Los avisos pasan a Silver bajo la política existente; sus contratos siguen siendo obligatorios.
-La exportación completa del Job Bronze sigue pendiente.
+La exportación del Job Bronze ya está revisada y su plantilla portable está versionable; no modifiqué el despliegue.
 
 El 13 de noviembre comprobé notebook 07 en Workspace con ambas versiones.
 La [evidencia de cierre](bronze_automation.md#cierre-comprobado-en-workspace--13-de-noviembre-de-2026) precisa los resultados y su alcance.
@@ -240,3 +243,12 @@ Las guardas de ingesta 02–05 y el descubrimiento dinámico siguen pendientes a
 El piloto NO_WORK terminó con éxito: once tareas SUCCEEDED y aproximadamente 2 minutos y 3 segundos.
 Contrasté el historial mediante Genie; el [registro del piloto](silver_planner.md) conserva alcance y límites.
 El siguiente incremento prepara descubrimiento e ingesta; todavía no habilita programación automática.
+
+## Incremento local: descubrimiento Bronze
+
+Implementé [descubrimiento acotado](bronze_discovery.md) en notebook 06.
+Conservé el esquema de control y las observaciones históricas.
+El plan reutiliza cierres y resoluciones; ya no considera completas las versiones solamente por sus rutas.
+Los lotes entregan versiones sin hash; Raw conserva la responsabilidad de calcularlo.
+La variante parametrizada del Job Bronze y el coordinador siguen pendientes.
+Mi siguiente comprobación usa una versión existente en modo explícito, sin reprocesamiento ni emisión de task values.

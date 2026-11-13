@@ -700,6 +700,40 @@ El siguiente incremento prepara descubrimiento e ingesta dinámica y el futuro c
 Las guardas Bronze 02–05 y la exportación completa de su Job mantienen sus pendientes.
 No habilité horarios ni cambié Archify.
 
+### Hito 47 — Conservar la configuración real del Job Bronze
+
+**Fecha:** 13 de noviembre de 2026. Revisé el JSON exportado del Job Bronze.
+Confirmé las cinco tareas, sus notebooks y el paralelo entre referencias y operativos.
+Guardé una plantilla portable con un marcador para la raíz personal del repositorio.
+Conservé los parámetros originales y la versión fija 2025-10-28.
+Las otras tareas reciben versión y hash desde Raw.
+No modifiqué el Job desplegado ni añadí notebook 06 todavía.
+La [revisión de configuración](docs/bronze_job_configuration.md) explica el siguiente incremento de descubrimiento.
+Comprobé localmente el JSON, el grafo y las referencias de task values.
+La prueba de ingesta con trabajo nuevo y el coordinador siguen pendientes.
+No cambié Archify.
+
+### Hito 48 — Preparar descubrimiento Bronze con pendientes y NO_WORK
+
+**Fecha:** 13 de noviembre de 2026. Adapté los seis bloques de notebook 06.
+Reemplacé la comprobación basada solamente en rutas por cierres Bronze completos y resoluciones vigentes.
+Separé la selección automática del reprocesamiento explícito de versiones completadas.
+Los intentos incompletos y la procedencia sin cierre quedan bloqueados para revisión.
+El plan entrega versiones sin hash, con lotes acotados y resultado NO_WORK cuando corresponde.
+Raw conserva la responsabilidad de calcular el hash real del ZIP.
+
+Conservé el esquema histórico del control y sus observaciones append-only.
+Añadí límites, reintentos temporales y controles de paginación y duplicados del catálogo.
+La [guía](docs/bronze_discovery.md) registra parámetros, efectos y costos de lectura.
+La vista previa del plan sí actualiza metadata del catálogo; no descarga archivos ni carga entidades.
+
+Pasaron 128 pruebas unitarias y tres integraciones seleccionadas con Spark/Delta reales.
+Dos integraciones pasaron en la primera ejecución; después corregí el doble HTTP de la tercera y la ejecuté satisfactoriamente.
+Comprobé Run all, actualización del control sin duplicar el ítem y entrega optativa de task values.
+Usé la imagen Docker existente, sin red, con el repositorio en solo lectura y temporales fuera de OneDrive.
+Falta comprobar notebook 06 en Workspace antes de conectar el coordinador.
+No modifiqué los Jobs desplegados ni Archify.
+
 ## Qué no publicar
 
 - Access tokens, secretos, archivos `.env`, cookies, hostnames privados o identificadores de cuenta.

@@ -19,7 +19,7 @@ Los parámetros por snapshot siguen siendo manuales hasta implementar el planifi
 ## Orquestación propuesta
 
 El [análisis del planificador y Job principal](../../docs/orchestration_plan.md) describe el siguiente incremento.
-El Job Bronze creado en la interfaz se llama gtfs_bogota_bronze_manual. Su exportación portable sigue pendiente.
+El Job Bronze creado en la interfaz se llama gtfs_bogota_bronze_manual. Su [plantilla portable](gtfs_bogota_bronze_manual.template.json) conserva la exportación revisada.
 El coordinador sigue propuesto. Plan_silver ya tiene una plantilla optativa implementada localmente.
 
 El cierre de [preparación Bronze v2](../../docs/bronze_automation.md) ya está comprobado en Workspace para ambas versiones.
@@ -34,3 +34,15 @@ La [guía](../../docs/silver_planner.md) describe su comprobación antes de camb
 Notebook 11 ya tiene vista previa comprobada en Workspace: diecinueve COMPLETE, un OUT_OF_SCOPE y dos RESOLVED.
 El Job conectado al planificador ya completó un piloto NO_WORK en Workspace: once tareas SUCCEEDED.
 La prueba con listas no vacías y trabajo nuevo sigue pendiente.
+
+## Job Bronze exportado
+
+Conservé las cinco tareas del Job existente y sus parámetros originales.
+La [revisión](../../docs/bronze_job_configuration.md) explica qué confirmé y qué falta para automatizar la ingesta.
+`/Workspace/REPO_ROOT` reemplaza la raíz personal del repositorio.
+La versión fija sigue siendo 2025-10-28; esta plantilla todavía no incorpora descubrimiento ni llama a Silver.
+No añadí parámetros, reintentos o entornos que la exportación no declara.
+La siguiente variante recibirá configuración explícita y mantendrá el hash calculado por Raw.
+
+Notebook 06 ya prepara listas de ingesta localmente; su [comprobación en Workspace](../../docs/bronze_discovery.md) sigue pendiente.
+La plantilla fiel del Job Bronze conserva sus cinco tareas y todavía no incluye descubrimiento.

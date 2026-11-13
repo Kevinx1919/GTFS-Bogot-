@@ -50,11 +50,19 @@ Resultado: para la versión `2025-10-28`, se validaron 909.878 filas en
 
 | Bloque | Propósito | Entrada | Efecto / salida | Validación |
 | --- | --- | --- | --- | --- |
-| Configuración | Declara el portal oficial, grupo GTFS, tablas y modo de selección. | Identificador público, modo y fechas opcionales. | Variables de sesión y `catalog_run_id`. | Endpoint, corrida y modo visibles. |
-| Consulta | Recorre las páginas del catálogo ArcGIS público. | Respuesta JSON del grupo oficial. | Ítems del catálogo en memoria. | HTTP exitoso, sin error ArcGIS y al menos un ítem. |
-| Contrato | Conserva solo ítems con versión GTFS fechada y normaliza metadata. | Ítems descubiertos. | DataFrame con esquema explícito. | Patrón de fecha, ítem único y URL directa identificada. |
-| Control y auditoría | Mantiene el estado actual y el historial de observaciones. | Catálogo normalizado. | Tablas Delta de control y auditoría. | `MERGE` por ítem y auditoría append-only. |
-| Plan | Selecciona una, varias o la última versión descargable sin Bronze. | Control, `bronze_gtfs_routes` y parámetros. | Plan para `latest_uningested`, `explicit_version` o `backfill_range`. | Solo ZIP directo, sin carga Bronze y con fechas válidas. |
+| 1 / configuración | Localizar el repositorio y validar modo, rango y límites. | Widgets y static_gtfs_catalog.json. | Variables, UUID y hora UTC; sin escrituras. | Fechas reales, rango coherente, identificadores simples, lotes de 1–20. |
+| 2 / consulta | Obtener todas las páginas del catálogo oficial. | Endpoint configurado. | Ítems acotados en memoria; solo HTTP GET. | Reintentos temporales, nextStart creciente, límite de páginas e ítems; respuesta parcial detiene. |
+| 3 / contrato | Normalizar los ítems y conservar el esquema explícito histórico. | Ítems públicos y metadata de corrida. | DataFrame de control; sin escrituras. | Fechas, IDs, ZIP directo y duplicados contradictorios. |
+| 4 / persistencia | Actualizar control y conservar observaciones. | DataFrame normalizado. | MERGE del control y append de observaciones del catálogo. | No descarga ZIP ni modifica Raw, Bronze o Silver; evita errorifexists. |
+| 5 / plan | Evaluar cierres Bronze completos y evidencia de cargas sin cierre. | Control, STARTED/CLOSED, resoluciones y procedencia acotada. | Decisiones y lista sin hash; sin escrituras. | Último intento, regla vigente, inventario completo, bloqueo de evidencia parcial y lote acotado. |
+| 6 / entrega | Publicar task values cuando lo solicito. | Plan y widget emit_task_values. | ingestion_work_items, estado y conteos; opcional. | NO_WORK entrega []; BLOCKED impide entrega y falla si solicito emisión. |
+
+La [guía de descubrimiento](bronze_discovery.md) explica modos, costos y comprobación.
+La vista previa no entrega listas, pero los bloques 1–4 sí consultan y actualizan metadata del catálogo.
+Uso Run all después de cambiar la selección; así reconstruyo el plan con los nuevos parámetros.
+Reutilizo el contrato de cierre y las resoluciones vigentes del planificador Silver.
+No ejecuto transformaciones Silver para descubrir versiones.
+La comprobación real en Workspace sigue pendiente.
 
 ## Notebook 07 — `07_validate_bronze_gtfs_snapshot`
 
