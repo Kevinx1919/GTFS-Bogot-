@@ -1,7 +1,7 @@
 # Mi recuperación de intentos sin cierre
 
 **Fecha:** 13 de noviembre de 2026.
-**Estado:** diagnóstico real con Genie; recuperación implementada localmente, todavía sin aplicar en Workspace.
+**Estado:** ambas resoluciones aplicadas en Workspace; nueva vista previa del planificador sin bloqueos.
 No modifiqué estados mediante Genie ni ejecuté escrituras remotas desde el agente.
 
 ## Qué encontré
@@ -130,4 +130,29 @@ Las integraciones incluyen vista previa completa de notebook 18, persistencia id
 También comprueban que un CLOSED o un cambio de estado invalide la exclusión.
 Usé la imagen y JARs existentes, sin red y con el repositorio montado en modo de solo lectura.
 Los temporales quedaron fuera de OneDrive.
-La aplicación real en Workspace y la nueva ejecución de notebook 11 siguen pendientes.
+La aplicación en Workspace y la nueva vista previa quedaron comprobadas después de estas pruebas locales.
+
+## Recuperación comprobada en Workspace — 13 de noviembre de 2026
+
+Notebook 18 devolvió persisted=true para las dos resoluciones.
+INVALID_IDENTITY quedó registrada con resolución 9c7ecf28e44631cf8f6182b08f4296fd36e21a234324a08a7fff51a81ee1689d.
+ABANDONED quedó registrada con resolución f62e1ff09705cb77f6492e9e19771948c97478e4e78e16cdf5ff8042bd0de9e2.
+La evidencia conservó el cierre correcto de 2026 y las siete filas anteriores de agency_v1.
+
+Después ejecuté notebook 11 nuevamente en vista previa.
+Su tabla mostró veintidós decisiones:
+
+| Estado | Cantidad | Alcance |
+| --- | ---: | --- |
+| COMPLETE | 19 | Nueve publicaciones de 2025 y diez de 2026. |
+| OUT_OF_SCOPE | 1 | Service_dates de 2025, fuera del rango configurado. |
+| RESOLVED | 2 | Los dos intentos identificados durante el diagnóstico. |
+| BLOCKED | 0 | Desaparecieron los bloqueos de identidad y dependencia. |
+| PENDING | 0 | No hay trabajo por programar dentro de este plan. |
+| DEFERRED | 0 | No hay trabajo aplazado en esta salida. |
+
+La tabla es coherente con NO_WORK bajo las reglas del planificador.
+No adjunté un nuevo JSON del resumen ni una consulta SQL independiente de las resoluciones.
+La salida demuestra que el planificador leyó y aplicó ambas decisiones en Workspace.
+No republicó entidades para resolver los bloqueos.
+Falta comprobar la variante del Job con task values y ciclos vacíos.

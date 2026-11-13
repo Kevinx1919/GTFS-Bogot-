@@ -2,7 +2,8 @@
 
 **Estado:** cierre Bronze v2 comprobado en Workspace para 2025 y 2026.
 La prueba de despliegue de los cargadores 02–05 sigue pendiente.
-Planificador implementado localmente; comprobación en Workspace pendiente. Job principal todavía propuesto.
+Vista previa del planificador comprobada en Workspace, sin bloqueos después de la recuperación.
+El piloto NO_WORK del Job terminó SUCCEEDED; el camino con trabajo nuevo y el Job principal siguen pendientes.
 La [guía Bronze v2](bronze_automation.md) describe el incremento actual.
 **Fecha:** 12 de noviembre de 2026.
 Este diseño desarrolla el pendiente 8b del [plan Silver](silver_design.md#automatización-pendiente-selección-de-snapshots-silver).
@@ -165,8 +166,8 @@ No necesito fusionar notebooks ni duplicar las transformaciones.
 1. Exportar la configuración real del Job Bronze y guardar una plantilla portable sin rutas personales ni IDs del entorno.
 2. Cierre bronze_snapshot_v2 comprobado: 2025 PASSED y 2026 WARNING con cinco advertencias, ambos sin fallos bloqueantes. La lectura independiente de eventos será parte de la comprobación del planificador.
 3. Probar en Workspace los cambios de integridad y carga común de notebooks 02–05 antes de habilitar ingesta automática. No requiere posponer la implementación de plan_silver sobre los cierres existentes.
-4. Plan_silver implementado y probado localmente. Comprobar primero notebook 11 en vista previa en Workspace.
-5. Revisar y probar la variante del Job que conecta el planificador con los diez bucles Silver. No se actualizó el Job desplegado.
+4. Vista previa de plan_silver comprobada en Workspace: diecinueve COMPLETE, un OUT_OF_SCOPE y dos RESOLVED; sin bloqueos ni pendientes.
+5. Variante conectada y piloto NO_WORK comprobado en Workspace. Falta una corrida con trabajo nuevo.
 6. Adaptar el descubrimiento y plan de ingesta de notebook 06, con ausencia de novedades como resultado normal.
 7. Crear la plantilla del Job principal y pasar parámetros explícitos a los Jobs existentes.
 8. Ejecutar un piloto manual y comprobar recuperación, auditoría, histórico y ausencia de duplicados.
@@ -230,3 +231,12 @@ El [diagnóstico y recuperación](planner_recovery.md) conserva la evidencia ver
 La recuperación explícita está implementada y probada localmente; aún no está aplicada en Workspace.
 Antes de conectar el Job, revisaré sus propuestas y volveré a ejecutar notebook 11.
 No eliminaré auditorías ni forzaré estados satisfactorios.
+
+El 13 de noviembre apliqué ambas resoluciones y comprobé nuevamente notebook 11 en Workspace.
+Los bloqueos originales desaparecieron sin republicar las entidades completadas.
+El siguiente incremento es comprobar task values y ciclos vacíos en la variante del Job.
+Las guardas de ingesta 02–05 y el descubrimiento dinámico siguen pendientes antes del coordinador automático.
+
+El piloto NO_WORK terminó con éxito: once tareas SUCCEEDED y aproximadamente 2 minutos y 3 segundos.
+Contrasté el historial mediante Genie; el [registro del piloto](silver_planner.md) conserva alcance y límites.
+El siguiente incremento prepara descubrimiento e ingesta; todavía no habilita programación automática.

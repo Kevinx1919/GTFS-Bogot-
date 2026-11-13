@@ -289,9 +289,9 @@ El [análisis de orquestación](orchestration_plan.md) conecta el planificador 8
 
 El cierre de [preparación Bronze v2](bronze_automation.md) ya está comprobado en Workspace para 2025 y 2026.
 Ambos snapshots terminaron sin fallos bloqueantes; 2026 conserva cinco advertencias de esquema.
-Plan_silver ya está implementado localmente. Las nuevas guardas de descarga y carga 02–05 conservan su prueba de despliegue pendiente.
+La vista previa de plan_silver ya está comprobada en Workspace. Las nuevas guardas de descarga y carga 02–05 conservan su prueba de despliegue pendiente.
 
-**Estado:** implementado y probado localmente; comprobación en Workspace pendiente.
+**Estado:** vista previa y piloto NO_WORK del Job comprobados en Workspace. La prueba con trabajo nuevo sigue pendiente.
 La [guía del planificador](silver_planner.md) contiene la vista previa y la variante optativa del Job.
 **Orden:** 8b, después de trips, frequencies y stop_times. Lo completaré antes de programar el Job automáticamente. Durante el desarrollo conservaré las listas manuales para ejecuciones controladas.
 

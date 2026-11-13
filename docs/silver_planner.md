@@ -1,6 +1,7 @@
 # Mi selección automática de trabajo Silver
 
-**Estado:** implementación local; comprobación en Workspace pendiente.
+**Estado:** recuperación y vista previa comprobadas; piloto NO_WORK del Job terminado con éxito en Workspace.
+La prueba del Job con trabajo nuevo sigue pendiente.
 **Fecha:** 13 de noviembre de 2026.
 Este incremento implementa el pendiente 8b.
 Todavía no conecta el descubrimiento de versiones ni el Job principal.
@@ -212,14 +213,16 @@ Las integraciones comprueban lectura congelada de Bronze, conteos técnicos, fal
 También ejecutan notebook 11 completo en vista previa con tablas pequeñas de fixture.
 La corrección final de una colisión de identificadores de fixture se comprobó en la suite unitaria.
 No ejecuté toda la suite nativa Silver; limité las integraciones a los componentes modificados.
-La comprobación real en Free Edition y el comportamiento de los ciclos vacíos siguen pendientes.
+La vista previa de notebook 11 ya está comprobada en Workspace.
+El piloto del camino NO_WORK ya terminó correctamente dentro del Job.
+La prueba del Job con listas no vacías sigue pendiente.
 
 Si la sesión ya importó módulos anteriores, reinicio Python después del Pull y ejecuto desde el bloque 1.
 No necesito instalar ni reiniciar paquetes dentro de cada iteración del Job.
 
 ## Qué sigue después
 
-Primero compruebo notebook 11 y después la variante del Job en Workspace.
+La vista previa y el piloto NO_WORK del Job ya están comprobados en Workspace.
 Luego adapto notebook 06 para descubrimiento y selección de ingesta.
 La prueba pendiente de las guardas Bronze 02–05 permanece antes de habilitar ingesta automática.
 La exportación completa del Job Bronze sigue pendiente.
@@ -233,3 +236,53 @@ Notebook 18 prepara y aplica resoluciones operativas sin modificar los registros
 El planificador incorpora únicamente las decisiones explícitas que siguen coincidiendo con el intento observado.
 Muestra RESOLVED y vuelve a evaluar la evidencia si el intento cambia o termina.
 No equivale a ignorar automáticamente todos los RUNNING ni a declarar exitoso un intento fallido.
+
+## Cierre de la vista previa en Workspace — 13 de noviembre de 2026
+
+Después de aplicar las dos resoluciones obtuve diecinueve COMPLETE, un OUT_OF_SCOPE y dos RESOLVED.
+No quedaron decisiones BLOCKED, PENDING ni DEFERRED en esa salida.
+Service_dates de 2025 permanece fuera del horizonte acordado.
+El resultado es coherente con NO_WORK; no necesito volver a publicar tablas completadas.
+El [detalle de recuperación](planner_recovery.md) conserva evidencia y alcance.
+
+Conecté plan_silver con los diez ciclos y comprobé una corrida NO_WORK del Workflow.
+No habilité un horario automático; todavía falta una prueba con trabajo nuevo.
+
+## Piloto del Job sin pendientes — 13 de noviembre de 2026
+
+Ejecuté gtfs_bogota_silver_manual después de conectar el planificador con los diez ciclos.
+La captura de Workspace mostró Succeeded.
+Contrasté su historial mediante Genie en las tablas system.lakeflow.
+Los resultados estructurados confirmaron SUCCEEDED para el Job y sus once tareas.
+
+| Medición | Resultado |
+| --- | --- |
+| Inicio UTC | 2026-11-13T21:09:57.123Z |
+| Fin UTC | 2026-11-13T21:12:00.382Z |
+| Ventana en Bogotá | 13 de noviembre, 16:09:57 a 16:12:00. |
+| Duración observada del Job | 123,259 segundos; aproximadamente 2 minutos y 3 segundos. |
+| Duración observada de plan_silver | 102,584 segundos; aproximadamente 1 minuto y 43 segundos. |
+| Tareas del Job | plan_silver y diez contenedores publish_*, todos SUCCEEDED. |
+
+La tabla del plan mostró diecinueve COMPLETE, un OUT_OF_SCOPE y dos RESOLVED.
+No mostró BLOCKED, PENDING ni DEFERRED.
+El motor corresponde a NO_WORK y genera listas vacías bajo ese resultado.
+Esta evidencia permite cerrar el piloto del camino sin pendientes.
+
+Conservo estos límites:
+
+- COUNT(DISTINCT run_id)=1 representa una ejecución de cada tarea registrada, no una iteración del ciclo.
+- La consulta de esa corrida no devolvió claves process_* ni publish_iteration en el ámbito consultado.
+- No convierto esa ausencia, por sí sola, en prueba universal de cero iteraciones.
+- La muestra de parámetros consultada no expone el array For each resuelto ni un contador de iteraciones.
+- No atribuyo ausencia de parámetros a todas las tareas desde esa única muestra.
+- No ejecuté un escaneo independiente para demostrar ausencia de escrituras analíticas durante esta corrida.
+- Esta duración describe un piloto sin pendientes, no el tiempo de cargar un feed nuevo.
+
+La conversación Genie de verificación es edec728c7025452686e59a6eed8dc7bd.
+La respuesta verificada es 0c747150192c4326b29d859e9e285d27.
+No consulté tablas de negocio para contrastar el historial del Job.
+La prueba con trabajo nuevo, el descubrimiento dinámico y el coordinador permanecen pendientes.
+
+Después de confirmar que todos los Inputs usan tasks.plan_silver.values, puedo retirar los parámetros generales *_work_items antiguos.
+No cambio los task values generados por el planificador ni los parámetros de las tareas internas.

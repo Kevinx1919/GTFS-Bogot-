@@ -669,6 +669,37 @@ No marco un intento inconcluso como SUCCEEDED ni elimino su historia.
 Pasaron 113 pruebas unitarias y cuatro integraciones seleccionadas con Spark y Delta reales.
 La recuperación está implementada localmente; todavía no está aplicada en Workspace.
 
+### Hito 45 — Comprobar la recuperación y cerrar la vista previa del planificador
+
+**Fecha:** 13 de noviembre de 2026. Notebook 18 registró ambas resoluciones con persisted=true.
+Conservé los intentos originales y la publicación anterior verificada de agency.
+Después ejecuté notebook 11 nuevamente en vista previa.
+Obtuve diecinueve COMPLETE, un OUT_OF_SCOPE y dos RESOLVED.
+Desaparecieron los bloqueos anteriores y no quedaron trabajos pendientes ni aplazados en esa tabla.
+Service_dates de 2025 mantuvo el alcance acordado.
+El resultado corresponde a NO_WORK; no necesité republicar las entidades completadas.
+
+La [evidencia de recuperación](docs/planner_recovery.md) precisa resultados y límites.
+Mi siguiente paso es conectar plan_silver al Job y comprobar las listas vacías.
+La ejecución completa del Workflow, la ingesta dinámica y el Job principal siguen pendientes.
+No habilité horarios ni cambié Archify.
+
+### Hito 46 — Ejecutar el Job Silver con selección dinámica sin pendientes
+
+**Fecha:** 13 de noviembre de 2026. Conecté plan_silver con los diez ciclos existentes.
+Ejecuté el Job manual y terminó Succeeded en aproximadamente 2 minutos y 3 segundos.
+La tabla del plan mostró diecinueve COMPLETE, un OUT_OF_SCOPE y dos RESOLVED.
+No quedaron pendientes ni bloqueos en esa salida.
+Genie confirmó SUCCEEDED para el Job y sus once tareas en el historial Lakeflow.
+
+Cierro el piloto del camino NO_WORK dentro del Workflow.
+No presento el conteo de ejecuciones de contenedores como un contador de iteraciones.
+El [registro del piloto](docs/silver_planner.md) precisa evidencia, tiempos y límites.
+Falta comprobar una corrida del Job con trabajo nuevo antes de la programación automática.
+El siguiente incremento prepara descubrimiento e ingesta dinámica y el futuro coordinador.
+Las guardas Bronze 02–05 y la exportación completa de su Job mantienen sus pendientes.
+No habilité horarios ni cambié Archify.
+
 ## Qué no publicar
 
 - Access tokens, secretos, archivos `.env`, cookies, hostnames privados o identificadores de cuenta.

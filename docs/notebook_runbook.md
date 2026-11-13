@@ -597,3 +597,22 @@ La [guía de recuperación](planner_recovery.md) documenta evidencia y parámetr
 
 Notebook 11 incorpora las resoluciones explícitas vigentes y muestra RESOLVED.
 Si el intento cambia o termina, vuelve a evaluarse sin esa exclusión.
+
+### Comprobación real de recuperación y plan — 13 de noviembre de 2026
+
+Notebook 18 registró las dos resoluciones con persisted=true en su bloque 3.
+Después ejecuté notebook 11 en vista previa y obtuve diecinueve COMPLETE, un OUT_OF_SCOPE y dos RESOLVED.
+No quedaron BLOCKED ni trabajos PENDING/DEFERRED en esa tabla.
+El resultado corresponde a NO_WORK bajo el motor actual.
+Los [detalles](planner_recovery.md) distinguen esta evidencia de una consulta SQL independiente y del Job completo.
+La comprobación de task values y de ciclos vacíos dentro del Workflow sigue pendiente.
+
+### Piloto NO_WORK dentro del Job — 13 de noviembre de 2026
+
+Conecté notebook 11 con emit_task_values=true y los diez ciclos existentes.
+El Job terminó SUCCEEDED en aproximadamente 2 minutos y 3 segundos.
+Genie confirmó el estado terminal del Job y de sus once tareas mediante metadata Lakeflow.
+La tabla del plan mostró diecinueve COMPLETE, un OUT_OF_SCOPE y dos RESOLVED, sin pendientes ni bloqueos.
+No obtuve un contador independiente de iteraciones desde las consultas de metadata realizadas.
+No confundo una ejecución del contenedor con una iteración de su tarea interna.
+El [registro](silver_planner.md) documenta los límites y deja pendiente la corrida con trabajo nuevo.

@@ -31,4 +31,6 @@ La [plantilla planificada](gtfs_bogota_silver_planned.template.json) añade plan
 La genero con --selection-mode auto; el modo por defecto y la plantilla manual siguen disponibles.
 Notebook 11 tiene vista previa sin escrituras con emit_task_values=false.
 La [guía](../../docs/silver_planner.md) describe su comprobación antes de cambiar el Job desplegado.
-La variante está probada localmente, pero todavía no está validada en Workspace.
+Notebook 11 ya tiene vista previa comprobada en Workspace: diecinueve COMPLETE, un OUT_OF_SCOPE y dos RESOLVED.
+El Job conectado al planificador ya completó un piloto NO_WORK en Workspace: once tareas SUCCEEDED.
+La prueba con listas no vacías y trabajo nuevo sigue pendiente.
