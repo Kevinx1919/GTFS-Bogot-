@@ -8,7 +8,7 @@
     "quality_profile": "showcase",
     "repository": {
       "url": "https://github.com/Kevinx1919/GTFS-Bogot-.git",
-      "revision": "34e3769e1d6eaebca950161f4f47f0bf38f7bc40"
+      "revision": "23dab92a64b6a1a9563274417b6928925baf1b4d"
     },
     "views": [
       {
@@ -27,9 +27,10 @@
           "service_dates",
           "viajes",
           "trips",
-          "frequencies"
+          "frequencies",
+          "stop_times"
         ],
-        "note": "Nueve entidades con contrato implementado y cierre funcional confirmado durante el desarrollo."
+        "note": "Diez entidades con contrato implementado y cierre funcional confirmado durante el desarrollo."
       },
       {
         "id": "programacion",
@@ -44,7 +45,7 @@
           "frequencies",
           "stop_times"
         ],
-        "note": "Calendarios, días activos, viajes y frecuencias ya funcionan. Stop_times es el siguiente incremento."
+        "note": "Calendarios, días activos, viajes, frecuencias y visitas ya funcionan. El planificador 8b sigue pendiente."
       },
       {
         "id": "territorio",
@@ -89,6 +90,12 @@
           "line": 1,
           "end_line": 18,
           "label": "Registro de entidades"
+        },
+        {
+          "path": "docs/silver_execution.md",
+          "line": 846,
+          "end_line": 865,
+          "label": "Cierre funcional de stop_times"
         }
       ],
       "parent": "gtfs"
@@ -106,9 +113,9 @@
         },
         {
           "path": "databricks/gtfs_silver/spark_validation.py",
-          "line": 84,
-          "end_line": 88,
-          "label": "Procedencia y regla"
+          "line": 98,
+          "end_line": 112,
+          "label": "Procedencia, regla y salidas"
         }
       ],
       "parent": "hoy"
@@ -126,9 +133,9 @@
         },
         {
           "path": "databricks/gtfs_silver/spark_validation.py",
-          "line": 84,
-          "end_line": 88,
-          "label": "Procedencia y regla"
+          "line": 98,
+          "end_line": 112,
+          "label": "Procedencia, regla y salidas"
         }
       ],
       "parent": "hoy"
@@ -160,9 +167,9 @@
         },
         {
           "path": "databricks/gtfs_silver/spark_validation.py",
-          "line": 84,
-          "end_line": 88,
-          "label": "Procedencia y regla"
+          "line": 98,
+          "end_line": 112,
+          "label": "Procedencia, regla y salidas"
         }
       ],
       "parent": "ubicaciones"
@@ -180,9 +187,9 @@
         },
         {
           "path": "databricks/gtfs_silver/spark_validation.py",
-          "line": 84,
-          "end_line": 88,
-          "label": "Procedencia y regla"
+          "line": 98,
+          "end_line": 112,
+          "label": "Procedencia, regla y salidas"
         }
       ],
       "parent": "ubicaciones"
@@ -214,9 +221,9 @@
         },
         {
           "path": "databricks/gtfs_silver/spark_validation.py",
-          "line": 84,
-          "end_line": 88,
-          "label": "Procedencia y regla"
+          "line": 98,
+          "end_line": 112,
+          "label": "Procedencia, regla y salidas"
         }
       ],
       "parent": "servicios"
@@ -234,9 +241,9 @@
         },
         {
           "path": "databricks/gtfs_silver/spark_validation.py",
-          "line": 84,
-          "end_line": 88,
-          "label": "Procedencia y regla"
+          "line": 98,
+          "end_line": 112,
+          "label": "Procedencia, regla y salidas"
         }
       ],
       "parent": "servicios"
@@ -264,7 +271,7 @@
     {
       "id": "viajes",
       "label": "Viajes y horarios",
-      "sublabel": "Trips y frequencies publicadas",
+      "sublabel": "Viajes, frecuencias y visitas publicadas",
       "sources": [
         {
           "path": "docs/silver_design.md",
@@ -288,9 +295,9 @@
         },
         {
           "path": "databricks/gtfs_silver/spark_validation.py",
-          "line": 84,
-          "end_line": 88,
-          "label": "Procedencia y regla"
+          "line": 98,
+          "end_line": 112,
+          "label": "Procedencia, regla y salidas"
         }
       ],
       "parent": "viajes"
@@ -302,15 +309,15 @@
       "sources": [
         {
           "path": "databricks/gtfs_silver/frequencies_spark.py",
-          "line": 141,
-          "end_line": 145,
+          "line": 129,
+          "end_line": 133,
           "label": "Campos fuente y derivados"
         },
         {
           "path": "databricks/gtfs_silver/spark_validation.py",
-          "line": 84,
-          "end_line": 88,
-          "label": "Procedencia y regla"
+          "line": 98,
+          "end_line": 112,
+          "label": "Procedencia, regla y salidas"
         }
       ],
       "parent": "viajes"
@@ -318,13 +325,25 @@
     {
       "id": "stop_times",
       "label": "stop_times",
-      "sublabel": "Visitas y horas · SIGUIENTE",
+      "sublabel": "Visitas y horas · PUBLICADA",
       "sources": [
         {
-          "path": "docs/silver_design.md",
-          "line": 62,
-          "end_line": 79,
-          "label": "Plan de entidades Silver"
+          "path": "databricks/gtfs_silver/stop_times_spark.py",
+          "line": 180,
+          "end_line": 193,
+          "label": "Campos y diagnóstico"
+        },
+        {
+          "path": "databricks/gtfs_silver/spark_validation.py",
+          "line": 98,
+          "end_line": 112,
+          "label": "Procedencia, regla y salidas"
+        },
+        {
+          "path": "docs/silver_execution.md",
+          "line": 846,
+          "end_line": 865,
+          "label": "Cierre funcional de stop_times"
         }
       ],
       "parent": "viajes"
@@ -384,6 +403,48 @@
         }
       ],
       "parent": "contexto"
+    },
+    {
+      "id": "operacion",
+      "parent": "gtfs",
+      "label": "Operación pendiente",
+      "sublabel": "Planificador y métricas futuras",
+      "sources": [
+        {
+          "path": "docs/silver_design.md",
+          "line": 79,
+          "end_line": 80,
+          "label": "Planificador y alcance futuro"
+        }
+      ]
+    },
+    {
+      "id": "planificador",
+      "parent": "operacion",
+      "label": "plan_silver · 8b",
+      "sublabel": "Seleccionar snapshots · PENDIENTE",
+      "sources": [
+        {
+          "path": "docs/silver_design.md",
+          "line": 286,
+          "end_line": 302,
+          "label": "Planificador pendiente"
+        }
+      ]
+    },
+    {
+      "id": "cobertura",
+      "parent": "operacion",
+      "label": "Cobertura para Gold",
+      "sublabel": "Cero, una o varias visitas · PLAN",
+      "sources": [
+        {
+          "path": "docs/stop_times_plan.md",
+          "line": 206,
+          "end_line": 240,
+          "label": "Clasificación propuesta"
+        }
+      ]
     }
   ],
   "cards": [
@@ -399,7 +460,7 @@
       "dot": "emerald",
       "title": "Lo que ya funciona",
       "items": [
-        "Nueve entidades tienen contrato implementado y cierre funcional. Service_dates cubre solamente 2026.",
+        "Diez entidades tienen contrato implementado y cierre funcional. Service_dates cubre solamente 2026.",
         "Shape_points viene de shapes.txt. Service_dates es una derivación; no un TXT adicional.",
         "Este estado documenta las comprobaciones del desarrollo; no consulta Databricks en vivo."
       ]
@@ -408,8 +469,8 @@
       "dot": "amber",
       "title": "Lo que sigue",
       "items": [
-        "El siguiente contrato es stop_times: visitas planificadas, secuencia y tiempos.",
-        "Después cerraré el planificador 8b antes de programar el Job automáticamente.",
+        "El siguiente incremento operativo es el planificador 8b: selección de snapshots antes de programar el Job.",
+        "Antes de las métricas Gold prepararé cobertura por viaje; no interpreto varias visitas como recorrido completo.",
         "Tarifas y feed_info siguen pendientes según la pregunta analítica. Gold y Power BI también siguen pendientes."
       ]
     }

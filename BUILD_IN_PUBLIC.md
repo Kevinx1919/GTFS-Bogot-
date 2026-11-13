@@ -588,7 +588,8 @@ Conservo la limitación de cobertura y las advertencias documentadas, sin invent
 
 El siguiente incremento operativo es el planificador 8b.
 La clasificación de cobertura para métricas Gold permanece planificada.
-Actualizaré los cinco diagramas con el cierre y la nueva relación entre viajes, visitas y paradas.
+Actualicé los cinco diagramas con el cierre y la relación entre viajes, visitas y paradas.
+Las cinco vistas pasaron controles automáticos de navegador; no hice una nueva revisión visual de capturas.
 
 ## Qué no publicar
 

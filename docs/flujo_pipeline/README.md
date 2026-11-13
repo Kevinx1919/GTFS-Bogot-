@@ -7,8 +7,8 @@ Uso esta carpeta para explicar el proyecto mediante diagramas interactivos y pá
 | Documento | Pregunta que responde | Alcance |
 | --- | --- | --- |
 | [Mapa del lakehouse](mapa_lakehouse/README.md) | ¿Dónde están los datos y cómo avanzan entre capas? | Raw, Staging, Bronze y Silver actuales; Gold y Power BI identificados como futuros. |
-| [Recorrido del Job Silver](job_silver/README.md) | ¿Qué ocurre al pulsar Run now y qué pasa ante un error? | Nueve tareas, parámetros por snapshot, validación, publicación, auditoría y recuperación. |
-| [Modelo GTFS](modelo_gtfs/README.md) | ¿Cómo se relacionan las entidades y cómo preservo cada snapshot? | Nueve tablas físicas y dos catálogos lógicos; stop_times continúa como siguiente contrato. |
+| [Recorrido del Job Silver](job_silver/README.md) | ¿Qué ocurre al pulsar Run now y qué pasa ante un error? | Diez tareas, parámetros por snapshot, validación, publicación, auditoría y recuperación. |
+| [Modelo GTFS](modelo_gtfs/README.md) | ¿Cómo se relacionan las entidades y cómo preservo cada snapshot? | Diez tablas físicas y dos catálogos lógicos; cobertura Gold y planificador 8b permanecen pendientes. |
 
 Puedo empezar directamente por el [mapa del lakehouse](mapa_lakehouse/mapa_lakehouse.html), el [orden del Job](job_silver/recorrido_job.html), el [interior de una iteración](job_silver/iteracion_snapshot.html), el [modelo Silver actual](modelo_gtfs/modelo_silver.html) o el [panorama GTFS](modelo_gtfs/panorama_gtfs.html).
 
@@ -45,19 +45,19 @@ Para evitar un problema de reemplazo de archivos de control en OneDrive genero e
 Referencias: [Archify](https://github.com/tt-a1i/archify), [skill](https://github.com/tt-a1i/archify/blob/a4065941f12be7967436261d9934784e381d423c/archify/SKILL.md), [guía operativa Silver](../silver_execution.md) y [contratos](../contracts).
 
 
-## Estado actualizado tras frequencies_v1
+## Estado actualizado tras stop_times_v1
 
 Actualicé las cinco vistas el 12 de noviembre de 2026.
-Las nueve entidades tienen despliegue funcional confirmado durante el desarrollo.
-El modelo conserva todas sus 135 columnas físicas. Distingue dos catálogos lógicos que no son tablas persistidas.
-El recorrido muestra las nueve tareas y separa dependencias operativas de relaciones entre tablas.
-El mapa distingue ocho entidades fuente y service_dates derivada, limitada a 2026.
+Las diez entidades tienen despliegue funcional confirmado durante el desarrollo.
+El modelo conserva las 155 columnas físicas definidas por el código y dos catálogos lógicos con seis columnas.
+El recorrido muestra diez tareas. El mapa distingue nueve entidades fuente y service_dates derivada, limitada a 2026.
 
-Los enlaces de evidencia fijan el código de 34e3769e1d6eaebca950161f4f47f0bf38f7bc40.
-El cierre de ejecución y esta actualización documental son cambios posteriores todavía locales.
-Actualicé guías Markdown, fuentes JSON, HTML y resúmenes; no modifiqué el pipeline ni ejecuté Jobs.
-El siguiente contrato es stop_times. Gold y el planificador automático permanecen pendientes.
+Los enlaces fijan el código y el cierre documental de 23dab92a64b6a1a9563274417b6928925baf1b4d.
+No presento los conteos del perfil como resultados nuevos de publicación.
+Los diagramas no consultan Databricks ni muestran telemetría en vivo.
+El planificador 8b y la clasificación de cobertura previa a métricas Gold siguen pendientes.
 
-Las cinco vistas pasaron comprobaciones automáticas de navegador.
-Los resúmenes distinguen esos controles de una revisión visual de capturas, que no repetí para esta revisión.
-El ERD denso utiliza el perfil standard para conservar todos los campos.
+Las cinco vistas pasaron controles automáticos de estructura, referencias, HTML y navegador.
+No hice una revisión visual de nuevas capturas. Los resúmenes públicos conservan hashes y medidas.
+El ERD denso conserva todos los campos. Los avisos sobre recorridos largos quedan registrados en su resumen.
+Actualicé fuentes JSON, HTML, guías y resúmenes. No cambié el código del pipeline.

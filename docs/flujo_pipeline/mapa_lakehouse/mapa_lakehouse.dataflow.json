@@ -8,7 +8,7 @@
     "quality_profile": "showcase",
     "repository": {
       "url": "https://github.com/Kevinx1919/GTFS-Bogot-.git",
-      "revision": "34e3769e1d6eaebca950161f4f47f0bf38f7bc40"
+      "revision": "23dab92a64b6a1a9563274417b6928925baf1b4d"
     },
     "views": [
       {
@@ -247,13 +247,13 @@
       "sublabel": "Valido, tipo y publico",
       "stage": 3,
       "row": 4,
-      "tag": "8 entidades fuente",
+      "tag": "9 entidades fuente",
       "sources": [
         {
           "path": "databricks/gtfs_silver/pipeline.py",
           "line": 45,
-          "end_line": 90,
-          "label": "Lecturas y contratos habilitados"
+          "end_line": 110,
+          "label": "Lectura y publicación de fuentes"
         },
         {
           "path": "databricks/gtfs_silver/publication.py",
@@ -267,7 +267,7 @@
       "id": "silver",
       "type": "database",
       "label": "Silver fuente",
-      "sublabel": "8 tablas Delta",
+      "sublabel": "9 tablas Delta",
       "stage": 3,
       "row": 3,
       "tag": "Histórico por snapshot",
@@ -283,6 +283,12 @@
           "line": 211,
           "end_line": 239,
           "label": "Publicación verificada"
+        },
+        {
+          "path": "docs/silver_execution.md",
+          "line": 846,
+          "end_line": 865,
+          "label": "Cierre funcional de stop_times"
         }
       ]
     },
@@ -363,9 +369,9 @@
       "sources": [
         {
           "path": "databricks/gtfs_silver/pipeline.py",
-          "line": 130,
-          "end_line": 160,
-          "label": "Lee fuentes Silver"
+          "line": 145,
+          "end_line": 174,
+          "label": "Lee y publica fuentes Silver"
         },
         {
           "path": "databricks/gtfs_silver/service_dates_spark.py",
@@ -392,8 +398,8 @@
         },
         {
           "path": "databricks/gtfs_silver/pipeline.py",
-          "line": 155,
-          "end_line": 160,
+          "line": 170,
+          "end_line": 173,
           "label": "Publica derivación"
         }
       ]
@@ -521,9 +527,9 @@
     },
     {
       "dot": "emerald",
-      "title": "Nueve entidades publicadas",
+      "title": "Diez entidades publicadas",
       "items": [
-        "Agency, routes, stops, calendar, calendar_dates, shape_points, trips y frequencies son entidades fuente.",
+        "Agency, routes, stops, calendar, calendar_dates, shape_points, trips, frequencies y stop_times son entidades fuente.",
         "Service_dates deriva días activos desde los calendarios Silver. Su horizonte actual cubre solamente 2026.",
         "El cierre funcional registra la confirmación durante el desarrollo. Este HTML no consulta tablas en vivo."
       ]
@@ -532,7 +538,7 @@
       "dot": "amber",
       "title": "Lo que sigue pendiente",
       "items": [
-        "Stop_times será el siguiente contrato Silver. Gold y Power BI continúan como objetivos.",
+        "El planificador 8b es el siguiente incremento operativo. Gold y Power BI siguen pendientes.",
         "La selección automática de snapshots sigue pendiente 8b. Las listas del Job todavía son manuales.",
         "Los datos describen oferta planificada; no demuestran operación, demanda ni puntualidad."
       ]
@@ -544,6 +550,15 @@
         "La entrada fuente combina Bronze y el encabezado del TXT. La derivación recibe calendarios y una ventana explícita.",
         "Conservo versión y hash. Los errores bloquean el snapshot; auditoría y cuarentena conservan evidencia.",
         "Genie ayuda a explorar en lectura. El pipeline versionado ejecuta transformaciones y escrituras."
+      ]
+    },
+    {
+      "dot": "slate",
+      "title": "Visitas y cobertura",
+      "items": [
+        "Stop_times conserva visitas planificadas y horas del día de servicio. Una visita no equivale a un vehículo.",
+        "El perfil 2026 encontró 61 viajes de una visita y 739 sin visitas. No son conteos nuevos de esta publicación.",
+        "La clasificación cero/una/varias visitas para métricas Gold todavía está planificada."
       ]
     }
   ]

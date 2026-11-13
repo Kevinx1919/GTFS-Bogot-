@@ -863,3 +863,14 @@ La clasificación cero/una/varias visitas para consumo Gold sigue planificada; n
 Varias visitas no garantizan un recorrido completo.
 El planificador de snapshots 8b continúa pendiente, antes de programar ejecuciones automáticas.
 La actualización de Archify registrará por separado esta confirmación y las referencias al código.
+
+
+### Actualización visual después del cierre de stop_times
+
+Actualicé las cinco vistas de Archify con las diez entidades y la décima tarea del Job.
+El ERD conserva 155 columnas físicas y dos catálogos lógicos no persistidos.
+Las referencias fijan el código y cierre documental de 23dab92a64b6a1a9563274417b6928925baf1b4d.
+Las cinco vistas pasaron controles automáticos de estructura, referencias, HTML y navegador.
+No hice una nueva revisión visual de capturas. Los resúmenes públicos conservan esa distinción.
+El planificador 8b y la clasificación de cobertura para Gold permanecen pendientes.
+No ejecuté Jobs ni modifiqué datos de Databricks durante esta actualización documental.

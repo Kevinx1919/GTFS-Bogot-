@@ -6,7 +6,7 @@
     "quality_profile": "showcase",
     "repository": {
       "url": "https://github.com/Kevinx1919/GTFS-Bogot-.git",
-      "revision": "34e3769e1d6eaebca950161f4f47f0bf38f7bc40"
+      "revision": "23dab92a64b6a1a9563274417b6928925baf1b4d"
     },
     "title": "Mi Job Silver: una entidad y un snapshot",
     "output": "docs/flujo_pipeline/job_silver/iteracion_snapshot.html",
@@ -108,13 +108,13 @@
         {
           "path": "databricks/gtfs_silver/pipeline.py",
           "line": 59,
-          "end_line": 90,
-          "label": "Entradas fuente versionadas"
+          "end_line": 110,
+          "label": "Fuentes y dependencias fijadas"
         },
         {
           "path": "databricks/gtfs_silver/pipeline.py",
-          "line": 130,
-          "end_line": 160,
+          "line": 145,
+          "end_line": 174,
           "label": "Derivación desde Silver"
         }
       ]
@@ -129,15 +129,15 @@
       "sources": [
         {
           "path": "databricks/gtfs_silver/spark_validation.py",
-          "line": 57,
-          "end_line": 95,
+          "line": 50,
+          "end_line": 112,
           "label": "Reconciliación y candidatos"
         },
         {
-          "path": "databricks/gtfs_silver/frequencies_spark.py",
-          "line": 69,
-          "end_line": 145,
-          "label": "Reglas de ventanas"
+          "path": "databricks/gtfs_silver/stop_times_spark.py",
+          "line": 97,
+          "end_line": 193,
+          "label": "Visitas, horas y cobertura"
         },
         {
           "path": "databricks/gtfs_silver/service_dates_spark.py",
@@ -457,7 +457,7 @@
       "dot": "cyan",
       "title": "Qué entra en una iteración",
       "items": [
-        "Ocho entidades fuente leen Bronze, encabezado TXT y las dependencias que requiere su contrato.",
+        "Nueve entidades fuente leen Bronze, encabezado TXT y las dependencias que requiere su contrato.",
         "Service_dates recibe calendarios Silver y un horizonte explícito. No simula un TXT adicional.",
         "Frequencies conserva horas fuente y deriva segundos. Exact_times ausente queda null con interpretación derivada explícita."
       ]
@@ -487,6 +487,15 @@
         "Esta vista explica mode=publish. Mode=validate devuelve resumen antes de escribir auditoría, cuarentena o Silver.",
         "Un reintento comienza desde el inicio. La escritura acotada protege los demás snapshots.",
         "Las animaciones no son telemetría. La publicación confirmada no sustituye nuevos conteos o verificaciones detalladas."
+      ]
+    },
+    {
+      "dot": "slate",
+      "title": "Advertencias de stop_times",
+      "items": [
+        "Una visita aislada produce advertencia. Un viaje sin visitas queda como diagnóstico de cobertura, sin fila ficticia de cuarentena.",
+        "Los errores de filas existentes bloquean el snapshot. No fabrico paradas ni horarios.",
+        "La clasificación de cobertura para Gold está planificada; varias visitas no prueban un recorrido completo."
       ]
     }
   ]

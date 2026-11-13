@@ -280,7 +280,7 @@ Las frecuencias aportan contexto por viaje sin multiplicar las visitas.
 La plantilla añade publish_stop_times como décima tarea. Reutilizo notebook 10, auditoría y escritor compartidos.
 Las nueve tareas anteriores mantienen su configuración. El Job existente requiere actualización manual.
 La [guía de despliegue](silver_execution.md#despliegue-de-stop_times_v1) explica validate y publish.
-Archify conserva la revisión de las nueve entidades publicadas.
+Archify ya refleja las diez entidades publicadas y mantiene los pendientes separados.
 El planificador automático 8b es el siguiente incremento operativo, antes de programar ejecuciones.
 
 ## Automatización pendiente: selección de snapshots Silver

@@ -7,20 +7,22 @@
     "quality_profile": "standard",
     "repository": {
       "url": "https://github.com/Kevinx1919/GTFS-Bogot-.git",
-      "revision": "34e3769e1d6eaebca950161f4f47f0bf38f7bc40"
+      "revision": "23dab92a64b6a1a9563274417b6928925baf1b4d"
     },
     "output": "docs/flujo_pipeline/modelo_gtfs/modelo_silver.html",
     "views": [
       {
         "id": "viajes",
-        "label": "Rutas, viajes y frecuencias",
+        "label": "Viajes y visitas",
         "focus": [
           "agency",
           "routes",
           "trips",
-          "frequencies"
+          "frequencies",
+          "stop_times",
+          "stops"
         ],
-        "note": "Referencias compuestas: versión, hash e ID. Una ventana no representa un vehículo."
+        "note": "Stop_times relaciona visitas con viajes y paradas dentro del mismo snapshot."
       },
       {
         "id": "servicios",
@@ -32,7 +34,7 @@
           "service_ids",
           "trips"
         ],
-        "note": "Service_ids es un catálogo lógico en memoria; no una décima tabla Silver."
+        "note": "Service_ids es un catálogo lógico de IDs. No es otra tabla Silver persistida."
       },
       {
         "id": "geometria",
@@ -53,15 +55,26 @@
           "trips"
         ],
         "note": "Conservo exact_times ausente y su interpretación efectiva por separado."
+      },
+      {
+        "id": "visitas",
+        "label": "Visitas, paradas y frecuencias",
+        "focus": [
+          "stop_times",
+          "stops",
+          "trips",
+          "frequencies"
+        ],
+        "note": "Una visita no es un vehículo. Frequencies se agrupa por viaje antes de aportar contexto."
       }
     ]
   },
   "layout": {
     "mode": "grid",
     "entityW": 272,
-    "gapX": 16,
-    "gapY": 48,
-    "rowH": 24
+    "gapX": 12,
+    "gapY": 42,
+    "rowH": 20
   },
   "entities": [
     {
@@ -148,9 +161,9 @@
         },
         {
           "path": "databricks/gtfs_silver/spark_validation.py",
-          "line": 84,
-          "end_line": 88,
-          "label": "Procedencia y regla"
+          "line": 98,
+          "end_line": 112,
+          "label": "Procedencia, regla y salidas"
         },
         {
           "path": "databricks/gtfs_silver/publication.py",
@@ -262,9 +275,9 @@
         },
         {
           "path": "databricks/gtfs_silver/spark_validation.py",
-          "line": 84,
-          "end_line": 88,
-          "label": "Procedencia y regla"
+          "line": 98,
+          "end_line": 112,
+          "label": "Procedencia, regla y salidas"
         },
         {
           "path": "databricks/gtfs_silver/publication.py",
@@ -280,7 +293,7 @@
       "label": "silver_gtfs_stops",
       "row": 1,
       "col": 3,
-      "tag": "Ubicaciones",
+      "tag": "Visitas y ubicaciones",
       "attributes": [
         {
           "name": "stop_id",
@@ -373,9 +386,9 @@
         },
         {
           "path": "databricks/gtfs_silver/spark_validation.py",
-          "line": 84,
-          "end_line": 88,
-          "label": "Procedencia y regla"
+          "line": 98,
+          "end_line": 112,
+          "label": "Procedencia, regla y salidas"
         },
         {
           "path": "databricks/gtfs_silver/publication.py",
@@ -490,9 +503,9 @@
         },
         {
           "path": "databricks/gtfs_silver/spark_validation.py",
-          "line": 84,
-          "end_line": 88,
-          "label": "Procedencia y regla"
+          "line": 98,
+          "end_line": 112,
+          "label": "Procedencia, regla y salidas"
         },
         {
           "path": "databricks/gtfs_silver/publication.py",
@@ -580,9 +593,9 @@
         },
         {
           "path": "databricks/gtfs_silver/spark_validation.py",
-          "line": 84,
-          "end_line": 88,
-          "label": "Procedencia y regla"
+          "line": 98,
+          "end_line": 112,
+          "label": "Procedencia, regla y salidas"
         },
         {
           "path": "databricks/gtfs_silver/publication.py",
@@ -678,9 +691,9 @@
         },
         {
           "path": "databricks/gtfs_silver/spark_validation.py",
-          "line": 84,
-          "end_line": 88,
-          "label": "Procedencia y regla"
+          "line": 98,
+          "end_line": 112,
+          "label": "Procedencia, regla y salidas"
         },
         {
           "path": "databricks/gtfs_silver/publication.py",
@@ -777,9 +790,9 @@
         },
         {
           "path": "databricks/gtfs_silver/spark_validation.py",
-          "line": 84,
-          "end_line": 88,
-          "label": "Procedencia y regla"
+          "line": 98,
+          "end_line": 112,
+          "label": "Procedencia, regla y salidas"
         },
         {
           "path": "databricks/gtfs_silver/publication.py",
@@ -881,15 +894,15 @@
       "sources": [
         {
           "path": "databricks/gtfs_silver/frequencies_spark.py",
-          "line": 141,
-          "end_line": 145,
+          "line": 129,
+          "end_line": 133,
           "label": "Campos fuente y derivados"
         },
         {
           "path": "databricks/gtfs_silver/spark_validation.py",
-          "line": 84,
-          "end_line": 88,
-          "label": "Procedencia y regla"
+          "line": 98,
+          "end_line": 112,
+          "label": "Procedencia, regla y salidas"
         },
         {
           "path": "databricks/gtfs_silver/publication.py",
@@ -904,7 +917,7 @@
       "id": "service_dates",
       "label": "silver_gtfs_service_dates",
       "row": 0,
-      "col": 3,
+      "col": 5,
       "tag": "Días activos",
       "attributes": [
         {
@@ -1057,6 +1070,134 @@
         }
       ],
       "sublabel": "Catálogo en memoria; no tabla física"
+    },
+    {
+      "id": "stop_times",
+      "label": "silver_gtfs_stop_times",
+      "row": 0,
+      "col": 3,
+      "tag": "Visitas y ubicaciones",
+      "attributes": [
+        {
+          "name": "trip_id",
+          "type": "string",
+          "key": [
+            "pk",
+            "fk"
+          ],
+          "references": "trips.trip_id"
+        },
+        {
+          "name": "arrival_time",
+          "type": "string"
+        },
+        {
+          "name": "departure_time",
+          "type": "string"
+        },
+        {
+          "name": "stop_id",
+          "type": "string",
+          "key": "fk",
+          "references": "stops.stop_id"
+        },
+        {
+          "name": "stop_sequence",
+          "type": "int",
+          "key": "pk"
+        },
+        {
+          "name": "timepoint",
+          "type": "int"
+        },
+        {
+          "name": "stop_headsign",
+          "type": "string"
+        },
+        {
+          "name": "shape_dist_traveled",
+          "type": "double"
+        },
+        {
+          "name": "arrival_time_seconds",
+          "type": "long"
+        },
+        {
+          "name": "departure_time_seconds",
+          "type": "long"
+        },
+        {
+          "name": "timepoint_effective",
+          "type": "int"
+        },
+        {
+          "name": "is_frequency_template",
+          "type": "boolean"
+        },
+        {
+          "name": "source_feed_version",
+          "type": "string",
+          "key": [
+            "pk",
+            "fk"
+          ],
+          "references": "trips.source_feed_version"
+        },
+        {
+          "name": "source_sha256",
+          "type": "string",
+          "key": [
+            "pk",
+            "fk"
+          ],
+          "references": "trips.source_sha256"
+        },
+        {
+          "name": "source_file_path",
+          "type": "string"
+        },
+        {
+          "name": "bronze_loaded_at_utc",
+          "type": "timestamp"
+        },
+        {
+          "name": "source_columns",
+          "type": "array<string>"
+        },
+        {
+          "name": "silver_rule_version",
+          "type": "string"
+        },
+        {
+          "name": "silver_run_id",
+          "type": "string"
+        },
+        {
+          "name": "silver_loaded_at_utc",
+          "type": "timestamp"
+        }
+      ],
+      "sources": [
+        {
+          "path": "databricks/gtfs_silver/stop_times_spark.py",
+          "line": 97,
+          "end_line": 193,
+          "label": "Campos, tipos y referencias"
+        },
+        {
+          "path": "databricks/gtfs_silver/spark_validation.py",
+          "line": 98,
+          "end_line": 112,
+          "label": "Procedencia, regla y salidas"
+        },
+        {
+          "path": "databricks/gtfs_silver/publication.py",
+          "line": 211,
+          "end_line": 239,
+          "label": "Campos de ejecución y publicación"
+        }
+      ],
+      "width": 272
     }
   ],
   "relationships": [
@@ -1113,7 +1254,7 @@
       "toCardinality": "one",
       "fromOptional": true,
       "toOptional": false,
-      "identifying": false
+      "identifying": true
     },
     {
       "id": "calendar_service_id",
@@ -1158,6 +1299,28 @@
       "fromOptional": true,
       "toOptional": false,
       "identifying": false
+    },
+    {
+      "id": "stop_times_trip_id",
+      "from": "stop_times",
+      "to": "trips",
+      "label": "S + trip_id",
+      "fromCardinality": "many",
+      "toCardinality": "one",
+      "fromOptional": true,
+      "toOptional": false,
+      "identifying": true
+    },
+    {
+      "id": "stop_times_stop_id",
+      "from": "stop_times",
+      "to": "stops",
+      "label": "S + stop_id",
+      "fromCardinality": "many",
+      "toCardinality": "one",
+      "fromOptional": true,
+      "toOptional": false,
+      "identifying": false
     }
   ],
   "cards": [
@@ -1172,9 +1335,9 @@
     },
     {
       "dot": "emerald",
-      "title": "Nueve tablas físicas; dos catálogos lógicos",
+      "title": "Diez tablas físicas; dos catálogos lógicos",
       "items": [
-        "Incluyo todas las columnas físicas de las nueve tablas Silver.",
+        "Incluyo las 155 columnas físicas de las diez tablas Silver y las seis columnas de dos catálogos lógicos.",
         "Service_ids representa la unión distinta de servicios declarados por los calendarios disponibles.",
         "Shape_ids representa IDs distintos extraídos de shape_points. Ambos catálogos son lógicos, no tablas persistidas."
       ]
@@ -1192,9 +1355,9 @@
       "dot": "violet",
       "title": "Cómo interpreto el estado",
       "items": [
-        "Las nueve entidades tienen cierre funcional. Service_dates cubre solo 2026.",
+        "Las diez entidades tienen cierre funcional. Service_dates cubre solo 2026.",
         "Los campos opcionales pueden quedar null. Source_columns conserva la evidencia del encabezado en entidades fuente.",
-        "Stop_times y Gold siguen pendientes. Este modelo no muestra operación real ni consulta tablas en vivo."
+        "Gold y el planificador 8b siguen pendientes. Este modelo no muestra operación real ni consulta tablas en vivo."
       ]
     },
     {
@@ -1203,6 +1366,15 @@
       "items": [
         "Parent_station referencia stop_id dentro del mismo snapshot. El tipo de ubicación determina cuándo exige un padre.",
         "Conservo las columnas FK en la tabla. Esta autorreferencia se explica aquí porque el motor no dibuja relaciones de una entidad consigo misma."
+      ]
+    },
+    {
+      "dot": "slate",
+      "title": "Cobertura y contexto de visitas",
+      "items": [
+        "La clave de stop_times es S + trip_id + stop_sequence. Una parada repetida puede representar otra visita válida.",
+        "Frequencies aporta contexto mediante IDs de viaje agrupados. No existe una FK directa desde visitas hacia cada ventana.",
+        "Una visita aislada conserva su advertencia. Los viajes sin visitas quedan como diagnóstico global; la clasificación Gold sigue planificada."
       ]
     }
   ]

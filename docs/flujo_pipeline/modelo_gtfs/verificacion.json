@@ -1,18 +1,18 @@
 {
   "schema_version": 1,
-  "checked_at_utc": "2026-11-12T18:06:47.837374+00:00",
+  "checked_at_utc": "2026-11-13T03:42:51.678340+00:00",
   "tool": "Archify 3.2.0",
-  "repository_revision": "34e3769e1d6eaebca950161f4f47f0bf38f7bc40",
+  "repository_revision": "23dab92a64b6a1a9563274417b6928925baf1b4d",
   "delivery_method": "Generé y comprobé fuera de OneDrive. Copié los HTML byte a byte y verifiqué sus hashes. Los recibos locales conservan su ruta original.",
-  "scope": "Documentación y navegador local. No ejecuté Jobs ni consulté Databricks. El cierre funcional procede de la confirmación del desarrollo.",
+  "scope": "Documentación y navegador local. No ejecuté Jobs ni consulté Databricks. El cierre funcional registra la comprobación durante el desarrollo.",
   "operational_confirmation_date": "2026-11-12",
   "artifacts": [
     {
       "source": "modelo_silver.erd.json",
-      "source_sha256": "e1943971bc909cd958009012ada6f943a2e1c33522992332cf959999df48783f",
+      "source_sha256": "75b90f757a84e2323edecc1dba40d1def9749079c929c08ba4502121efb54270",
       "html": "modelo_silver.html",
-      "html_sha256": "6f20f2a33a3a11c457820eaf618113928b8a31305bc592fd6d5552026707cb22",
-      "bytes": 944910,
+      "html_sha256": "7943d654acb2cb571629e4e7b71c63e4723cbee37c60c7a03b508420af9694f8",
+      "bytes": 960146,
       "quality_profile": "standard",
       "automated_gates": {
         "validate": "pass",
@@ -24,82 +24,82 @@
         {
           "width": 1440,
           "height": 900,
-          "minimum_projected_node_text_px": 6.509403546480387,
-          "readability_ok": true
+          "minimum_projected_node_text_px": 6.032868525896414,
+          "readability_ok": true,
+          "vertical_scroll_accepted": false
         },
         {
           "width": 1600,
           "height": 1000,
-          "minimum_projected_node_text_px": 7.283181085437937,
-          "readability_ok": true
+          "minimum_projected_node_text_px": 6.75,
+          "readability_ok": true,
+          "vertical_scroll_accepted": true
         },
         {
           "width": 1920,
           "height": 1080,
-          "minimum_projected_node_text_px": 7.500806018269747,
-          "readability_ok": true
+          "minimum_projected_node_text_px": 7.502988047808765,
+          "readability_ok": true,
+          "vertical_scroll_accepted": true
         },
         {
           "width": 2048,
           "height": 1320,
-          "minimum_projected_node_text_px": 7.863514239656099,
-          "readability_ok": true
+          "minimum_projected_node_text_px": 8.381474103585656,
+          "readability_ok": true,
+          "vertical_scroll_accepted": false
         }
       ],
       "visual_review": {
         "status": "not-requested",
-        "scope": "Esta actualización tiene controles automáticos de navegador. No atribuyo las capturas de la versión anterior a estos HTML nuevos."
+        "scope": "Esta actualización tiene controles automáticos de navegador. No atribuyo capturas anteriores a estos HTML nuevos."
       },
       "final_copy_matches_validated_artifact": true,
       "advisories": {
-        "crossings": [],
-        "detours": [
-          {
-            "relationship": {
-              "id": "trips_shape_id",
-              "from": "trips",
-              "to": "shape_ids",
-              "label": "S + shape_id",
-              "collectionIndex": 3,
-              "artifactIndex": 4
-            },
-            "bends": 5,
-            "stretch": 1.537
-          },
-          {
-            "relationship": {
-              "id": "calendar_service_id",
-              "from": "calendar",
-              "to": "service_ids",
-              "label": "S + service_id",
-              "collectionIndex": 5,
-              "artifactIndex": 6
-            },
-            "bends": 3,
-            "stretch": 1.064,
-            "directCorridorBlockers": [
-              {
-                "id": "calendar_dates",
-                "label": "silver_gtfs_calendar_dates",
-                "box": [
-                  854,
-                  556,
-                  272,
-                  300
-                ]
-              }
-            ]
-          }
-        ],
-        "truncated": false
+        "action": "inspect-route-readability",
+        "signals": {
+          "routesOverSuggestedBends": 1
+        },
+        "reason": "Automated gates passed, but crossings or detours still need perceptual review before claiming visual quality.",
+        "affectedRoutes": {
+          "crossings": [],
+          "detours": [
+            {
+              "relationship": {
+                "id": "calendar_service_id",
+                "from": "calendar",
+                "to": "service_ids",
+                "label": "S + service_id",
+                "collectionIndex": 5,
+                "artifactIndex": 6
+              },
+              "bends": 3,
+              "stretch": 1.068,
+              "directCorridorBlockers": [
+                {
+                  "id": "calendar_dates",
+                  "label": "silver_gtfs_calendar_dates",
+                  "box": [
+                    854,
+                    518,
+                    272,
+                    256
+                  ]
+                }
+              ]
+            }
+          ],
+          "truncated": false
+        },
+        "repair": "Advisory only: this mode places or routes these relationships itself. Report them; do not remove relationships or meaning to reduce crossings."
       }
     },
     {
       "source": "panorama_gtfs.tree.json",
-      "source_sha256": "02d260e6c7f42ecb91b5cf35950fdb1b74c7be532b0c09f859e673cad0a04561",
+      "source_sha256": "29184dfe1044005254f2139c95ecc365604d346eeb7dabdbfd3895fa651ebf8d",
       "html": "panorama_gtfs.html",
-      "html_sha256": "6efbff19a9be57f3a84e2add15dcc23f3b78845f86aba929295df48e00905561",
-      "bytes": 869976,
+      "html_sha256": "bb1818ca0a093e1cd538c81718c38386a4b1e1eb2e26b0879699403fa1ae45fb",
+      "bytes": 877781,
       "quality_profile": "showcase",
       "automated_gates": {
         "validate": "pass",
@@ -112,30 +112,34 @@
           "width": 1440,
           "height": 900,
           "minimum_projected_node_text_px": 7.501388888888889,
-          "readability_ok": true
+          "readability_ok": true,
+          "vertical_scroll_accepted": true
         },
         {
           "width": 1600,
           "height": 1000,
           "minimum_projected_node_text_px": 7.501388888888889,
-          "readability_ok": true
+          "readability_ok": true,
+          "vertical_scroll_accepted": true
         },
         {
           "width": 1920,
           "height": 1080,
           "minimum_projected_node_text_px": 7.501388888888889,
-          "readability_ok": true
+          "readability_ok": true,
+          "vertical_scroll_accepted": true
         },
         {
           "width": 2048,
           "height": 1320,
-          "minimum_projected_node_text_px": 8.036111111111111,
-          "readability_ok": true
+          "minimum_projected_node_text_px": 7.501388888888889,
+          "readability_ok": true,
+          "vertical_scroll_accepted": true
         }
       ],
       "visual_review": {
         "status": "not-requested",
-        "scope": "Esta actualización tiene controles automáticos de navegador. No atribuyo las capturas de la versión anterior a estos HTML nuevos."
+        "scope": "Esta actualización tiene controles automáticos de navegador. No atribuyo capturas anteriores a estos HTML nuevos."
       },
       "final_copy_matches_validated_artifact": true,
       "advisories": {}

@@ -2,12 +2,12 @@
   "schema_version": 2,
   "diagram_type": "workflow",
   "meta": {
-    "title": "Mi Job Silver: nueve tareas por snapshot",
+    "title": "Mi Job Silver: diez tareas y sus snapshots",
     "locale": "es",
     "quality_profile": "showcase",
     "repository": {
       "url": "https://github.com/Kevinx1919/GTFS-Bogot-.git",
-      "revision": "34e3769e1d6eaebca950161f4f47f0bf38f7bc40"
+      "revision": "23dab92a64b6a1a9563274417b6928925baf1b4d"
     },
     "output": "docs/flujo_pipeline/job_silver/recorrido_job.html",
     "views": [
@@ -25,7 +25,8 @@
           "shape_points",
           "trips",
           "frequencies",
-          "fin"
+          "fin",
+          "stop_times"
         ],
         "note": "Orden serial del Job; no todas las dependencias representan un join."
       },
@@ -41,11 +42,12 @@
       },
       {
         "id": "viajes",
-        "label": "Trazados y viajes",
+        "label": "Viajes, frecuencias y visitas",
         "focus": [
           "shape_points",
           "trips",
-          "frequencies"
+          "frequencies",
+          "stop_times"
         ],
         "note": "Cada tarea llama al notebook 10 con sus parámetros."
       },
@@ -58,7 +60,7 @@
           "bloqueada",
           "reparar"
         ],
-        "note": "Frequencies espera si falla trips. La misma política de reintentos aplica a las demás etapas."
+        "note": "Si trips falla, frequencies y stop_times esperan. Todas las etapas mantienen la política de reintento."
       }
     ]
   },
@@ -85,7 +87,11 @@
     },
     {
       "id": "cierre",
-      "label": "Frecuencias y cierre"
+      "label": "Frecuencias y visitas"
+    },
+    {
+      "id": "resultado",
+      "label": "Resultado de las etapas seleccionadas"
     },
     {
       "id": "errores",
@@ -104,6 +110,7 @@
     "shape_points",
     "trips",
     "frequencies",
+    "stop_times",
     "fin"
   ],
   "nodes": [
@@ -322,8 +329,36 @@
       ]
     },
     {
-      "id": "fin",
+      "id": "stop_times",
       "lane": "cierre",
+      "col": 5,
+      "type": "backend",
+      "label": "stop_times",
+      "sublabel": "2025 y 2026 · For each",
+      "sources": [
+        {
+          "path": "databricks/gtfs_silver/job_config.py",
+          "line": 98,
+          "end_line": 109,
+          "label": "Décima tarea serial"
+        },
+        {
+          "path": "databricks/gtfs_silver/pipeline.py",
+          "line": 203,
+          "end_line": 228,
+          "label": "Trips, stops y frequencies"
+        },
+        {
+          "path": "docs/silver_execution.md",
+          "line": 846,
+          "end_line": 865,
+          "label": "Cierre funcional de stop_times"
+        }
+      ]
+    },
+    {
+      "id": "fin",
+      "lane": "resultado",
       "col": 5,
       "type": "backend",
       "label": "Job completado",
@@ -331,9 +366,15 @@
       "sources": [
         {
           "path": "databricks/gtfs_silver/job_config.py",
-          "line": 75,
+          "line": 98,
           "end_line": 109,
-          "label": "Dependencias entre tareas"
+          "label": "Orden y dependencias finales"
+        },
+        {
+          "path": "docs/silver_execution.md",
+          "line": 846,
+          "end_line": 865,
+          "label": "Cierre funcional de stop_times"
         }
       ]
     },
@@ -359,8 +400,8 @@
       "lane": "errores",
       "col": 4,
       "type": "backend",
-      "label": "Frequencies espera",
-      "sublabel": "Dependencia sin éxito",
+      "label": "Etapas siguientes",
+      "sublabel": "Frecuencias y visitas esperan",
       "icon": "waiting",
       "sources": [
         {
@@ -453,8 +494,15 @@
       "variant": "emphasis"
     },
     {
-      "id": "frequencies_fin",
+      "id": "frequencies_stop_times",
       "from": "frequencies",
+      "to": "stop_times",
+      "role": "main",
+      "variant": "emphasis"
+    },
+    {
+      "id": "stop_times_fin",
+      "from": "stop_times",
       "to": "fin",
       "role": "main",
       "variant": "emphasis"
@@ -488,7 +536,7 @@
       "title": "Cómo leo el orden",
       "items": [
         "Sigo las flechas hacia abajo y a la derecha. Cada bloque representa una tarea del Job.",
-        "Las nueve tareas reutilizan notebook 10. Cambian entidad, versión y hash.",
+        "Las diez tareas reutilizan notebook 10. Cambian entidad, versión y hash.",
         "Cada For each usa concurrencia 1. La serialización protege también la auditoría compartida."
       ]
     },
@@ -498,7 +546,8 @@
       "items": [
         "Routes valida agency. Calendar_dates valida calendar cuando está publicado.",
         "Trips valida rutas, servicios y trazados del mismo snapshot. Frequencies valida trips.",
-        "Stops valida su jerarquía interna; esperar a routes no significa que consulte routes."
+        "Stops valida su jerarquía interna; esperar a routes no significa que consulte routes.",
+        "Stop_times requiere trips y stops; también frequencies cuando su archivo está publicado."
       ]
     },
     {
@@ -506,7 +555,7 @@
       "title": "Selección y alcance",
       "items": [
         "Las listas de snapshots son manuales. El planificador automático sigue pendiente.",
-        "Ocho tareas fuente contemplan 2025 y 2026. Service_dates contempla solamente el horizonte 2026.",
+        "Nueve tareas fuente contemplan 2025 y 2026. Service_dates contempla solamente el horizonte 2026.",
         "La rama de error ejemplifica trips; las otras tareas conservan la misma política de un reintento."
       ]
     },
@@ -514,7 +563,7 @@
       "dot": "violet",
       "title": "Estado comprobado y límites",
       "items": [
-        "Las nueve entidades tienen cierre funcional durante el desarrollo. Las animaciones no representan una ejecución real.",
+        "Las diez entidades tienen cierre funcional durante el desarrollo. Las animaciones no representan una ejecución real.",
         "Los enlaces fijan el código de la plantilla. Los cambios de configuración en la interfaz necesitan su propia revisión."
       ]
     }
