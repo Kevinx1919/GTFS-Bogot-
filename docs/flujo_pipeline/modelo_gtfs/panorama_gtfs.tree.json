@@ -8,7 +8,7 @@
     "quality_profile": "showcase",
     "repository": {
       "url": "https://github.com/Kevinx1919/GTFS-Bogot-.git",
-      "revision": "23dab92a64b6a1a9563274417b6928925baf1b4d"
+      "revision": "6c4490fd2846d8afeb70ee08f02d4680d535b76e"
     },
     "views": [
       {
@@ -45,7 +45,7 @@
           "frequencies",
           "stop_times"
         ],
-        "note": "Calendarios, días activos, viajes, frecuencias y visitas ya funcionan. El planificador 8b sigue pendiente."
+        "note": "Calendarios y viajes están publicados. El planificador dinámico tiene piloto sin trabajo comprobado."
       },
       {
         "id": "territorio",
@@ -351,13 +351,13 @@
     {
       "id": "contexto",
       "label": "Tarifas y metadata",
-      "sublabel": "PENDIENTE EN SILVER",
+      "sublabel": "EVALUADAS · SEGÚN USO",
       "sources": [
         {
-          "path": "docs/silver_design.md",
-          "line": 62,
-          "end_line": 79,
-          "label": "Plan de entidades Silver"
+          "path": "docs/remaining_silver_assessment.md",
+          "line": 1,
+          "end_line": 24,
+          "label": "No son dependencias obligatorias del MVP"
         }
       ],
       "parent": "gtfs"
@@ -368,10 +368,10 @@
       "sublabel": "Metadata del feed, si existe",
       "sources": [
         {
-          "path": "docs/silver_design.md",
-          "line": 62,
-          "end_line": 79,
-          "label": "Plan de entidades Silver"
+          "path": "docs/remaining_silver_assessment.md",
+          "line": 33,
+          "end_line": 43,
+          "label": "Evaluación sin publicación Silver"
         }
       ],
       "parent": "contexto"
@@ -382,10 +382,10 @@
       "sublabel": "Tarifas publicadas, si existen",
       "sources": [
         {
-          "path": "docs/silver_design.md",
-          "line": 62,
-          "end_line": 79,
-          "label": "Plan de entidades Silver"
+          "path": "docs/remaining_silver_assessment.md",
+          "line": 45,
+          "end_line": 68,
+          "label": "Evaluación sin publicación Silver"
         }
       ],
       "parent": "contexto"
@@ -396,10 +396,10 @@
       "sublabel": "Reglas tarifarias, si existen",
       "sources": [
         {
-          "path": "docs/silver_design.md",
-          "line": 62,
-          "end_line": 79,
-          "label": "Plan de entidades Silver"
+          "path": "docs/remaining_silver_assessment.md",
+          "line": 70,
+          "end_line": 83,
+          "label": "Evaluación sin publicación Silver"
         }
       ],
       "parent": "contexto"
@@ -407,14 +407,14 @@
     {
       "id": "operacion",
       "parent": "gtfs",
-      "label": "Operación pendiente",
-      "sublabel": "Planificador y métricas futuras",
+      "label": "Control y consumo",
+      "sublabel": "Implementación y diseño",
       "sources": [
         {
-          "path": "docs/silver_design.md",
-          "line": 79,
-          "end_line": 80,
-          "label": "Planificador y alcance futuro"
+          "path": "docs/gold_plan.md",
+          "line": 10,
+          "end_line": 34,
+          "label": "Estado y siguiente decisión"
         }
       ]
     },
@@ -422,13 +422,19 @@
       "id": "planificador",
       "parent": "operacion",
       "label": "plan_silver · 8b",
-      "sublabel": "Seleccionar snapshots · PENDIENTE",
+      "sublabel": "Dinámico · piloto NO_WORK",
       "sources": [
         {
-          "path": "docs/silver_design.md",
-          "line": 286,
-          "end_line": 302,
-          "label": "Planificador pendiente"
+          "path": "databricks/jobs/gtfs_bogota_silver_planned.template.json",
+          "line": 59,
+          "end_line": 85,
+          "label": "Emite listas y alimenta bucles"
+        },
+        {
+          "path": "docs/silver_planner.md",
+          "line": 1,
+          "end_line": 20,
+          "label": "Estado del planificador"
         }
       ]
     },
@@ -436,13 +442,33 @@
       "id": "cobertura",
       "parent": "operacion",
       "label": "Cobertura para Gold",
-      "sublabel": "Cero, una o varias visitas · PLAN",
+      "sublabel": "Prototipo local · sin publicar",
       "sources": [
         {
-          "path": "docs/stop_times_plan.md",
-          "line": 206,
-          "end_line": 240,
-          "label": "Clasificación propuesta"
+          "path": "docs/contracts/trip_coverage.md",
+          "line": 1,
+          "end_line": 20,
+          "label": "Cobertura Gold local"
+        }
+      ]
+    },
+    {
+      "id": "consumo",
+      "parent": "operacion",
+      "label": "Power BI",
+      "sublabel": "Diseño + MCP probado",
+      "sources": [
+        {
+          "path": "docs/powerbi_mcp_setup.md",
+          "line": 124,
+          "end_line": 137,
+          "label": "Conexión de lectura comprobada"
+        },
+        {
+          "path": "docs/power_bi_user_stories.md",
+          "line": 40,
+          "end_line": 57,
+          "label": "Inicio y cuatro páginas candidatas"
         }
       ]
     }
@@ -467,11 +493,12 @@
     },
     {
       "dot": "amber",
-      "title": "Lo que sigue",
+      "title": "Qué queda por cerrar",
       "items": [
-        "El siguiente incremento operativo es el planificador 8b: selección de snapshots antes de programar el Job.",
-        "Antes de las métricas Gold prepararé cobertura por viaje; no interpreto varias visitas como recorrido completo.",
-        "Tarifas y feed_info siguen pendientes según la pregunta analítica. Gold y Power BI también siguen pendientes."
+        "Las tres entidades opcionales fueron evaluadas. Se incorporarán a Silver solo si una pregunta las necesita.",
+        "La cobertura Gold tiene contrato y código local; su publicación en Workspace sigue pendiente.",
+        "Las preguntas de negocio y cinco vistas están documentadas. El boceto HTML usa cifras ilustrativas.",
+        "El MCP permite modelado. La habilidad del navegador trabaja el reporte web; su cuenta todavía no fue comprobada."
       ]
     }
   ]

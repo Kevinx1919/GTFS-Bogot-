@@ -1,0 +1,313 @@
+{
+  "schema_version": 1,
+  "diagram_type": "dataflow",
+  "meta": {
+    "title": "Del dato a Power BI: estado y diseño de consumo",
+    "locale": "es",
+    "output": "docs/flujo_pipeline/consumo_analitico/consumo_analitico.html",
+    "quality_profile": "showcase",
+    "repository": {
+      "url": "https://github.com/Kevinx1919/GTFS-Bogot-.git",
+      "revision": "6c4490fd2846d8afeb70ee08f02d4680d535b76e"
+    },
+    "views": [
+      {
+        "id": "datos",
+        "label": "Preparar y consumir",
+        "focus": [
+          "silver",
+          "preparar",
+          "gold",
+          "dax",
+          "reporte"
+        ],
+        "note": "Solo Silver está publicado. Gold local y el modelo GTFS todavía necesitan publicación y validación."
+      },
+      {
+        "id": "asistencia",
+        "label": "Prototipo, MCP y navegador",
+        "focus": [
+          "prototipo",
+          "mcp",
+          "plugin",
+          "dax",
+          "reporte"
+        ],
+        "note": "El prototipo usa fixtures; MCP local probado en lectura; acceso web sin comprobar."
+      }
+    ]
+  },
+  "stages": [
+    {
+      "label": "Fuentes"
+    },
+    {
+      "label": "Preparación"
+    },
+    {
+      "label": "Persistencia"
+    },
+    {
+      "label": "Modelo"
+    },
+    {
+      "label": "Reporte"
+    }
+  ],
+  "nodes": [
+    {
+      "id": "silver",
+      "type": "database",
+      "label": "Silver GTFS",
+      "sublabel": "Datos validados",
+      "stage": 0,
+      "row": 2,
+      "tag": "PUBLICADO",
+      "sources": [
+        {
+          "path": "docs/gold_plan.md",
+          "line": 10,
+          "end_line": 21,
+          "label": "Responsabilidad y estado documentados"
+        }
+      ]
+    },
+    {
+      "id": "preguntas",
+      "type": "frontend",
+      "label": "Preguntas",
+      "sublabel": "Decisión e indicador",
+      "stage": 1,
+      "row": 0,
+      "tag": "CANDIDATAS",
+      "sources": [
+        {
+          "path": "docs/power_bi_user_stories.md",
+          "line": 9,
+          "end_line": 25,
+          "label": "Responsabilidad y estado documentados"
+        }
+      ]
+    },
+    {
+      "id": "preparar",
+      "type": "backend",
+      "label": "Preparar Gold",
+      "sublabel": "Cobertura por viaje",
+      "stage": 1,
+      "row": 2,
+      "tag": "PROTOTIPO LOCAL",
+      "sources": [
+        {
+          "path": "databricks/gtfs_gold/trip_coverage.py",
+          "line": 29,
+          "end_line": 102,
+          "label": "Responsabilidad y estado documentados"
+        }
+      ]
+    },
+    {
+      "id": "contratos",
+      "type": "backend",
+      "label": "Fichas de negocio",
+      "sublabel": "Grano y denominador",
+      "stage": 2,
+      "row": 0,
+      "tag": "POR COMPLETAR",
+      "sources": [
+        {
+          "path": "docs/gold_plan.md",
+          "line": 123,
+          "end_line": 133,
+          "label": "Responsabilidad y estado documentados"
+        }
+      ]
+    },
+    {
+      "id": "gold",
+      "type": "database",
+      "label": "Tablas Gold",
+      "sublabel": "Escritura por snapshot",
+      "stage": 2,
+      "row": 2,
+      "tag": "SIN PUBLICAR",
+      "sources": [
+        {
+          "path": "docs/contracts/trip_coverage.md",
+          "line": 1,
+          "end_line": 20,
+          "label": "Responsabilidad y estado documentados"
+        }
+      ]
+    },
+    {
+      "id": "dax",
+      "type": "backend",
+      "label": "Modelo y DAX",
+      "sublabel": "Medidas con filtros",
+      "stage": 3,
+      "row": 2,
+      "tag": "GTFS PENDIENTE",
+      "sources": [
+        {
+          "path": "docs/powerbi_mcp_setup.md",
+          "line": 7,
+          "end_line": 30,
+          "label": "Responsabilidad y estado documentados"
+        }
+      ]
+    },
+    {
+      "id": "mcp",
+      "type": "backend",
+      "label": "MCP local",
+      "sublabel": "Inspección del modelo",
+      "stage": 3,
+      "row": 4,
+      "tag": "LECTURA PROBADA",
+      "sources": [
+        {
+          "path": "docs/powerbi_mcp_setup.md",
+          "line": 124,
+          "end_line": 137,
+          "label": "Responsabilidad y estado documentados"
+        }
+      ]
+    },
+    {
+      "id": "prototipo",
+      "type": "frontend",
+      "label": "Boceto HTML",
+      "sublabel": "Guía visual con fixtures",
+      "stage": 4,
+      "row": 0,
+      "tag": "LOCAL",
+      "sources": [
+        {
+          "path": "docs/power_bi_navigation_images.md",
+          "line": 160,
+          "end_line": 176,
+          "label": "Responsabilidad y estado documentados"
+        }
+      ]
+    },
+    {
+      "id": "reporte",
+      "type": "frontend",
+      "label": "Reporte Power BI",
+      "sublabel": "Inicio + cuatro páginas",
+      "stage": 4,
+      "row": 2,
+      "tag": "POR CONSTRUIR",
+      "sources": [
+        {
+          "path": "docs/power_bi_user_stories.md",
+          "line": 40,
+          "end_line": 57,
+          "label": "Responsabilidad y estado documentados"
+        }
+      ]
+    },
+    {
+      "id": "plugin",
+      "type": "backend",
+      "label": "Habilidad web",
+      "sublabel": "Edición en navegador",
+      "stage": 4,
+      "row": 4,
+      "tag": "ACCESO PENDIENTE",
+      "sources": [
+        {
+          "path": "docs/powerbi_mcp_setup.md",
+          "line": 139,
+          "end_line": 155,
+          "label": "Responsabilidad y estado documentados"
+        }
+      ]
+    }
+  ],
+  "flows": [
+    {
+      "id": "silver_gold",
+      "from": "silver",
+      "to": "preparar",
+      "label": "Fuentes Silver"
+    },
+    {
+      "id": "reglas",
+      "from": "preguntas",
+      "to": "preparar",
+      "label": "Reglas propuestas"
+    },
+    {
+      "id": "publicacion",
+      "from": "preparar",
+      "to": "gold",
+      "label": "Tras validar"
+    },
+    {
+      "id": "consumo",
+      "from": "gold",
+      "to": "dax",
+      "label": "Consumo pendiente"
+    },
+    {
+      "id": "definiciones",
+      "from": "contratos",
+      "to": "dax",
+      "label": "Filtros y grano"
+    },
+    {
+      "id": "medidas",
+      "from": "dax",
+      "to": "reporte",
+      "label": "Medidas y datos"
+    },
+    {
+      "id": "mcp_futuro",
+      "from": "mcp",
+      "to": "dax",
+      "label": "Conectar después"
+    },
+    {
+      "id": "boceto",
+      "from": "prototipo",
+      "to": "reporte",
+      "label": "Guía de diseño"
+    },
+    {
+      "id": "web_futuro",
+      "from": "plugin",
+      "to": "reporte",
+      "label": "Edición futura"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "emerald",
+      "title": "Qué calcula cada capa",
+      "items": [
+        "Gold prepara relaciones, categorías y agregados reutilizables. El prototipo de cobertura aún no se publicó.",
+        "Power BI calculará conteos y porcentajes según los filtros del modelo. No materializo cada combinación de filtros."
+      ]
+    },
+    {
+      "dot": "amber",
+      "title": "Cómo leo los estados",
+      "items": [
+        "Las flechas de Gold a Power BI describen el flujo previsto, no una carga ya ejecutada.",
+        "La conexión MCP fue probada con un modelo local abierto; no crea ni certifica el modelo GTFS.",
+        "La habilidad web necesita su propia comprobación de cuenta, permisos y entorno."
+      ]
+    },
+    {
+      "dot": "slate",
+      "title": "Preguntas y límites",
+      "items": [
+        "General, Programación, Red y Calidad responden preguntas candidatas documentadas. Inicio proporciona navegación.",
+        "El HTML usa rutas DEMO. Los conteos reales están separados y no prueban operación observada.",
+        "No mido cumplimiento contractual, demanda ni puntualidad con GTFS estático."
+      ]
+    }
+  ]
+}

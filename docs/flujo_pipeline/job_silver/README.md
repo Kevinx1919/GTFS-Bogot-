@@ -1,8 +1,8 @@
 # Mi recorrido del Job Silver
 
-Actualicé las dos vistas el 12 de noviembre de 2026.
+Actualicé las dos vistas el 18 de noviembre de 2026.
 
-1. [Orden del Job](recorrido_job.html): diez tareas, parámetros por snapshot y un ejemplo de recuperación.
+1. [Orden del Job](recorrido_job.html): plan dinámico y diez ciclos, parámetros por snapshot y un ejemplo de recuperación.
 2. [Una iteración](iteracion_snapshot.html): entradas, validación, cuarentena, publicación, auditoría y errores.
 
 ## Cómo sigo el Job
@@ -10,11 +10,13 @@ Actualicé las dos vistas el 12 de noviembre de 2026.
 Las flechas avanzan hacia abajo y a la derecha:
 
 ```text
-agency → routes → stops → calendar → calendar_dates
+plan_silver → agency → routes → stops → calendar → calendar_dates
 → service_dates → shape_points → trips → frequencies → stop_times
 ```
 
-Cada bloque representa un For each. Las diez tareas utilizan notebook 10.
+Plan_silver ejecuta notebook 11 y emite las listas por entidad.
+Después, cada bloque de publicación representa un For each que utiliza notebook 10.
+Una lista vacía no ejecuta el notebook interno del bucle.
 Nueve tareas fuente contemplan 2025 y 2026. Service_dates calcula solamente el horizonte 2026.
 Cada bucle usa concurrencia 1. La plantilla mantiene un reintento con un intervalo mínimo de 60 segundos.
 
@@ -44,8 +46,10 @@ Un fallo posterior a la escritura puede dejar silver_committed=true. Reviso ese 
 
 Las diez entidades tienen despliegue funcional confirmado durante el desarrollo.
 El [cierre de stop_times](../../silver_execution.md#cierre-de-la-ejecución-de-stop_times) conserva el alcance de esa confirmación.
-Los diagramas enlazan el código de 23dab92a64b6a1a9563274417b6928925baf1b4d. No muestran telemetría ni verifican cambios externos de la interfaz.
-Las listas de snapshots siguen siendo manuales. El planificador automático permanece pendiente 8b.
+Los diagramas enlazan el código de 6c4490fd2846d8afeb70ee08f02d4680d535b76e. No muestran telemetría ni verifican cambios externos de la interfaz.
+Las listas proceden de valores de tarea del planificador dinámico.
+Conservo la variante manual para pruebas controladas. El piloto NO_WORK está comprobado.
+El coordinador ya terminó SUCCEEDED con 2026; probar un feed nuevo sigue pendiente.
 
 Las fuentes son [el recorrido](recorrido_job.workflow.json) y [la iteración](iteracion_snapshot.workflow.json).
 Ambas vistas pasaron controles automáticos de estructura, referencias, HTML y navegador.
@@ -54,4 +58,5 @@ No hice una nueva revisión de capturas. Los recibos detallados permanecen fuera
 Genero fuera de OneDrive y copio los HTML comprobados sin cambiar sus bytes.
 
 Stop_times conserva visitas aisladas con advertencia y registra viajes sin visitas como diagnóstico global.
-La clasificación cero/una/varias visitas para métricas Gold está planificada. No es una tarea adicional implementada.
+La clasificación Gold dispone de procesador local y contrato. No es una tarea añadida al Job Silver ni al coordinador.
+Su publicación en Workspace y la definición completa del consumo siguen pendientes.

@@ -1,0 +1,63 @@
+{
+  "schema_version": 1,
+  "checked_at_utc": "2026-11-18T17:30:30.713169+00:00",
+  "tool": "Archify 3.2.0",
+  "repository_revision": "6c4490fd2846d8afeb70ee08f02d4680d535b76e",
+  "delivery_method": "Generé y comprobé fuera de OneDrive. Copié los HTML byte a byte y verifiqué hashes; los recibos completos quedan fuera de Git.",
+  "scope": "Documentación y controles automáticos en navegador. No ejecuté Jobs ni consulté modelos durante esta generación.",
+  "artifacts": [
+    {
+      "source": "consumo_analitico.dataflow.json",
+      "source_sha256": "68fce4b4c588bc96d73d5a273d0a1e2e475831829280056a452995b0fb161d5c",
+      "html": "consumo_analitico.html",
+      "html_sha256": "4b1e5017325860f51f57e325bec8ddc7991ef0c2dc3a0c4c2d7556bdcb71d2f0",
+      "bytes": 847139,
+      "quality_profile": "showcase",
+      "automated_gates": {
+        "validate": "pass",
+        "deliver": "pass",
+        "check": "pass",
+        "browser-check": "pass"
+      },
+      "browser_viewports": [
+        {
+          "width": 1440,
+          "height": 900,
+          "theme": "light",
+          "minimum_projected_node_text_px": 7,
+          "readability_ok": true,
+          "vertical_scroll_accepted": false
+        },
+        {
+          "width": 1600,
+          "height": 1000,
+          "theme": "light",
+          "minimum_projected_node_text_px": 7,
+          "readability_ok": true,
+          "vertical_scroll_accepted": false
+        },
+        {
+          "width": 1920,
+          "height": 1080,
+          "theme": "light",
+          "minimum_projected_node_text_px": 7,
+          "readability_ok": true,
+          "vertical_scroll_accepted": false
+        },
+        {
+          "width": 2048,
+          "height": 1320,
+          "theme": "light",
+          "minimum_projected_node_text_px": 7,
+          "readability_ok": true,
+          "vertical_scroll_accepted": false
+        }
+      ],
+      "visual_review": {
+        "status": "not-requested",
+        "scope": "Controles automáticos de navegador; no atribuyo capturas o revisión perceptual a esta entrega."
+      },
+      "final_copy_matches_validated_artifact": true
+    }
+  ]
+}

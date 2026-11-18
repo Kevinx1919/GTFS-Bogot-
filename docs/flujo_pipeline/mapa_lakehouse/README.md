@@ -2,7 +2,7 @@
 
 [Abro el mapa interactivo](mapa_lakehouse.html).
 
-Actualicé esta vista el 12 de noviembre de 2026.
+Actualicé esta vista el 18 de noviembre de 2026.
 Sigo el dato desde la fuente pública hasta Silver y distingo archivos, transformaciones y tablas.
 
 | Zona | Qué conservo |
@@ -12,7 +12,8 @@ Sigo el dato desde la fuente pública hasta Silver y distingo archivos, transfor
 | Bronze | Filas fuente y procedencia en tablas bronze_gtfs_*. |
 | Silver fuente | Nueve entidades tipadas y validadas desde Bronze. |
 | Silver derivada | Service_dates: días activos calculados desde calendarios Silver, solamente para 2026. |
-| Gold y Power BI | Métricas y consumo analítico pendientes. |
+| Gold | Cobertura implementada localmente; tabla analítica todavía sin publicación. |
+| Power BI | Preguntas y diseño propuestos; modelo y reporte GTFS pendientes. |
 
 Mantengo Bronze y Silver en workspace.gtfs_bogota.
 Sus responsabilidades y prefijos distinguen las capas. Un Volume almacena archivos; no equivale a una tabla Delta.
@@ -35,18 +36,20 @@ Los conteos de perfil, las pruebas locales y las confirmaciones de publicación 
 El GTFS estático describe oferta planificada.
 Las ventanas de frequencies no cuentan vehículos observados ni garantizan salidas exactas.
 Stop_times ya tiene despliegue funcional confirmado. Gold y Power BI siguen pendientes.
-La selección automática de snapshots continúa pendiente 8b.
+El planificador Silver ya entrega listas dinámicas; el piloto NO_WORK quedó comprobado.
 
 Uso Genie para explorar en lectura. El pipeline versionado ejecuta transformaciones y escrituras.
 El mapa no consulta Databricks ni representa telemetría en vivo.
 
 ## Fuente y comprobación
 
-La [fuente editable](mapa_lakehouse.dataflow.json) enlaza el código de 23dab92a64b6a1a9563274417b6928925baf1b4d.
+La [fuente editable](mapa_lakehouse.dataflow.json) enlaza el código de 6c4490fd2846d8afeb70ee08f02d4680d535b76e.
 La vista pasó controles automáticos de estructura, referencias, HTML y navegador.
 El [resumen público](verificacion.json) conserva hashes y medidas de esta revisión.
-No hice una nueva revisión de capturas. El aviso sobre la ruta del encabezado queda registrado.
+Las comprobaciones actuales se registran en el resumen público. El aviso de rutas se conserva cuando corresponde.
 Genero fuera de OneDrive y copio el HTML comprobado sin cambiar sus bytes.
 
-La clasificación de cobertura antes de métricas Gold permanece planificada.
+La cobertura Gold ya tiene contrato, consulta y procesador local.
+Service_dates corresponde a indicadores por fecha distintos; no es entrada del procesador trip_coverage.
+La [vista de consumo](../consumo_analitico/README.md) desarrolla sus siguientes pasos.
 Conservo el aviso de recorrido largo del encabezado TXT en el resumen, sin quitar esa entrada real del pipeline.

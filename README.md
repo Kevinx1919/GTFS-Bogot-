@@ -220,7 +220,7 @@ Implementé shape_points_v1 con Spark nativo. Conserva puntos repetidos y genera
 La implementación de shape_points pasó 36 pruebas seleccionadas sin omisiones. Incluyen trece nuevas y tres integraciones Delta en total. El flujo de shape_points ya funciona en Databricks. El [cierre](docs/silver_execution.md#cierre-de-la-ejecución-de-shape_points) registra la evidencia disponible.
 
 
-Trips ya funciona. Frequencies ya está publicada. El siguiente paso es stop_times. Registré la [selección automática de snapshots](docs/silver_design.md#automatización-pendiente-selección-de-snapshots-silver) como pendiente 8b. Las listas actuales siguen siendo manuales. Una versión nueva todavía requiere configurar su trabajo.
+Trips, frequencies y stop_times ya tienen despliegue funcional. La [selección de snapshots](docs/silver_design.md#automatización-pendiente-selección-de-snapshots-silver) usa listas dinámicas y tiene piloto NO_WORK comprobado. Conservo la variante manual para pruebas controladas. La ingesta de un feed nuevo sigue pendiente de prueba integral.
 
 
 ### Trips: perfil, implementación y despliegue funcional
@@ -262,3 +262,10 @@ La plantilla añade publish_stop_times como décima tarea; las nueve anteriores 
 Conservo 61 visitas aisladas con advertencia y registro 739 viajes sin visitas en 2026.
 Stop_times ya se ejecutó en Databricks y comprobé sus datos. Completo diez entidades Silver con despliegue funcional.
 El [despliegue](docs/silver_execution.md#despliegue-de-stop_times_v1) separa validate, publish y comprobación final.
+
+## Recorrido de documentación actualizado
+
+Empiezo por las [preguntas de negocio](docs/power_bi_user_stories.md), el [diseño del reporte](docs/power_bi_navigation_images.md) y el [plan de cierre](docs/gold_plan.md).
+La [documentación Archify](docs/flujo_pipeline/README.md) reúne seis vistas con estados explícitos.
+El [flujo analítico](docs/flujo_pipeline/consumo_analitico/consumo_analitico.html) distingue Gold, medidas DAX, reporte y herramientas de asistencia.
+Los contratos explican reglas y grano; los diagramas permiten recorrer sus relaciones.

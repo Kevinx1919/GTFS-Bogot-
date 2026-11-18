@@ -6,7 +6,7 @@
     "quality_profile": "showcase",
     "repository": {
       "url": "https://github.com/Kevinx1919/GTFS-Bogot-.git",
-      "revision": "23dab92a64b6a1a9563274417b6928925baf1b4d"
+      "revision": "6c4490fd2846d8afeb70ee08f02d4680d535b76e"
     },
     "title": "Mi Job Silver: una entidad y un snapshot",
     "output": "docs/flujo_pipeline/job_silver/iteracion_snapshot.html",
@@ -107,14 +107,14 @@
       "sources": [
         {
           "path": "databricks/gtfs_silver/pipeline.py",
-          "line": 59,
-          "end_line": 110,
+          "line": 119,
+          "end_line": 170,
           "label": "Fuentes y dependencias fijadas"
         },
         {
           "path": "databricks/gtfs_silver/pipeline.py",
-          "line": 145,
-          "end_line": 174,
+          "line": 216,
+          "end_line": 245,
           "label": "Derivación desde Silver"
         }
       ]
@@ -263,8 +263,8 @@
       "sources": [
         {
           "path": "databricks/gtfs_silver/pipeline.py",
-          "line": 32,
-          "end_line": 78,
+          "line": 81,
+          "end_line": 138,
           "label": "Configuración y entradas"
         },
         {
@@ -495,7 +495,8 @@
       "items": [
         "Una visita aislada produce advertencia. Un viaje sin visitas queda como diagnóstico de cobertura, sin fila ficticia de cuarentena.",
         "Los errores de filas existentes bloquean el snapshot. No fabrico paradas ni horarios.",
-        "La clasificación de cobertura para Gold está planificada; varias visitas no prueban un recorrido completo."
+        "La clasificación Gold ya tiene prototipo local fuera del Job Silver. Varias visitas no prueban un recorrido completo.",
+        "Los task values seleccionan cada iteración antes de este flujo. No ejecuto notebook 20 desde notebook 10."
       ]
     }
   ]

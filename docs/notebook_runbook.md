@@ -404,7 +404,7 @@ El notebook 14 conserva el perfil de lectura. No se añade al Job. Las 36 prueba
 
 Los hashes y nombres son valores actuales del proyecto. Las consultas no fijan versiones Delta ni una transacción conjunta. El bloque 10 infiere nombres del encabezado; desactiva inferencia de tipos. Esa exploración no cambia el esquema explícito del pipeline.
 
-El [informe](trips_profile_2025_2026.md) conserva hallazgos y reconciliaciones. La [propuesta de contrato](contracts/trips.md) mantiene los cinco campos publicados como string. Después de este perfil añadí procesador, pruebas y tarea de trips. El apartado siguiente conserva ese incremento. El planificador de snapshots permanece pendiente 8b.
+El [informe](trips_profile_2025_2026.md) conserva hallazgos y reconciliaciones. La [propuesta de contrato](contracts/trips.md) mantiene los cinco campos publicados como string. Después de este perfil añadí procesador, pruebas y tarea de trips. El apartado siguiente conserva ese incremento. Este perfil precedió al planificador 8b; su selección dinámica y piloto se documentan en silver_planner.md.
 
 
 ## Notebook 10 — Entrada de trips_v1 — 11 de noviembre de 2026
@@ -448,7 +448,7 @@ Los bloques 5–9 filtran las parejas explícitas. Sus resultados no constituyen
 El [perfil](frequencies_profile_2025_2026.md) conserva rangos, contexto y límites.
 La [contrato implementado](contracts/frequencies.md) define los tipos y controles implementados.
 El cuaderno no se añade al Job. Notebook 10 conserva la responsabilidad de ejecutar el pipeline.
-Después del perfil añadí procesador, pruebas y tarea de frequencies. El despliegue funcional ya está confirmado. El planificador sigue pendiente 8b.
+Después del perfil añadí procesador, pruebas y tarea de frequencies. El despliegue funcional ya está confirmado. El planificador 8b ya tiene selección dinámica y piloto NO_WORK comprobado.
 
 
 ## Notebook 10 — Entrada de frequencies_v1 — 12 de noviembre de 2026

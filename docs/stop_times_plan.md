@@ -150,7 +150,7 @@ Tampoco uniré cada visita con todos los puntos de shape_points.
 Prepararé publish_stop_times como décima tarea, después de publish_frequencies.
 Mantendré notebook 10, parámetros por entidad/version/hash y concurrencia 1.
 La plantilla local ya incorpora esa tarea y el registro habilita el procesador. El Job existente todavía requiere actualización manual.
-Las listas seguirán manuales hasta implementar el pendiente 8b.
+Conservo listas manuales para pruebas controladas; la variante dinámica ya usa valores de tarea del planificador 8b.
 
 ## Cómo controlaré el costo
 
@@ -201,7 +201,7 @@ Mantengo distancias repetidas como advertencia; un descenso produce rechazo. Est
 Mantengo los valores timepoint fuente separados de su interpretación efectiva.
 La persistencia del resultado es optativa y queda desactivada para Serverless 4. Su liberación usa finally cuando la activo.
 La décima tarea reutiliza notebook 10. Las nueve tareas anteriores conservan su configuración.
-La publicación en Workspace ya está confirmada. El planificador 8b permanece pendiente. La actualización visual se documenta por separado.
+La publicación en Workspace ya está confirmada. El planificador 8b ya tiene selección dinámica y piloto NO_WORK comprobado. La actualización visual se documenta por separado.
 
 ## Clasificación de cobertura antes de las métricas Gold
 

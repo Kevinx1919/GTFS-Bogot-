@@ -439,7 +439,7 @@ El flujo de shape_points ya funciona en Workspace. El cierre siguiente registra 
 
 Registro el alcance exacto de esta confirmación. Aquí no adjunto IDs de runs, resúmenes de iteraciones ni nuevos conteos de Silver por snapshot. Los 909.878 / 926.501 candidatos y las 439 / 30.208 advertencias anteriores siguen siendo resultados esperados del perfil. No los convierto en una nueva salida medida de Workspace. Las 36 pruebas locales permanecen como evidencia separada.
 
-El Job conserva listas manuales de versión/hash. Una versión nueva todavía requiere configurar su trabajo. Registré el [planificador pendiente](silver_design.md#automatización-pendiente-selección-de-snapshots-silver) como orden 8b, después de los contratos iniciales y antes de programar ejecuciones automáticas. No añadí esa tarea al Job actual.
+Conservo una variante manual del Job para ejecuciones controladas. El [planificador 8b](silver_design.md#automatización-pendiente-selección-de-snapshots-silver) ya alimenta las listas dinámicas en la variante conectada; su piloto NO_WORK está comprobado. La ingesta de un feed nuevo y la programación siguen pendientes.
 
 
 ## Comprobación posterior de shape_points mediante Genie
@@ -566,7 +566,7 @@ Las 37 pruebas locales conservan su evidencia independiente. No repetí pruebas 
 
 Trips completa la octava entidad Silver con despliegue funcional. Continúo con frequencies, orden 7 del plan.
 Primero revisaré ventanas, intervalos y referencias antes de implementar su contrato.
-El planificador automático sigue pendiente 8b. Archify mantiene su revisión anterior.
+El planificador 8b se implementó después de este contrato. Archify ya documenta la planificación dinámica y su piloto.
 
 ## Comprobación posterior de trips mediante Genie
 
@@ -806,7 +806,7 @@ Espero una clave distinta por fila y ambos snapshots preservados.
 Las visitas de plantillas no equivalen a salidas expandidas ni vehículos observados.
 Registro la duración de validate y publish. Reviso almacenamiento temporal antes de ajustar el diseño físico.
 La publicación de nueve millones de filas todavía no tiene un benchmark documentado.
-El planificador automático 8b y la actualización posterior de Archify permanecen pendientes.
+El planificador 8b tiene piloto NO_WORK comprobado y Archify ya refleja ese estado.
 
 La [documentación oficial de caché Serverless](https://docs.databricks.com/aws/en/compute/serverless/dataframe-cache) exige entorno 5 o superior.
 No cambié la versión 4 del Job ni sus dependencias. Esta optimización queda desactivada por defecto.
@@ -859,9 +859,9 @@ Faltaba hacer Pull en el Git folder de Databricks.
 Después de sincronizar el código, la ejecución funcionó. No fue necesario modificar el procesador.
 
 Mantengo las visitas aisladas con advertencia y el diagnóstico de viajes sin visitas.
-La clasificación cero/una/varias visitas para consumo Gold sigue planificada; no es otra tabla publicada.
+La clasificación cero/una/varias visitas dispone de prototipo Gold local; todavía no es otra tabla publicada.
 Varias visitas no garantizan un recorrido completo.
-El planificador de snapshots 8b continúa pendiente, antes de programar ejecuciones automáticas.
+El planificador 8b ya está implementado y tiene piloto NO_WORK comprobado. La programación automática continúa deshabilitada.
 La actualización de Archify registrará por separado esta confirmación y las referencias al código.
 
 
@@ -872,5 +872,5 @@ El ERD conserva 155 columnas físicas y dos catálogos lógicos no persistidos.
 Las referencias fijan el código y cierre documental de 23dab92a64b6a1a9563274417b6928925baf1b4d.
 Las cinco vistas pasaron controles automáticos de estructura, referencias, HTML y navegador.
 No hice una nueva revisión visual de capturas. Los resúmenes públicos conservan esa distinción.
-El planificador 8b y la clasificación de cobertura para Gold permanecen pendientes.
+El planificador 8b está comprobado sin trabajo pendiente. La cobertura Gold tiene implementación local y publicación pendiente.
 No ejecuté Jobs ni modifiqué datos de Databricks durante esta actualización documental.

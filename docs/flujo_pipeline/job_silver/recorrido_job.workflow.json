@@ -2,12 +2,12 @@
   "schema_version": 2,
   "diagram_type": "workflow",
   "meta": {
-    "title": "Mi Job Silver: diez tareas y sus snapshots",
+    "title": "Mi Job Silver: planificación y diez ciclos",
     "locale": "es",
     "quality_profile": "showcase",
     "repository": {
       "url": "https://github.com/Kevinx1919/GTFS-Bogot-.git",
-      "revision": "23dab92a64b6a1a9563274417b6928925baf1b4d"
+      "revision": "6c4490fd2846d8afeb70ee08f02d4680d535b76e"
     },
     "output": "docs/flujo_pipeline/job_silver/recorrido_job.html",
     "views": [
@@ -16,6 +16,7 @@
         "label": "Orden completo",
         "focus": [
           "iniciar",
+          "plan_silver",
           "agency",
           "routes",
           "stops",
@@ -28,7 +29,7 @@
           "fin",
           "stop_times"
         ],
-        "note": "Orden serial del Job; no todas las dependencias representan un join."
+        "note": "Planifica trabajos antes de los diez ciclos. Una lista vacía no ejecuta su notebook interno."
       },
       {
         "id": "calendarios",
@@ -70,6 +71,10 @@
       "label": "Inicio manual"
     },
     {
+      "id": "planificacion",
+      "label": "Plan dinámico desde auditorías"
+    },
+    {
       "id": "referencias",
       "label": "Agencias y rutas"
     },
@@ -101,6 +106,7 @@
   ],
   "mainPath": [
     "iniciar",
+    "plan_silver",
     "agency",
     "routes",
     "stops",
@@ -124,9 +130,31 @@
       "sources": [
         {
           "path": "databricks/gtfs_silver/job_config.py",
-          "line": 28,
-          "end_line": 40,
+          "line": 30,
+          "end_line": 42,
           "label": "Job sin calendario automático"
+        }
+      ]
+    },
+    {
+      "id": "plan_silver",
+      "lane": "planificacion",
+      "col": 0,
+      "type": "backend",
+      "label": "plan_silver",
+      "sublabel": "Listas dinámicas por entidad",
+      "sources": [
+        {
+          "path": "databricks/jobs/gtfs_bogota_silver_planned.template.json",
+          "line": 59,
+          "end_line": 85,
+          "label": "Tarea inicial y entradas dinámicas"
+        },
+        {
+          "path": "databricks/notebooks/silver/11_plan_silver.ipynb",
+          "line": 1,
+          "end_line": 40,
+          "label": "Preparación de la selección"
         }
       ]
     },
@@ -140,14 +168,14 @@
       "sources": [
         {
           "path": "databricks/gtfs_silver/job_config.py",
-          "line": 45,
-          "end_line": 66,
+          "line": 47,
+          "end_line": 68,
           "label": "Notebook y política compartidos"
         },
         {
           "path": "databricks/gtfs_silver/job_config.py",
-          "line": 75,
-          "end_line": 109,
+          "line": 77,
+          "end_line": 111,
           "label": "Entidad, orden y parámetros"
         }
       ]
@@ -162,14 +190,14 @@
       "sources": [
         {
           "path": "databricks/gtfs_silver/job_config.py",
-          "line": 45,
-          "end_line": 66,
+          "line": 47,
+          "end_line": 68,
           "label": "Notebook y política compartidos"
         },
         {
           "path": "databricks/gtfs_silver/job_config.py",
-          "line": 75,
-          "end_line": 109,
+          "line": 77,
+          "end_line": 111,
           "label": "Entidad, orden y parámetros"
         }
       ]
@@ -184,14 +212,14 @@
       "sources": [
         {
           "path": "databricks/gtfs_silver/job_config.py",
-          "line": 45,
-          "end_line": 66,
+          "line": 47,
+          "end_line": 68,
           "label": "Notebook y política compartidos"
         },
         {
           "path": "databricks/gtfs_silver/job_config.py",
-          "line": 75,
-          "end_line": 109,
+          "line": 77,
+          "end_line": 111,
           "label": "Entidad, orden y parámetros"
         }
       ]
@@ -206,14 +234,14 @@
       "sources": [
         {
           "path": "databricks/gtfs_silver/job_config.py",
-          "line": 45,
-          "end_line": 66,
+          "line": 47,
+          "end_line": 68,
           "label": "Notebook y política compartidos"
         },
         {
           "path": "databricks/gtfs_silver/job_config.py",
-          "line": 75,
-          "end_line": 109,
+          "line": 77,
+          "end_line": 111,
           "label": "Entidad, orden y parámetros"
         }
       ]
@@ -228,14 +256,14 @@
       "sources": [
         {
           "path": "databricks/gtfs_silver/job_config.py",
-          "line": 45,
-          "end_line": 66,
+          "line": 47,
+          "end_line": 68,
           "label": "Notebook y política compartidos"
         },
         {
           "path": "databricks/gtfs_silver/job_config.py",
-          "line": 75,
-          "end_line": 109,
+          "line": 77,
+          "end_line": 111,
           "label": "Entidad, orden y parámetros"
         }
       ]
@@ -250,14 +278,14 @@
       "sources": [
         {
           "path": "databricks/gtfs_silver/job_config.py",
-          "line": 45,
-          "end_line": 66,
+          "line": 47,
+          "end_line": 68,
           "label": "Notebook y política compartidos"
         },
         {
           "path": "databricks/gtfs_silver/job_config.py",
-          "line": 75,
-          "end_line": 109,
+          "line": 77,
+          "end_line": 111,
           "label": "Entidad, orden y parámetros"
         }
       ]
@@ -272,14 +300,14 @@
       "sources": [
         {
           "path": "databricks/gtfs_silver/job_config.py",
-          "line": 45,
-          "end_line": 66,
+          "line": 47,
+          "end_line": 68,
           "label": "Notebook y política compartidos"
         },
         {
           "path": "databricks/gtfs_silver/job_config.py",
-          "line": 75,
-          "end_line": 109,
+          "line": 77,
+          "end_line": 111,
           "label": "Entidad, orden y parámetros"
         }
       ]
@@ -294,14 +322,14 @@
       "sources": [
         {
           "path": "databricks/gtfs_silver/job_config.py",
-          "line": 45,
-          "end_line": 66,
+          "line": 47,
+          "end_line": 68,
           "label": "Notebook y política compartidos"
         },
         {
           "path": "databricks/gtfs_silver/job_config.py",
-          "line": 75,
-          "end_line": 109,
+          "line": 77,
+          "end_line": 111,
           "label": "Entidad, orden y parámetros"
         }
       ]
@@ -316,14 +344,14 @@
       "sources": [
         {
           "path": "databricks/gtfs_silver/job_config.py",
-          "line": 45,
-          "end_line": 66,
+          "line": 47,
+          "end_line": 68,
           "label": "Notebook y política compartidos"
         },
         {
           "path": "databricks/gtfs_silver/job_config.py",
-          "line": 75,
-          "end_line": 109,
+          "line": 77,
+          "end_line": 111,
           "label": "Entidad, orden y parámetros"
         }
       ]
@@ -338,14 +366,14 @@
       "sources": [
         {
           "path": "databricks/gtfs_silver/job_config.py",
-          "line": 98,
-          "end_line": 109,
+          "line": 100,
+          "end_line": 111,
           "label": "Décima tarea serial"
         },
         {
           "path": "databricks/gtfs_silver/pipeline.py",
-          "line": 203,
-          "end_line": 228,
+          "line": 274,
+          "end_line": 299,
           "label": "Trips, stops y frequencies"
         },
         {
@@ -366,8 +394,8 @@
       "sources": [
         {
           "path": "databricks/gtfs_silver/job_config.py",
-          "line": 98,
-          "end_line": 109,
+          "line": 100,
+          "end_line": 111,
           "label": "Orden y dependencias finales"
         },
         {
@@ -389,8 +417,8 @@
       "sources": [
         {
           "path": "databricks/gtfs_silver/job_config.py",
-          "line": 65,
-          "end_line": 66,
+          "line": 67,
+          "end_line": 68,
           "label": "Reintento mínimo de 60 segundos"
         }
       ]
@@ -406,8 +434,8 @@
       "sources": [
         {
           "path": "databricks/gtfs_silver/job_config.py",
-          "line": 98,
-          "end_line": 109,
+          "line": 100,
+          "end_line": 111,
           "label": "Frequencies depende de trips"
         }
       ]
@@ -431,8 +459,15 @@
   ],
   "edges": [
     {
-      "id": "iniciar_agency",
+      "id": "iniciar_plan",
       "from": "iniciar",
+      "to": "plan_silver",
+      "role": "main",
+      "variant": "emphasis"
+    },
+    {
+      "id": "plan_agency",
+      "from": "plan_silver",
       "to": "agency",
       "role": "main",
       "variant": "emphasis"
@@ -536,7 +571,7 @@
       "title": "Cómo leo el orden",
       "items": [
         "Sigo las flechas hacia abajo y a la derecha. Cada bloque representa una tarea del Job.",
-        "Las diez tareas reutilizan notebook 10. Cambian entidad, versión y hash.",
+        "Las diez tareas de publicación reutilizan notebook 10. Notebook 11 genera las listas desde auditorías.",
         "Cada For each usa concurrencia 1. La serialización protege también la auditoría compartida."
       ]
     },
@@ -554,7 +589,7 @@
       "dot": "amber",
       "title": "Selección y alcance",
       "items": [
-        "Las listas de snapshots son manuales. El planificador automático sigue pendiente.",
+        "Las entradas provienen de task values del planificador; conservo una variante manual para pruebas controladas.",
         "Nueve tareas fuente contemplan 2025 y 2026. Service_dates contempla solamente el horizonte 2026.",
         "La rama de error ejemplifica trips; las otras tareas conservan la misma política de un reintento."
       ]
@@ -564,7 +599,8 @@
       "title": "Estado comprobado y límites",
       "items": [
         "Las diez entidades tienen cierre funcional durante el desarrollo. Las animaciones no representan una ejecución real.",
-        "Los enlaces fijan el código de la plantilla. Los cambios de configuración en la interfaz necesitan su propia revisión."
+        "Los enlaces fijan el código de la plantilla. Los cambios de configuración en la interfaz necesitan su propia revisión.",
+        "El piloto NO_WORK está comprobado. El coordinador ya ejecutó el snapshot existente; feed nuevo y programación siguen pendientes."
       ]
     }
   ],

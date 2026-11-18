@@ -87,6 +87,6 @@ Frequencies contiene 2 / 14 filas y 2 / 14 trip_id distintos. Todas sus referenc
 
 El [contrato](contracts/trips.md) mantiene cinco campos de negocio string. Los tres IDs principales son obligatorios. shape_id requiere validación condicional. trip_headsign conserva sus ausencias. Las fuentes curadas deberán pertenecer al mismo snapshot.
 
-Después de revisar el significado implementé las reglas y sus pruebas. Reutilicé notebook 10. El registro habilita trips y la plantilla añade su tarea. El despliegue funcional ya está confirmado. Los conteos de este informe siguen correspondiendo al perfil de lectura. El planificador de snapshots continúa pendiente 8b.
+Después de revisar el significado implementé las reglas y sus pruebas. Reutilicé notebook 10. El registro habilita trips y la plantilla añade su tarea. El despliegue funcional ya está confirmado. Los conteos de este informe siguen correspondiendo al perfil de lectura. El planificador 8b se implementó después y ya tiene piloto NO_WORK comprobado; los conteos del perfil conservan su alcance original.
 
 La [referencia GTFS](https://gtfs.org/documentation/schedule/reference/#tripstxt) define los campos. El proyecto define identidad histórica, controles de calidad y política de publicación.

@@ -7,7 +7,7 @@
     "quality_profile": "standard",
     "repository": {
       "url": "https://github.com/Kevinx1919/GTFS-Bogot-.git",
-      "revision": "23dab92a64b6a1a9563274417b6928925baf1b4d"
+      "revision": "6c4490fd2846d8afeb70ee08f02d4680d535b76e"
     },
     "output": "docs/flujo_pipeline/modelo_gtfs/modelo_silver.html",
     "views": [
@@ -1375,6 +1375,15 @@
         "La clave de stop_times es S + trip_id + stop_sequence. Una parada repetida puede representar otra visita válida.",
         "Frequencies aporta contexto mediante IDs de viaje agrupados. No existe una FK directa desde visitas hacia cada ventana.",
         "Una visita aislada conserva su advertencia. Los viajes sin visitas quedan como diagnóstico global; la clasificación Gold sigue planificada."
+      ]
+    },
+    {
+      "dot": "amber",
+      "title": "Consumo Gold y Power BI",
+      "items": [
+        "El modelo conserva diez tablas físicas Silver y dos catálogos lógicos; no agregué tres entidades opcionales por cantidad.",
+        "Trip_coverage tiene prototipo Gold local. Agrupa visitas y ventanas antes de relacionarlas con viajes.",
+        "Service_dates solo cubre 2026. El reporte todavía debe cerrar indicadores, denominadores y correspondencias de componentes."
       ]
     }
   ]

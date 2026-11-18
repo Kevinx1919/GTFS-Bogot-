@@ -6,9 +6,12 @@ Uso esta carpeta para explicar el proyecto mediante diagramas interactivos y pá
 
 | Documento | Pregunta que responde | Alcance |
 | --- | --- | --- |
-| [Mapa del lakehouse](mapa_lakehouse/README.md) | ¿Dónde están los datos y cómo avanzan entre capas? | Raw, Staging, Bronze y Silver actuales; Gold y Power BI identificados como futuros. |
-| [Recorrido del Job Silver](job_silver/README.md) | ¿Qué ocurre al pulsar Run now y qué pasa ante un error? | Diez tareas, parámetros por snapshot, validación, publicación, auditoría y recuperación. |
-| [Modelo GTFS](modelo_gtfs/README.md) | ¿Cómo se relacionan las entidades y cómo preservo cada snapshot? | Diez tablas físicas y dos catálogos lógicos; cobertura Gold y planificador 8b permanecen pendientes. |
+| [Mapa del lakehouse](mapa_lakehouse/README.md) | ¿Dónde están los datos y cómo avanzan entre capas? | Raw, Staging, Bronze y Silver actuales; cobertura Gold local y consumo pendiente. |
+| [Recorrido del Job Silver](job_silver/README.md) | ¿Qué ocurre al pulsar Run now y qué pasa ante un error? | Plan dinámico y diez ciclos; validación, publicación, auditoría y recuperación. |
+| [Modelo GTFS](modelo_gtfs/README.md) | ¿Cómo se relacionan las entidades y cómo preservo cada snapshot? | Diez tablas físicas y dos catálogos lógicos; planificador probado y cobertura Gold local. |
+
+El [flujo de consumo analítico](consumo_analitico/README.md) conecta preguntas, Gold, medidas DAX y reporte.
+Distingue el MCP local de la habilidad web y marca lo que todavía no está publicado.
 
 Puedo empezar directamente por el [mapa del lakehouse](mapa_lakehouse/mapa_lakehouse.html), el [orden del Job](job_silver/recorrido_job.html), el [interior de una iteración](job_silver/iteracion_snapshot.html), el [modelo Silver actual](modelo_gtfs/modelo_silver.html) o el [panorama GTFS](modelo_gtfs/panorama_gtfs.html).
 
@@ -45,19 +48,25 @@ Para evitar un problema de reemplazo de archivos de control en OneDrive genero e
 Referencias: [Archify](https://github.com/tt-a1i/archify), [skill](https://github.com/tt-a1i/archify/blob/a4065941f12be7967436261d9934784e381d423c/archify/SKILL.md), [guía operativa Silver](../silver_execution.md) y [contratos](../contracts).
 
 
-## Estado actualizado tras stop_times_v1
+## Estado actualizado — 18 de noviembre de 2026
 
-Actualicé las cinco vistas el 12 de noviembre de 2026.
-Las diez entidades tienen despliegue funcional confirmado durante el desarrollo.
-El modelo conserva las 155 columnas físicas definidas por el código y dos catálogos lógicos con seis columnas.
-El recorrido muestra diez tareas. El mapa distingue nueve entidades fuente y service_dates derivada, limitada a 2026.
+Actualicé seis vistas con fuentes editables y referencias al commit 6c4490fd2846d8afeb70ee08f02d4680d535b76e.
+Las diez entidades Silver tienen despliegue funcional confirmado.
+El ERD conserva sus 155 columnas físicas y dos catálogos lógicos con seis columnas.
+No añadí entidades Silver opcionales por cantidad; las tres pendientes fueron evaluadas según su utilidad.
 
-Los enlaces fijan el código y el cierre documental de 23dab92a64b6a1a9563274417b6928925baf1b4d.
-No presento los conteos del perfil como resultados nuevos de publicación.
-Los diagramas no consultan Databricks ni muestran telemetría en vivo.
-El planificador 8b y la clasificación de cobertura previa a métricas Gold siguen pendientes.
+El recorrido incorpora plan_silver antes de los diez ciclos de publicación.
+Las entradas provienen de task values; las listas vacías no ejecutan el notebook interno.
+El piloto Silver NO_WORK está comprobado.
+El coordinador terminó SUCCEEDED con el snapshot existente 2026; el feed nuevo queda aplazado.
 
-Las cinco vistas pasaron controles automáticos de estructura, referencias, HTML y navegador.
-No hice una revisión visual de nuevas capturas. Los resúmenes públicos conservan hashes y medidas.
-El ERD denso conserva todos los campos. Los avisos sobre recorridos largos quedan registrados en su resumen.
-Actualicé fuentes JSON, HTML, guías y resúmenes. No cambié el código del pipeline.
+Gold dispone de un contrato y procesador local de cobertura; su publicación en Workspace sigue pendiente.
+Inicio y cuatro páginas analíticas tienen preguntas candidatas documentadas.
+El boceto HTML utiliza fixtures y permanece fuera de Git como artefacto de revisión.
+El MCP local de Power BI fue probado en solo lectura después de aceptar su licencia.
+La habilidad del navegador tiene un flujo distinto; la cuenta web todavía no fue comprobada.
+
+Los diagramas no consultan Databricks ni Power BI en vivo.
+La nueva vista representa el diseño de consumo; sus flechas pendientes no prueban una carga ya realizada.
+Los resúmenes públicos registran los controles de cada HTML y su copia final.
+Los recibos completos permanecen fuera de OneDrive y de Git.

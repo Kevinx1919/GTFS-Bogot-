@@ -887,6 +887,21 @@ La prueba mantuvo --readonly y no modificó tablas, medidas, relaciones ni pági
 La habilidad del navegador puede complementar ese modelado; su cuenta web todavía no tiene una comprobación de acceso.
 La [guía de conexión](docs/powerbi_mcp_setup.md) conserva capacidades, estado y límites.
 
+### Hito 58 — Sincronizar documentación y seis vistas Archify
+
+**Fecha:** 18 de noviembre de 2026.
+Actualicé el mapa del lakehouse, el recorrido Silver, su iteración, el ERD y el panorama GTFS.
+Añadí una vista de consumo desde preguntas de negocio hasta Gold, medidas DAX y reporte.
+El recorrido ya incluye plan_silver antes de los diez ciclos; sus listas proceden de valores de tarea.
+Las vistas distinguen Silver publicado, Gold local y consumo todavía pendiente.
+No confundí el prototipo HTML con un reporte Power BI conectado.
+
+Fijé los enlaces al commit que conserva el código y los contratos antes de generar los diagramas.
+Los seis HTML pasaron validate, deliver, check y browser-check.
+Generé fuera de OneDrive, copié los bytes comprobados y verifiqué hashes.
+No hice una revisión perceptual de nuevas capturas; los resúmenes públicos registran el alcance automático.
+No ejecuté Jobs ni modifiqué modelos durante esta actualización visual.
+
 ## Qué no publicar
 
 - Access tokens, secretos, archivos `.env`, cookies, hostnames privados o identificadores de cuenta.
