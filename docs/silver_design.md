@@ -2,7 +2,7 @@
 
 ## 1. Estado y propósito
 
-**Estado de este documento:** este es mi plan para construir Silver por etapas. La carpeta Silver contiene una guía SQL de agency como punto de entrada y un perfilador PySpark como alternativa. Revisé las salidas del perfilador PySpark de agency para 2025 y 2026 y las contrasté con consultas SQL mediante Genie. La guía SQL con widgets no tiene una comprobación de ejecución completa documentada. El [contrato v1 de agency](contracts/agency.md) define el primer incremento. Su núcleo Python de validación ya fue implementado y contrastado; el notebook 09 de lectura fue ejecutado y revisado en Databricks para ambos snapshots. La [publicación y el Job manual](silver_execution.md) ya están preparados y probados localmente con Delta real. Agency ya fue publicada para ambos snapshots y su Job manual terminó con éxito. Implementé y publiqué [routes_v1](contracts/routes.md) con Spark y el Job compartido. Al 10 de noviembre completé el [perfil de stops](stops_profile_2025_2026.md) en lectura. El contrato stops_v1 ya está implementado y ejecutado en Databricks: comprobé el Job, la tabla Silver y sus datos con una consulta breve. Calendar y calendar_dates ya están implementados y publicados: ejecuté sus tareas y consulté las tablas en Workspace. Service_dates está publicada y consultada para 2026: 1.403 pares únicos, siete servicios y fechas de enero a diciembre. Completé el perfil e implementé shape_points. Sus 36 pruebas seleccionadas pasaron. El flujo ya funciona en Databricks. Completé el perfil de trips, orden 6. Su contrato está implementado. Las 37 pruebas seleccionadas pasaron. El Job de trips ya funciona. Las diez entidades actuales tienen despliegue funcional en Workspace, incluido stop_times, orden 8. El siguiente incremento operativo es el planificador 8b. Las demás entidades continúan como propuestas. El [cierre de stops](silver_execution.md#cierre-de-la-ejecución-de-stops) distingue esta comprobación de los conteos del perfil y de las pruebas locales.
+**Estado de este documento:** este es mi plan para construir Silver por etapas. La carpeta Silver contiene una guía SQL de agency como punto de entrada y un perfilador PySpark como alternativa. Revisé las salidas del perfilador PySpark de agency para 2025 y 2026 y las contrasté con consultas SQL mediante Genie. La guía SQL con widgets no tiene una comprobación de ejecución completa documentada. El [contrato v1 de agency](contracts/agency.md) define el primer incremento. Su núcleo Python de validación ya fue implementado y contrastado; el notebook 09 de lectura fue ejecutado y revisado en Databricks para ambos snapshots. La [publicación y el Job manual](silver_execution.md) ya están preparados y probados localmente con Delta real. Agency ya fue publicada para ambos snapshots y su Job manual terminó con éxito. Implementé y publiqué [routes_v1](contracts/routes.md) con Spark y el Job compartido. Al 10 de noviembre completé el [perfil de stops](stops_profile_2025_2026.md) en lectura. El contrato stops_v1 ya está implementado y ejecutado en Databricks: comprobé el Job, la tabla Silver y sus datos con una consulta breve. Calendar y calendar_dates ya están implementados y publicados: ejecuté sus tareas y consulté las tablas en Workspace. Service_dates está publicada y consultada para 2026: 1.403 pares únicos, siete servicios y fechas de enero a diciembre. Completé el perfil e implementé shape_points. Sus 36 pruebas seleccionadas pasaron. El flujo ya funciona en Databricks. Completé el perfil de trips, orden 6. Su contrato está implementado. Las 37 pruebas seleccionadas pasaron. El Job de trips ya funciona. Las diez entidades actuales tienen despliegue funcional en Workspace, incluido stop_times, orden 8. El planificador y el coordinador ya tienen pruebas funcionales con snapshots existentes. El siguiente incremento es cobertura de viajes antes de las métricas Gold. Las demás entidades continúan condicionadas a su pregunta de negocio. El [cierre de stops](silver_execution.md#cierre-de-la-ejecución-de-stops) distingue esta comprobación de los conteos del perfil y de las pruebas locales.
 
 **Punto de partida:** al reejecutar 04 comprobé que reconoció los hashes ya cargados de las ocho entidades de referencia de cada versión. La auditoría 07 de 2025 terminó en PASSED, sin fallos ni advertencias; la de 2026 en WARNING, sin fallos bloqueantes y con cinco advertencias de esquema conocidas. Esto no significa que ya estén probados los tipos, la unicidad o todas las reglas GTFS que necesitará Silver.
 
@@ -263,7 +263,7 @@ Después de revisar el perfil implementé las reglas con Spark nativo y reutilic
 La plantilla añade publish_frequencies después de publish_trips. Las ocho tareas anteriores permanecen iguales.
 La [guía de despliegue](silver_execution.md#despliegue-de-frequencies_v1) conserva parámetros y resultados esperados.
 Las 42 pruebas seleccionadas pasaron sin omisiones. Frequencies ya está publicada en Databricks. El siguiente paso es perfilar stop_times, orden 8.
-Stop_times seguirá después, en el orden 8. El planificador de snapshots permanece pendiente 8b.
+Stop_times, orden 8, ya tiene despliegue funcional. El planificador 8b ya selecciona listas dinámicas y tiene piloto NO_WORK comprobado.
 
 ## Siguiente incremento: stop_times
 
@@ -281,7 +281,7 @@ La plantilla añade publish_stop_times como décima tarea. Reutilizo notebook 10
 Las nueve tareas anteriores mantienen su configuración. El Job existente requiere actualización manual.
 La [guía de despliegue](silver_execution.md#despliegue-de-stop_times_v1) explica validate y publish.
 Archify ya refleja las diez entidades publicadas y mantiene los pendientes separados.
-El planificador automático 8b es el siguiente incremento operativo, antes de programar ejecuciones.
+El planificador 8b está implementado y el piloto NO_WORK ya fue comprobado. La programación automática sigue deshabilitada.
 
 ## Automatización pendiente: selección de snapshots Silver
 
@@ -293,9 +293,9 @@ La vista previa de plan_silver ya está comprobada en Workspace. Las nuevas guar
 
 **Estado:** vista previa y piloto NO_WORK del Job comprobados en Workspace. La prueba con trabajo nuevo sigue pendiente.
 La [guía del planificador](silver_planner.md) contiene la vista previa y la variante optativa del Job.
-**Orden:** 8b, después de trips, frequencies y stop_times. Lo completaré antes de programar el Job automáticamente. Durante el desarrollo conservaré las listas manuales para ejecuciones controladas.
+**Orden:** 8b, después de trips, frequencies y stop_times. Ya tiene selección dinámica y piloto sin trabajo comprobado. Conservo la variante manual para ejecuciones controladas; la programación sigue deshabilitada.
 
-El Job actual usa listas fijas con versión/hash. Una versión nueva no entra automáticamente. El procesador acepta nuevos snapshots compatibles; la limitación actual está en seleccionar y entregar el trabajo.
+La plantilla manual conserva listas fijas; el Job desplegado ya usa plan_silver y sus listas dinámicas. El coordinador tuvo un piloto satisfactorio con 2026. La prueba con una versión nueva queda aplazada por decisión de alcance.
 
 Añadiré una tarea inicial propuesta, plan_silver. Consultará metadata de carga y validación Bronze. Contrastará cada entidad con audit_gtfs_silver_runs y sus dependencias. Construirá una lista dinámica por entidad. Los For each recibirán esas listas mediante valores de tarea.
 
@@ -335,4 +335,21 @@ El [plan de cobertura](stop_times_plan.md#clasificación-de-cobertura-antes-de-l
 Conservaré una fila por viaje declarado y snapshot mediante trips y un left join con visitas agregadas.
 Distinguiré sin_visitas, una_visita y varias_visitas. No interpretaré varias visitas como recorrido completo.
 Cada métrica definirá horas necesarias, contexto de frecuencias, exclusiones y denominador.
-Esta clasificación permanece planificada; no añadí una entidad Gold al registro Silver ni al Job.
+Esta clasificación ya tiene consulta verificada y procesador Gold preparado localmente. La [ficha trip_coverage_v1](contracts/trip_coverage.md) conserva su implementación y el despliegue pendiente. No añadí una entidad Gold al registro Silver ni al Job.
+
+## Alcance de cierre acordado — 17 de noviembre de 2026
+
+Cerraré primero GTFS estático, Gold y Power BI.
+Demanda, GTFS-Realtime y n8n/Ollama serán ampliaciones posteriores.
+La [ruta de cierre](gold_plan.md) comienza por cobertura y conserva la ficha de negocio por cada tabla Gold.
+No necesito tipar tarifas o feed_info para una pregunta que no utiliza esos datos.
+La prueba de ingesta de un feed nuevo seguirá pendiente; no habilito programación automática por el piloto existente.
+
+## Evaluación de entidades opcionales antes de negocio
+
+Revisé feed_info, fare_attributes y fare_rules sin publicar nuevas entidades.
+La [evaluación de utilidad](remaining_silver_assessment.md) conserva las seis consultas y sus límites.
+No exijo completar las tres por existir en Bronze.
+Para oferta planificada no son dependencias imprescindibles; las tarifas requieren una pregunta tarifaria explícita.
+Feed_info puede enriquecer una ficha de procedencia si necesito esos atributos.
+Definiré primero decisiones y métricas antes de publicar el prototipo Gold o ampliar Silver.

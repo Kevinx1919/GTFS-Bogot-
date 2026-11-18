@@ -112,3 +112,10 @@ Notebook 10 ejecuta el procesador compartido. No necesito ejecutar notebook 17 a
 La plantilla añade publish_stop_times después de publish_frequencies.
 Stop_times ya tiene despliegue funcional confirmado en Databricks; comprobé la tabla y sus datos.
 La [guía](../../../docs/silver_execution.md#despliegue-de-stop_times_v1) conserva parámetros y comprobaciones.
+
+## Evaluación de metadata y tarifas pendientes
+
+Notebook 21 conserva seis controles de lectura verificados mediante Genie.
+La [evaluación](../../../docs/remaining_silver_assessment.md) revisa su utilidad antes de añadir procesadores.
+No crea nuevas tablas Silver ni es un prerrequisito del Job.
+Las preguntas del reporte decidirán si necesito incorporar esas entidades.

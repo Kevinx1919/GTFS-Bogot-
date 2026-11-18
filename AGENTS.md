@@ -2,7 +2,7 @@
 
 ## Project overview
 
-This repository implements the **Bogotá GTFS Mobility Lakehouse**. It relates planned service from official versioned GTFS static feeds with observed demand from official validations and exits. GTFS-Realtime is an optional operational enrichment source and remains monitored until the provider is available. The project persists raw evidence, transforms it with Databricks and PySpark, and serves governed metrics to Power BI. n8n/Ollama may summarize approved anomalies, but it is not part of the data-processing control plane.
+This repository implements the **Bogotá GTFS Mobility Lakehouse**. It relates planned service from official versioned GTFS static feeds with observed demand from official validations and exits. GTFS-Realtime is an optional operational enrichment source and remains monitored until the provider is available. The first delivery closes GTFS static, Gold and Power BI. Official demand, GTFS-Realtime and n8n/Ollama remain later extensions. The project persists raw evidence, transforms it with Databricks and PySpark, and prepares governed metrics for Power BI. n8n/Ollama may summarize approved anomalies, but it is not part of the data-processing control plane.
 
 Schedule each source according to its publication cadence. GTFS-Realtime, when enabled, runs every 5 minutes in `America/Bogota`; static GTFS runs when a new version is published; demand sources run daily or monthly as their contracts allow. Store ingestion timestamps in UTC and convert only for operational reporting.
 

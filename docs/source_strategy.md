@@ -4,6 +4,14 @@
 
 Quiero construir un lakehouse reproducible que relacione la **oferta planificada** de TransMilenio con la **demanda observada** publicada por la entidad. Antes de calcular una métrica, necesito entender qué representa cada fuente y hasta dónde me permite llegar.
 
+## Primera entrega acordada
+
+El 17 de noviembre acoté la primera versión a GTFS estático, Gold y Power BI.
+La [ruta de cierre](gold_plan.md) conserva sus entregables.
+Demanda, salidas, GTFS-Realtime y n8n/Ollama mantienen su diseño como ampliaciones posteriores.
+No necesito esas integraciones para terminar la primera entrega estática.
+La siguiente tabla conserva el orden de fuentes del alcance ampliado.
+
 ## Fuentes priorizadas
 
 Priorizo las fuentes que me permiten avanzar sin depender de que GTFS-Realtime esté disponible. El orden también me ayuda a aprender una integración a la vez.
@@ -57,7 +65,7 @@ Estoy diseñando el Job para estos tres modos de selección:
 
 | Modo | Propósito | Criterio |
 | --- | --- | --- |
-| `latest_uningested` | Operación incremental. | Versión directa más reciente que aún no tiene registros Bronze. |
+| `latest_uningested` | Operación incremental. | Versión directa pendiente según cierres Bronze completos, sin ocultar intentos incompletos. |
 | `backfill_range` | Carga histórica inicial. | Versiones publicadas dentro de un rango de fechas explícito. |
 | `explicit_version` | Reproceso o análisis reproducible. | Una fecha de versión exacta indicada por el operador. |
 

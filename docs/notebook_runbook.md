@@ -632,4 +632,42 @@ La tarea plan_bronze fija emit_task_values=true y recibe selección y rango desd
 La condición has_bronze_work consume planned_count; el For each consume ingestion_work_items solo en la rama true.
 No añadí bloques al notebook para coordinar Jobs mediante código Python.
 Lakeflow conserva esa responsabilidad en las tareas declarativas del padre.
-La creación y ejecución del padre todavía necesitan su comprobación en Workspace.
+El padre ya fue creado y terminó SUCCEEDED con el snapshot existente 2026.
+El piloto no demuestra la ingesta de una versión nueva ni todas las ramas de fallo.
+
+## Notebook Gold 19 — Vista previa de cobertura
+
+| Bloque | Propósito | Entrada | Salida / efecto | Validación |
+| --- | --- | --- | --- | --- |
+| SQL de lectura | Clasificar cobertura y contexto sin perder viajes. | Trips, stop_times y frequencies Silver del snapshot 2026. | Cuatro agregados; sin escritura. | Consulta verificada mediante Genie; totales reconciliados con los conteos documentados. |
+
+El [perfil](trip_coverage_profile_2026.md) registra resultados y límites.
+No hice una ejecución completa del notebook en Workspace; conservé el SQL ya ejecutado mediante Genie.
+No es un prerrequisito obligatorio antes de cada publicación.
+
+## Notebook Gold 20 — Validar o publicar cobertura
+
+| Bloque | Propósito | Entrada | Salida / efecto | Validación |
+| --- | --- | --- | --- | --- |
+| 1 / configuración | Resolver repositorio y seleccionar modo y snapshot. | repo_root, catálogo, schema, versión, hash y mode. | Variables de sesión; sin escrituras. | Ruta absoluta y repositorio completo; identidad se valida antes de leer o escribir. |
+| 2 / ejecución | Preparar y reconciliar cobertura; publicar solo cuando lo solicito. | Últimas auditorías y versiones Delta fijadas de tres fuentes Silver. | Resumen JSON; validate sin escritura; publish escribe Gold y sus eventos de auditoría. | Conteos fuente auditados, clave única, visitas/ventanas conciliadas y contexto coherente; escritura limitada a S. |
+
+La [ficha Gold](contracts/trip_coverage.md) explica el grano, los tipos y las decisiones de negocio.
+Mode=validate es el valor inicial; Run all relee los widgets.
+No instalo dependencias nuevas para este módulo; reutilizo Spark/Delta administrados y el repositorio sincronizado.
+El padre todavía no ejecuta Gold; la validación y publicación en Workspace siguen pendientes.
+
+## Notebook Silver 21 — Evaluación de metadata y tarifas
+
+| Bloque | Propósito | Entrada | Salida / efecto | Validación |
+| --- | --- | --- | --- | --- |
+| 1 | Contrastar presencia observada de archivos. | Observaciones de esquema de ambos snapshots. | Dos agregados; solo lectura. | Se interpreta con la evidencia Bronze previa, no como prueba aislada de ausencia. |
+| 2 | Revisar atributos de tarifa y agencias. | Fare_attributes Bronze y agency Silver del mismo snapshot. | Dos perfiles; solo lectura. | Claves, campos requeridos, precios y referencias comprobadas. |
+| 3 | Revisar reglas, tarifas y rutas. | Fare_rules, fare_attributes y routes del mismo snapshot. | Un perfil 2025; solo lectura. | Conteos, duplicados completos y referencias seleccionadas. |
+| 4 | Revisar metadata y fechas declaradas. | Feed_info Bronze 2026. | Un perfil; solo lectura. | Campos requeridos revisados y fechas convertidas sin inversión. |
+| 5 | Completar comprobación de zonas. | Reglas 2025 y zonas únicas de stops Silver. | Un agregado; solo lectura. | Origen, destino y zonas intermedias presentes, sin multiplicar reglas. |
+| 6 | Entender el alcance de los atributos. | Ocho filas tarifarias y agencias del mismo snapshot. | Detalle acotado; solo lectura. | La fila 2026 corresponde a TransMiCable; no se generaliza a toda la red. |
+
+La [evaluación](remaining_silver_assessment.md) precisa controles, utilidad y límites.
+Los seis SQL terminaron satisfactoriamente mediante Genie; el notebook completo no tiene ejecución documentada en Workspace.
+No constituye un contrato Silver implementado ni una etapa obligatoria del Job.

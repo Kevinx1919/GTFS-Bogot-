@@ -1,8 +1,8 @@
 # Mi Job principal: gtfs_bogota_pipeline
 
-**Estado:** plantillas y renderizador implementados y comprobados localmente.
-Todavía no creé ni ejecuté el coordinador en Databricks.
-La primera configuración prepara un piloto manual con el snapshot existente 2026-09-29.
+**Estado:** coordinador creado y piloto manual con 2026-09-29 terminado SUCCEEDED según mi comprobación en la interfaz.
+No conservé el detalle de estados por tarea ni el Job run ID de ese piloto.
+La prueba con un feed nuevo queda aplazada expresamente para otro momento.
 No habilité horarios ni añadí entidades Silver.
 
 ## Archivos
@@ -196,5 +196,16 @@ Con NONE_FAILED, el plan satisfactorio permite continuar cuando ingest_bronze qu
 Un fallo de la condición se propaga a ingest_bronze y bloquea la promoción mediante Silver.
 No añadí outcome=true a Silver porque impediría el camino sin novedades.
 Añadí una regresión que exige outcome en cada enlace directo a una condición.
-La comprobación del guardado y las ramas en Workspace sigue pendiente.
+La configuración se guardó y el piloto existente terminó SUCCEEDED.
+Las ramas de fallo y una versión GTFS nueva siguen pendientes de prueba.
 El archivo render_pipeline.py es un generador Python; el editor recibe la configuración YAML generada.
+
+## Piloto existente y alcance de la primera entrega
+
+El 17 de noviembre ejecuté el coordinador con 2026 y revisé su resultado SUCCEEDED.
+Conservo esa comprobación funcional sin atribuir conteos nuevos ni estados específicos a cada tarea.
+No ejecuté una nueva validación independiente del historial mediante Genie para repetir esa comprobación.
+La prueba con una versión nueva, las ramas de fallo y la programación siguen pendientes.
+Acordé continuar con GTFS estático, Gold y Power BI como primera entrega.
+El [plan de cierre](gold_plan.md) conserva ese alcance y deja las otras fuentes como ampliaciones.
+No añadí Gold al coordinador antes de comprobar su primer publicador.

@@ -801,6 +801,92 @@ Añadí una prueba de regresión para los enlaces directos hacia condiciones.
 Regeneré los archivos JSON/YAML del entorno; falta comprobar su guardado y ejecución en Workspace.
 No modifiqué los Jobs desplegados desde el agente ni cambié Archify.
 
+### Hito 53 — Comprobar el piloto del coordinador y acotar la primera entrega
+
+**Fecha:** 17 de noviembre de 2026.
+Ejecuté el coordinador con el snapshot existente 2026 y revisé SUCCEEDED en la interfaz.
+No adjunté un nuevo ID de corrida ni el detalle de estados por tarea.
+Aplacé expresamente la prueba con un feed nuevo y conservé la programación deshabilitada.
+
+Acordé cerrar primero GTFS estático, Gold y Power BI.
+Demanda, salidas, GTFS-Realtime y n8n/Ollama pasan a ampliaciones posteriores.
+La [ruta de cierre](docs/gold_plan.md) conserva los entregables y los pendientes sin marcarlos como completados.
+El siguiente incremento es la cobertura de viajes prevista antes de las métricas Gold.
+
+### Hito 54 — Implementar la primera entidad Gold de cobertura
+
+**Fecha:** 17 de noviembre de 2026.
+Preparé gold_gtfs_trip_coverage con una fila por viaje declarado y snapshot.
+Conservo viajes sin visitas y agrego visitas y ventanas antes de unir.
+La [ficha de negocio](docs/contracts/trip_coverage.md) define pregunta, grano, ubicaciones, ausencias, claves y límites de Power BI.
+
+Contrasté la vista previa Silver mediante una consulta de solo lectura en Genie.
+Recuperé cuatro grupos completos: 739 viajes sin visitas, 61 con una y 180260 con varias.
+Los grupos concilian 181060 viajes, 9408893 visitas y 14 ventanas de frecuencia.
+Conservé el SQL en notebook Gold 19; no descargué un feed nuevo ni escribí datos de Workspace.
+
+Implementé gtfs_gold/trip_coverage.py y notebook Gold 20 con validate por defecto.
+Compruebo auditorías vigentes, fijo versiones Delta y reconcilio fuentes, unicidad y totales.
+Publish limita la escritura al snapshot y conserva una auditoría Gold separada.
+No añadí la entidad al registro Silver ni al coordinador antes de comprobar su despliegue.
+
+Pasaron 135 pruebas unitarias y dos integraciones seleccionadas con Spark/Delta reales.
+Comprobé ausencia de escritura en validate, ventanas múltiples, deriva, fallo previo, reejecución e histórico.
+Las pruebas usaron fixtures offline y la imagen Docker existente; todos los temporales quedaron fuera de OneDrive.
+La publicación Gold en Workspace y Power BI siguen pendientes.
+No cambié Archify.
+
+### Hito 55 — Evaluar tablas pendientes antes de elegir métricas
+
+**Fecha:** 17 de noviembre de 2026.
+Revisé feed_info, fare_attributes y fare_rules mediante seis consultas de solo lectura con Genie.
+Recuperé todos los resultados estructurados y conservé el SQL completo en notebook Silver 21.
+Comprobé campos seleccionados, conversiones y referencias por snapshot; no certifiqué toda la especificación ni publiqué contratos Silver.
+La única tarifa 2026 referencia TransMiCable; no la extiendo a toda la red.
+Las 676 reglas 2025 resuelven sus referencias comprobadas a tarifas, rutas y zonas.
+Feed_info 2026 aporta publicador y período declarado; no prueba frescura ni cobertura por sí solo.
+
+Revisé la propuesta de completar todas las entidades antes de negocio.
+Su existencia en Bronze no obliga a incorporarlas a Silver para una pregunta que no las usa.
+La [evaluación](docs/remaining_silver_assessment.md) deja tarifas como candidatas si incorporo ese dominio al reporte.
+La [guía de negocio](docs/business_questions.md) ordena persona, decisión, pregunta e indicador antes de construir visualizaciones.
+El prototipo Gold permanece local y sin publicación hasta confirmar su papel en el modelo elegido.
+No ejecuté Jobs, descargué feeds ni modifiqué tablas durante esta revisión.
+
+### Hito 56 — Proponer historias de negocio para Power BI
+
+**Fecha:** 17 de noviembre de 2026.
+Preparé doce historias candidatas para gerencia, programación, planeación, accesibilidad, supervisión técnica y responsabilidad del dato.
+Organicé cuatro páginas propuestas: panorama, programación, red publicada y revisión técnica.
+Cada historia vincula pregunta, acción, fuentes, aceptación y límites.
+Los escenarios son parte del portafolio; no representan entrevistas reales con TransMilenio.
+
+Usé sus funciones públicas como contexto y los contratos Silver como límite de lo calculable.
+Separé programación publicada de operación observada y cumplimiento contractual.
+No relacioné agency_id con operadores o contratos sin una correspondencia validada.
+El [backlog de negocio](docs/power_bi_user_stories.md) distingue prioridades y necesidades de fuentes adicionales.
+Las tres entidades pendientes no son requisito para estas preguntas iniciales.
+No publiqué Gold, creé reportes ni modifiqué Archify durante esta definición.
+
+### Hito 57 — Revisar consumo, prototipo visual y conexión con Power BI
+
+**Fecha:** 18 de noviembre de 2026.
+Conservé preguntas, decisiones y doce historias candidatas antes de cerrar indicadores.
+Separé el trabajo de Gold de las medidas DAX que responden a los filtros.
+Las métricas del HTML todavía no representan resultados publicados desde Databricks.
+
+Preparé Inicio y cuatro páginas analíticas en un prototipo HTML/JavaScript local.
+La navegación conserva componente y permite revisar calendario, recorridos y calidad con fixtures ilustrativos.
+Pasaron 28 comprobaciones de interacción y adaptación a tres anchuras.
+El artefacto de revisión permanece fuera de Git; no creé un PBIX ni publiqué el reporte.
+
+Reparé una ruta obsoleta del MCP de Power BI usando la extensión oficial instalada 1.0.1.
+Acepté la licencia después de revisarla y autorizar explícitamente esa acción.
+La aceptación persistió al reiniciar el servidor y la conexión local al modelo abierto funcionó.
+La prueba mantuvo --readonly y no modificó tablas, medidas, relaciones ni páginas.
+La habilidad del navegador puede complementar ese modelado; su cuenta web todavía no tiene una comprobación de acceso.
+La [guía de conexión](docs/powerbi_mcp_setup.md) conserva capacidades, estado y límites.
+
 ## Qué no publicar
 
 - Access tokens, secretos, archivos `.env`, cookies, hostnames privados o identificadores de cuenta.

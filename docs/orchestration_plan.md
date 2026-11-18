@@ -4,7 +4,9 @@
 Los flujos Bronze 2025 y 2026 llegaron a cierres PASSED y WARNING, respectivamente, con conteos conciliados.
 Contrasté el cierre 2026 mediante Genie; faltan indicadores específicos de reutilización y un feed nuevo.
 Vista previa del planificador comprobada en Workspace, sin bloqueos después de la recuperación.
-El piloto NO_WORK del Job terminó SUCCEEDED; el camino con trabajo nuevo y el Job principal siguen pendientes.
+El Job Silver tiene piloto NO_WORK comprobado.
+El coordinador ya terminó SUCCEEDED en una prueba manual con el snapshot existente 2026.
+La prueba con feed nuevo queda aplazada; continúo con Gold y Power BI para la primera entrega.
 La [guía Bronze v2](bronze_automation.md) describe el incremento actual.
 **Fecha:** 12 de noviembre de 2026.
 Este diseño desarrolla el pendiente 8b del [plan Silver](silver_design.md#automatización-pendiente-selección-de-snapshots-silver).
@@ -173,8 +175,8 @@ No necesito fusionar notebooks ni duplicar las transformaciones.
 4. Vista previa de plan_silver comprobada en Workspace: diecinueve COMPLETE, un OUT_OF_SCOPE y dos RESOLVED; sin bloqueos ni pendientes.
 5. Variante conectada y piloto NO_WORK comprobado en Workspace. Falta una corrida con trabajo nuevo.
 6. Notebook 06 comprobado en Workspace: selección explícita COMPLETE para ambos snapshots. La emisión al Workflow y el camino con trabajo siguen pendientes.
-7. Plantilla del Job principal implementada localmente, con parámetros explícitos a los hijos. La guía pipeline_coordinator.md conserva sus cuatro tareas y el piloto pendiente.
-8. Ejecutar un piloto manual y comprobar recuperación, auditoría, histórico y ausencia de duplicados.
+7. Job principal creado y ejecutado con 2026; resultado SUCCEEDED revisado en la interfaz. La guía pipeline_coordinator.md conserva alcance y límites.
+8. Piloto con snapshot existente comprobado. Recuperación integral, ramas de fallo y feed nuevo siguen pendientes; no bloqueo con ellos el desarrollo local de Gold.
 9. Habilitar programación según la cadencia de publicación, después de aprobar el piloto.
 
 Las dos primeras piezas seguirán funcionando por separado durante la transición.
@@ -276,4 +278,15 @@ El For each depende de la condición con outcome=true; Silver no tiene un enlace
 Conservo una iteración Bronze y una corrida principal simultáneas; los hijos mantienen sus propios límites.
 Los defaults del piloto seleccionan 2026-09-29, ya validado, y un rango Silver del mismo snapshot.
 No añadí una tabla de cierre global; el historial del principal y las auditorías existentes conservan la evidencia inicial.
-La creación en Workspace, el piloto NO_WORK y el camino con trabajo del coordinador siguen pendientes.
+El coordinador ya existe y terminó SUCCEEDED con el snapshot existente 2026.
+No atribuyo una rama NO_WORK específica sin conservar los estados por tarea.
+El camino con trabajo nuevo sigue pendiente.
+
+## Cierre funcional del piloto existente y continuación analítica
+
+El 17 de noviembre comprobé SUCCEEDED para el coordinador con 2026, sin adjuntar un nuevo ID de corrida ni estados por tarea.
+Dejé la prueba con una versión GTFS nueva para otro momento y mantengo deshabilitada la programación automática.
+La primera entrega acordada cubre GTFS estático, Gold y Power BI.
+El siguiente trabajo define indicadores y completa sus contratos antes de publicar Gold.
+La clasificación de cobertura ya dispone de un prototipo local comprobado.
+La [ficha trip_coverage_v1](contracts/trip_coverage.md) y el [plan de cierre](gold_plan.md) definen ese incremento.

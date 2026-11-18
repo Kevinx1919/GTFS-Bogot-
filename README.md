@@ -1,21 +1,35 @@
 # Bogotá GTFS Mobility Lakehouse
 
-Estoy construyendo un lakehouse de movilidad para Bogotá mientras aprendo Databricks y PySpark. Empecé con el GTFS estático para entender la oferta planificada de TransMilenio; más adelante quiero relacionarlo con validaciones y salidas oficiales. Incorporaré GTFS-Realtime cuando la fuente esté disponible. Mi objetivo es tener un proyecto de portafolio que pueda explicar desde la ingesta hasta el análisis en Power BI.
+Estoy construyendo un lakehouse de movilidad para Bogotá mientras aprendo Databricks y PySpark. Mi primera entrega cubre GTFS estático, Gold y Power BI. Conservo demanda oficial, GTFS-Realtime y n8n/Ollama como ampliaciones posteriores. Quiero explicar el proyecto desde la ingesta hasta un reporte de oferta planificada y cobertura.
 
 > La velocidad operacional se deriva de posiciones consecutivas de vehículos. No representa ni pretende medir la congestión total de la ciudad.
 
-## Problema de negocio
+## Problema de negocio de la primera entrega
 
-Los equipos de operación necesitan detectar degradaciones del servicio y entender qué rutas, franjas horarias o eventos las explican. La información en tiempo real es efímera y los archivos GTFS estáticos describen la operación planificada, por lo que se requiere conservar ambos y convertirlos en métricas confiables.
+Quiero entender la oferta planificada publicada y las limitaciones de los datos que alimentan el reporte.
+Las primeras preguntas son:
 
-Con las fuentes y validaciones necesarias, quiero llegar a responder preguntas como:
+- ¿Qué rutas y ubicaciones aparecen en cada snapshot?
+- ¿Qué servicios tienen fechas activas dentro del horizonte 2026?
+- ¿Cuántos viajes declarados tienen visitas publicadas y qué contexto de frecuencias presentan?
+- ¿Qué exclusiones y advertencias debo mostrar junto a cada indicador?
 
-- ¿Qué rutas tienen menor cobertura de vehículos frente a su patrón histórico?
-- ¿Cómo evoluciona la velocidad operacional por ruta, dirección y franja de cinco minutos?
-- ¿Qué alertas de servicio y actualizaciones de viajes coinciden con una degradación operativa?
-- ¿Qué tan fresco y completo está el dato que alimenta el tablero?
+Estos datos describen planificación. No demuestran viajes operados, puntualidad, ocupación ni espera experimentada.
+La [ruta de cierre](docs/gold_plan.md) define los entregables de Gold, Power BI y la demostración del portafolio.
+Las [historias de negocio](docs/power_bi_user_stories.md) relacionan preguntas, decisiones e indicadores candidatos.
+El [diseño visual](docs/power_bi_navigation_images.md) propone Inicio y cuatro páginas analíticas.
+El boceto HTML utiliza cifras ilustrativas; todavía no consume Gold ni ejecuta DAX.
 
-## Arquitectura objetivo
+## Arquitectura de la primera entrega
+
+```text
+GTFS estático oficial → Raw inmutable → Bronze Delta → Silver Delta → Gold Delta → Power BI
+```
+
+El Job principal ya coordinó descubrimiento, Bronze y Silver en un piloto con el snapshot existente de 2026.
+Gold tiene su primer procesador preparado localmente; su publicación y su incorporación al flujo siguen pendientes.
+
+## Arquitectura objetivo ampliada
 
 ```text
 GTFS estático + validaciones/salidas oficiales + GTFS-Realtime
@@ -70,28 +84,30 @@ Dejo las fuentes, contratos y límites analíticos en [docs/source_strategy.md](
 
 | Capa | Responsabilidad | Ejemplos |
 | --- | --- | --- |
-| Raw / Volume | Evidencia inmutable del origen | `.pb`, ZIP GTFS, manifiestos JSON |
-| Bronze | Registro de snapshots y auditoría | `bronze_feed_snapshot`, `bronze_ingestion_audit` |
-| Silver | Datos decodificados y validados | posiciones, alertas, actualizaciones, rutas, paradas |
-| Gold | Métricas de negocio por intervalo | velocidad operacional, cobertura de flota, confiabilidad, frescura |
+| Raw / Volume | Evidencia inmutable del origen | ZIP GTFS y manifiestos; protobuf queda para una ampliación |
+| Bronze | Filas fuente y auditoría por snapshot | `bronze_gtfs_*` y auditorías de carga/calidad |
+| Silver | Entidades estáticas tipadas y validadas | Diez entidades; `service_dates` derivada solo para 2026 |
+| Gold | Datos de negocio preparados para consumo | Cobertura de viajes implementada localmente; publicación pendiente |
 
-## Métricas y anomalías iniciales
+## Indicadores previstos para la primera entrega
 
-- Demanda por componente, estación/portal y franja horaria cuando la fuente lo permita.
-- Cambios de demanda frente al patrón histórico comparable.
-- Cambios de oferta planificada: rutas, paradas, viajes, calendarios y frecuencias entre versiones GTFS.
-- Proxy de presión demanda-oferta planificada, únicamente después de validar llaves y granularidad compatibles.
-- Feed sin actualización, fallos consecutivos y frescura del último snapshot exitoso.
-- Cobertura de vehículos y velocidad operacional solo cuando GTFS-Realtime vuelva a estar disponible.
+- Catálogo publicado de rutas, agencias y ubicaciones, conservando la identidad del snapshot.
+- Cobertura de viajes declarados: sin visitas, una visita o varias visitas.
+- Contexto de frecuencias separado del conteo de patrones de viaje.
+- Oferta asociada a fechas activas, con ficha de negocio y denominadores explícitos antes de implementar cada indicador.
+- Advertencias de calidad y límites de interpretación visibles en Power BI.
 
-Antes de llamar anomalía a un resultado, necesito una línea base suficiente. Durante la etapa inicial quiero reunir evidencia y revisar calidad, sin convertir una variación aislada en una conclusión definitiva.
+Las métricas de demanda, operación observada y anomalías quedan en el alcance ampliado.
+No llamaré anomalía a una variación aislada sin una línea base suficiente.
 
 ## Stack
 
 - **Ingesta y transformación:** Python, PySpark, Databricks Jobs.
 - **Lakehouse:** Unity Catalog, Volumes, Delta Lake y Databricks SQL.
 - **Calidad:** reglas PySpark, tablas de auditoría y pruebas automatizadas.
-- **Analítica:** Power BI.
+- **Analítica:** Power BI; Gold prepara datos reutilizables y las medidas DAX responden a filtros.
+- **Asistencia al modelado:** MCP oficial de Power BI, con conexión local probada en solo lectura.
+- **Asistencia al reporte web:** habilidad Power BI disponible; acceso a la cuenta web todavía sin verificar.
 - **Automatización de narrativa:** n8n y Ollama, en modo lectura.
 - **Entrega:** GitHub, CI y documentación reproducible.
 
@@ -103,31 +119,37 @@ Antes de llamar anomalía a un resultado, necesito una línea base suficiente. D
 - Las claves, nombres de tablas y nombres de archivos se escriben en `snake_case`.
 - Ningún secreto, token, archivo `.env` ni dato personal se sube a Git.
 
-## Roadmap
+## Roadmap de cierre de la primera entrega
 
-1. Validar fuentes oficiales, contratos y conectividad desde Databricks.
-2. Descubrir automáticamente las versiones GTFS y persistir un plan de ingesta reproducible.
-3. Implementar captura Raw idempotente del GTFS estático versionado y backfill histórico.
-4. Inspeccionar e incorporar validaciones mensuales como primera fuente de demanda.
-5. Incorporar salidas y, después, validaciones diarias según su esquema y volumen.
-6. Construir Bronze/Silver, modelo dimensional y controles de calidad.
-7. Comparar oferta planificada y demanda observada sin inferir ocupación o puntualidad.
-8. Reintentar la incorporación de GTFS-Realtime con auditoría y reglas de frescura.
-9. Construir métricas Gold, Power BI y detección determinista de anomalías.
-10. Conectar n8n/Ollama únicamente a una vista de anomalías aprobadas.
-10. Automatizar, observar costos y documentar operación/recuperación.
+1. Raw, Bronze y diez entidades Silver disponibles para los snapshots existentes.
+2. Coordinador manual comprobado con 2026; prueba de feed nuevo aplazada y programación deshabilitada.
+3. Primera entidad Gold: cobertura de viajes, con procesador local y publicación en Workspace pendiente.
+4. Modelo e indicadores de oferta planificada, con fichas de negocio y relaciones por snapshot.
+5. Reporte Power BI y demostración reproducible del proyecto.
+
+La [estrategia de fuentes](docs/source_strategy.md) conserva las ampliaciones de demanda, salidas y GTFS-Realtime.
+No son requisitos para cerrar esta primera versión.
 
 ## Estado actual
 
-Ya conservé los snapshots GTFS estáticos `2025-10-28` y `2026-09-29` en Raw y los cargué en tablas Delta Bronze. El Job manual `gtfs_bogota_bronze_manual` ejecutó con éxito Raw, Staging, cargas Bronze y validación de calidad. La comparación de esquemas identificó cinco cambios entre versiones sin fallos bloqueantes; una reejecución conservó el conteo esperado de 9.408.893 filas de `stop_times` para 2026.
+Raw y Bronze conservan 2025-10-28 y 2026-09-29. Las diez entidades Silver habilitadas ya tienen despliegue funcional confirmado.
+El Job Silver usa listas dinámicas y el Job principal terminó SUCCEEDED en la prueba manual con 2026.
+Ese piloto no prueba la ingesta de una versión nueva, que dejé pendiente para otro momento.
 
-El notebook de descubrimiento de versiones funciona, pero todavía tengo que conectarlo al Job. También me falta manejar «sin novedades», probar recuperación y dejar la observabilidad y configuración versionada listas antes de programarlo automáticamente. Agency ya está publicada en Silver y su Job manual terminó con éxito para ambos snapshots. Routes también quedó publicada después de sincronizar la corrección del lector y ejecutar el Job ampliado; comprobé la existencia de las tablas Silver. Stops también quedó publicada: ejecuté su Job y comprobé los datos con una consulta breve. El detalle y las limitaciones de este primer hito están en [Build in Public](BUILD_IN_PUBLIC.md#hito-08--primer-flujo-raw-a-bronze-ejecutado-con-éxito).
+Comencé Gold por la cobertura de viajes. La consulta Silver verificada conserva 181060 viajes y 9408893 visitas de 2026.
+Identifica 739 viajes sin visitas, 61 con una visita y 180260 con varias visitas.
+El procesador y notebook 20 son un prototipo local con validate por defecto; todavía no publiqué Gold en Workspace.
+Antes de publicar definiré las decisiones del reporte y las métricas que las apoyan. La [evaluación de entidades pendientes](docs/remaining_silver_assessment.md) evita ampliar Silver solo por cantidad de tablas.
+El [contrato](docs/contracts/trip_coverage.md), el [perfil](docs/trip_coverage_profile_2026.md) y el [plan Gold](docs/gold_plan.md) conservan las decisiones.
 
-### Revisión del contrato antes de Silver
+Documenté [Gold, medidas DAX y conexión con Power BI](docs/powerbi_mcp_setup.md).
+La licencia del MCP quedó aceptada y probé una conexión local al modelo abierto.
+Esa prueba no crea un modelo GTFS ni habilita cambios sobre el informe.
+Las métricas candidatas del boceto conservan sus filtros, denominadores y límites como trabajo de definición.
 
-Las correcciones locales de Raw/Bronze admiten las combinaciones válidas de calendarios, detienen Raw ante estructura incompleta y amplían la auditoría de procedencia. Las 16 pruebas locales pasan. Al repetir la validación de ambos snapshots obtuve estos resultados: 2025 terminó en `PASSED`, sin fallos ni advertencias; 2026 en `WARNING`, sin fallos bloqueantes y con cinco advertencias de evolución de esquema conocida. En 04, las ocho entidades de referencia de cada versión omitieron nuevas inserciones al reconocer el hash existente. Ese hito permitió perfilar agencias y rutas y definir sus contratos Silver, ya implementados y publicados. Después implementé y ejecuté stops; también publiqué calendar/calendar_dates y ahora preparo service_dates. El detalle está en el [Hito 09](BUILD_IN_PUBLIC.md#hito-09--revisar-el-contrato-de-bronze-antes-de-diseñar-silver) y el [procedimiento de revalidación](docs/notebook_runbook.md#revalidación-en-databricks-de-los-snapshots-existentes).
-
-Para las pruebas de agency, instalo antes `databricks/requirements-silver.txt` en un entorno virtual. La suite no realiza llamadas de red: `python -B -m unittest discover -s tests -v`. Las pruebas nativas Spark requieren además PySpark y Java.
+La suite usa fixtures locales y no realiza llamadas reales de red como prueba automatizada.
+Las pruebas nativas Spark/Delta requieren su entorno offline, como describen las guías existentes.
+No instalé dependencias de pruebas dentro del repositorio.
 
 ### Plan de Silver
 
