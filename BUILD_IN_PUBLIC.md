@@ -734,6 +734,62 @@ Usé la imagen Docker existente, sin red, con el repositorio en solo lectura y t
 Falta comprobar notebook 06 en Workspace antes de conectar el coordinador.
 No modifiqué los Jobs desplegados ni Archify.
 
+### Hito 49 — Comprobar descubrimiento y cierre del flujo Bronze 2025
+
+Comprobé notebook 06 para 2025-10-28 y 2026-09-29.
+Ambas versiones devolvieron COMPLETE / VALIDATED_BRONZE_CLOSURE.
+Después ejecuté el Job Bronze para 2025 y obtuve PASSED bajo bronze_snapshot_v2.
+La validación terminó completa y elegible para Silver, sin fallos ni advertencias.
+Los conteos conciliaron las once entidades publicadas; feed_info permaneció ausente como archivo opcional.
+Las cuatro relaciones revisadas devolvieron cero referencias inexistentes.
+La evolución de esquema INFO / NOT_APPLICABLE identifica la línea base sin versión anterior comparable.
+
+Conservé la salida de validación como evidencia de esta comprobación.
+Todavía no registré el ID del Job run ni los indicadores específicos de reutilización de los cargadores.
+Preparé una plantilla parametrizada con requested_feed_version y entrega obligatoria de task values.
+No modifiqué el grafo desplegado desde el agente ni cambié Archify.
+Falta comprobar la variante con 2026 y después el coordinador con trabajo de ingesta.
+
+### Hito 50 — Contrastar el cierre Bronze 2026 mediante Genie
+
+**Fecha de revisión:** 14 de noviembre de 2026.
+La ejecución solicitada para 2026-09-29 terminó su validación completa y elegible para Silver.
+Registré la corrida de calidad 6bccbeb8-4d57-4042-8ef7-5c81fa700bd3.
+Obtuve WARNING con cero fallos y cinco advertencias de esquema conocidas frente a 2025.
+
+Contrasté tres consultas de auditoría mediante Genie y recuperé sus resultados estructurados.
+STARTED y CLOSED usan bronze_snapshot_v2; no aparece v24 en los eventos de esa corrida.
+La auditoría suma 69 controles, coherentes con el cierre.
+Las advertencias describen cambios de columnas en agency, routes, stop_times, stops y trips.
+Conservé el [SQL de revisión](databricks/sql/2026_11_14_verify_bronze_validation.sql) y su [alcance](docs/bronze_automation.md#comprobación-del-flujo-bronze-2026-y-contraste-mediante-genie).
+No cambié datos ni atribuí una causa al texto v24 recibido.
+
+Todavía no reexporté la configuración actual del Job ni comprobé cada parámetro efectivo.
+Los indicadores específicos de reutilización y una ingesta nueva siguen pendientes.
+El siguiente incremento prepara el coordinador y la entrega de listas de descubrimiento.
+No cambié Archify ni habilité programación automática.
+
+### Hito 51 — Preparar la plantilla del Job principal
+
+**Fecha:** 14 de noviembre de 2026.
+Creé plantillas JSON y YAML de gtfs_bogota_pipeline y un renderizador local sin llamadas a Databricks.
+El grafo conserva descubrimiento, condición de trabajo, un ciclo Bronze serial y la llamada al Job Silver.
+Uso una condición para excluir Bronze cuando no hay versiones pendientes.
+Silver reúne las ramas mediante NONE_FAILED y conserva las dependencias ejecutadas del plan y la condición.
+Así preparo el camino sin novedades sin ocultar fallos de ingesta.
+
+Los Jobs hijos reciben parámetros explícitos; Raw conserva la responsabilidad del hash.
+Las plantillas versionables no contienen mis rutas personales ni IDs de Jobs del entorno.
+Generé aparte archivos locales resueltos con los valores conocidos del Workspace.
+Los defaults preparan el piloto del snapshot existente 2026-09-29, sin horario.
+La [guía del coordinador](docs/pipeline_coordinator.md) explica carga mediante CLI/API y edición YAML desde la interfaz.
+
+Pasaron 133 pruebas unitarias, incluidas cinco del contrato del coordinador.
+Las pruebas locales no equivalen a ejecutar las ramas en Lakeflow.
+No creé ni ejecuté el Job principal y no modifiqué los Jobs hijos desde el agente.
+Faltan la creación en Workspace, el piloto NO_WORK y el camino con trabajo antes de activar programación.
+No cambié Archify.
+
 ## Qué no publicar
 
 - Access tokens, secretos, archivos `.env`, cookies, hostnames privados o identificadores de cuenta.

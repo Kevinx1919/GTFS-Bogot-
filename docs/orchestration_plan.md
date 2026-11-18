@@ -1,7 +1,8 @@
 # Mi plan de automatización: selección Silver y Job principal
 
 **Estado:** cierre Bronze v2 comprobado en Workspace para 2025 y 2026.
-La prueba de despliegue de los cargadores 02–05 sigue pendiente.
+Los flujos Bronze 2025 y 2026 llegaron a cierres PASSED y WARNING, respectivamente, con conteos conciliados.
+Contrasté el cierre 2026 mediante Genie; faltan indicadores específicos de reutilización y un feed nuevo.
 Vista previa del planificador comprobada en Workspace, sin bloqueos después de la recuperación.
 El piloto NO_WORK del Job terminó SUCCEEDED; el camino con trabajo nuevo y el Job principal siguen pendientes.
 La [guía Bronze v2](bronze_automation.md) describe el incremento actual.
@@ -168,11 +169,11 @@ No necesito fusionar notebooks ni duplicar las transformaciones.
 
 1. Completado: contrasté la exportación real del Job Bronze y guardé una plantilla sin la raíz personal del repositorio.
 2. Cierre bronze_snapshot_v2 comprobado: 2025 PASSED y 2026 WARNING con cinco advertencias, ambos sin fallos bloqueantes. La lectura independiente de eventos será parte de la comprobación del planificador.
-3. Probar en Workspace los cambios de integridad y carga común de notebooks 02–05 antes de habilitar ingesta automática. No requiere posponer la implementación de plan_silver sobre los cierres existentes.
+3. Los flujos Bronze 2025 y 2026 llegaron a cierres completos con conteos reconciliados. Contrasté la auditoría 2026 mediante Genie; falta registrar la reutilización específica de los cargadores y probar una ingesta nueva.
 4. Vista previa de plan_silver comprobada en Workspace: diecinueve COMPLETE, un OUT_OF_SCOPE y dos RESOLVED; sin bloqueos ni pendientes.
 5. Variante conectada y piloto NO_WORK comprobado en Workspace. Falta una corrida con trabajo nuevo.
-6. Implementado localmente: adaptar notebook 06 con cierres completos, selección explícita y NO_WORK. Falta comprobarlo en Workspace.
-7. Crear la plantilla del Job principal y pasar parámetros explícitos a los Jobs existentes.
+6. Notebook 06 comprobado en Workspace: selección explícita COMPLETE para ambos snapshots. La emisión al Workflow y el camino con trabajo siguen pendientes.
+7. Plantilla del Job principal implementada localmente, con parámetros explícitos a los hijos. La guía pipeline_coordinator.md conserva sus cuatro tareas y el piloto pendiente.
 8. Ejecutar un piloto manual y comprobar recuperación, auditoría, histórico y ausencia de duplicados.
 9. Habilitar programación según la cadencia de publicación, después de aprobar el piloto.
 
@@ -252,3 +253,26 @@ El plan reutiliza cierres y resoluciones; ya no considera completas las versione
 Los lotes entregan versiones sin hash; Raw conserva la responsabilidad de calcularlo.
 La variante parametrizada del Job Bronze y el coordinador siguen pendientes.
 Mi siguiente comprobación usa una versión existente en modo explícito, sin reprocesamiento ni emisión de task values.
+
+## Comprobación posterior y siguiente cambio de configuración
+
+Comprobé notebook 06 para ambas versiones y recibí COMPLETE / VALIDATED_BRONZE_CLOSURE.
+El flujo Bronze 2025 también llegó a PASSED, con validación completa y conteos fuente conciliados.
+Preparé una [variante parametrizada](bronze_job_configuration.md#variante-parametrizada-preparación-local) sin alterar el grafo.
+Uso requested_feed_version para solicitar la versión y conservo la identidad entregada por Raw a las tareas posteriores.
+La salida de la comprobación 2026 quedó contrastada mediante Genie: regla v2, 69 controles, cero fallos y cinco advertencias conocidas.
+El coordinador y la entrega de listas de descubrimiento son el siguiente incremento; no habilité un horario.
+
+El [contraste de calidad 2026](bronze_automation.md#comprobación-del-flujo-bronze-2026-y-contraste-mediante-genie) conserva el UUID, resultados y consultas.
+La regla registrada coincide en inicio y cierre; la diferencia textual v24 no aparece en los eventos.
+Antes de declarar completo el coordinador comprobaré su entrega de listas vacías y una ejecución con trabajo.
+
+## Plantilla del coordinador implementada localmente
+
+Preparé la [plantilla del Job principal](pipeline_coordinator.md), su representación YAML y un renderizador sin llamadas a Databricks.
+Uso una condición explícita para no iniciar iteraciones Bronze cuando planned_count es cero.
+La llamada Silver depende también del plan y la condición, con NONE_FAILED para reunir las ramas sin ocultar fallos.
+Conservo una iteración Bronze y una corrida principal simultáneas; los hijos mantienen sus propios límites.
+Los defaults del piloto seleccionan 2026-09-29, ya validado, y un rango Silver del mismo snapshot.
+No añadí una tabla de cierre global; el historial del principal y las auditorías existentes conservan la evidencia inicial.
+La creación en Workspace, el piloto NO_WORK y el camino con trabajo del coordinador siguen pendientes.

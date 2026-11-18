@@ -44,5 +44,27 @@ La versión fija sigue siendo 2025-10-28; esta plantilla todavía no incorpora d
 No añadí parámetros, reintentos o entornos que la exportación no declara.
 La siguiente variante recibirá configuración explícita y mantendrá el hash calculado por Raw.
 
-Notebook 06 ya prepara listas de ingesta localmente; su [comprobación en Workspace](../../docs/bronze_discovery.md) sigue pendiente.
+Notebook 06 ya reconoce ambos snapshots existentes en Workspace; su [entrega de listas al Workflow](../../docs/bronze_discovery.md) sigue pendiente.
 La plantilla fiel del Job Bronze conserva sus cinco tareas y todavía no incluye descubrimiento.
+
+## Variante Bronze parametrizada
+
+La [plantilla parametrizada](gtfs_bogota_bronze_parameterized.template.json) añade requested_feed_version al Job existente.
+Conserva las cinco tareas, sus rutas portables y las referencias de identidad desde Raw.
+Exige task values en Raw y validación; no incluye descubrimiento ni llama a Silver todavía.
+La [guía](../../docs/bronze_job_configuration.md#variante-parametrizada-preparación-local) explica cómo actualizar el Job existente.
+La salida del flujo 2025 ya confirma validación completa y conteos reconciliados.
+La salida de la comprobación 2026 ya está contrastada con su auditoría mediante Genie: validación completa y elegible, con cinco advertencias conocidas.
+No reexporté la configuración modificada ni comprobé cada parámetro efectivo del Job.
+El siguiente incremento prepara el coordinador y la entrega de listas de descubrimiento.
+
+## Job principal preparado localmente
+
+La [plantilla JSON](gtfs_bogota_pipeline.template.json) y su [representación YAML](gtfs_bogota_pipeline.template.yaml) definen el coordinador manual.
+Los IDs cero y /Workspace/REPO_ROOT son marcadores; genero los archivos del entorno con render_pipeline.py.
+El renderizador no autentica, crea ni ejecuta Jobs.
+La [guía del coordinador](../../docs/pipeline_coordinator.md) explica carga desde CLI/API o edición YAML de la interfaz.
+Conservo cuatro tareas: descubrimiento, condición de trabajo, For each con Run Job Bronze y Run Job Silver.
+La condición excluye Bronze cuando no hay versiones pendientes; NONE_FAILED permite continuar hacia Silver si no hubo fallos.
+El piloto inicial queda acotado al snapshot existente 2026-09-29, sin horario automático.
+El coordinador todavía no está creado ni comprobado en Workspace.

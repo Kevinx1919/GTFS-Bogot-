@@ -1,7 +1,8 @@
 # Mi preparación de Bronze para automatización
 
 **Estado:** cierre de notebook 07 comprobado en Workspace para ambos snapshots.
-Los cambios de descarga y carga de notebooks 02–05 mantienen su prueba de despliegue pendiente.
+El flujo 2025 llegó al cierre PASSED y el de 2026 al cierre WARNING con cinco advertencias conocidas.
+Ambos conciliaron conteos; los indicadores específicos de reutilización siguen sin documentarse.
 **Fecha:** 12 de noviembre de 2026.
 Este incremento prepara el pendiente 8b. Todavía no instala el planificador ni el Job principal.
 
@@ -275,12 +276,69 @@ python3 -B -m unittest test_bronze_runtime.BronzeDeltaTests -v
 
 Necesito incluir tests y las dependencias en PYTHONPATH, como describe la guía de pruebas de Silver.
 
+## Comprobación del flujo Bronze 2025
+
+Después de ejecutar el Job Bronze obtuve un cierre `bronze_snapshot_v2` con `PASSED`.
+La validación terminó completa y elegible para Silver, con cero fallos y cero advertencias.
+Los controles `source_row_count_matches` reconciliaron las once entidades publicadas.
+Comprobé 676 rutas, 6530 paradas, 107162 viajes, 909878 puntos de geometría y 5698892 visitas.
+También concilié agency, calendar, calendar_dates, fare_attributes, fare_rules y frequencies.
+Feed_info no estaba publicado; su ausencia opcional quedó registrada sin inventar filas.
+Las cuatro relaciones comprobadas devolvieron cero referencias inexistentes.
+
+Los controles de evolución de esquema muestran NOT_APPLICABLE con severidad INFO.
+El código de notebook 07 usa ese resultado cuando no existe una versión anterior para comparar el archivo.
+Ese estado identifica la línea base histórica; no representa un fallo.
+
+La evidencia recibida es la salida de validación; no incluye el identificador de la corrida.
+No registré los indicadores de reutilización de 02–05 ni una comparación independiente de sus historiales Delta.
+Los conteos finales reconciliados no sustituyen esas comprobaciones operativas específicas.
+Esta ejecución tampoco prueba la ingesta de un feed nuevo.
+
+## Comprobación del flujo Bronze 2026 y contraste mediante Genie
+
+**Fecha de revisión:** 14 de noviembre de 2026.
+Conservé la salida de validación de la ejecución solicitada para 2026-09-29.
+Su identidad es `08d14e0b3a5b9caa5451b722659871fd554e3273b94bdd770fdf81a26bf02097`.
+La corrida de calidad es `6bccbeb8-4d57-4042-8ef7-5c81fa700bd3`; no es el ID de ejecución del Job.
+El cierre terminó WARNING, completo y elegible para Silver, sin fallos bloqueantes y con cinco advertencias.
+
+Contrasté tres consultas acotadas mediante Genie y recuperé todos sus resultados estructurados.
+STARTED y CLOSED registran `bronze_snapshot_v2` para la misma identidad.
+El texto compartido decía `bronze_snapshot_v24` en una línea; esa diferencia no aparece en los eventos registrados.
+No determino la causa del texto ni cambio datos para resolverlo.
+El STARTED conserva RUNNING como evento histórico; el CLOSED demuestra que esta validación terminó.
+
+El cierre declara 69 controles.
+La auditoría contiene 52 PASS/BLOCKING, nueve PASS/WARNING, cinco WARN/WARNING y tres NOT_APPLICABLE/INFO.
+Esos grupos suman los mismos 69 controles.
+Las cinco advertencias comparan contra 2025-10-28:
+
+| Entidad | Cambio de columnas publicado |
+| --- | --- |
+| agency | Añade agency_fare_url. |
+| routes | Omite route_desc. |
+| stop_times | Añade shape_dist_traveled y stop_headsign. |
+| stops | Añade wheelchair_boarding. |
+| trips | Añade trip_headsign. |
+
+La salida recibida concilia las once entidades publicadas; fare_rules está ausente como opcional.
+Las cuatro relaciones comprobadas devuelven cero referencias inexistentes.
+No interpreto ready_for_silver como una nueva publicación Silver ni como aprobación de futuros esquemas desconocidos.
+Los contratos Silver continúan decidiendo sus transformaciones y su publicación.
+
+Conservé el [SQL de comprobación](../databricks/sql/2026_11_14_verify_bronze_validation.sql).
+La revisión consultó auditorías; no volvió a perfilar ni modificar tablas de negocio.
+La configuración completa del Job no se reexportó en esta revisión.
+Los indicadores de reutilización de 02–05 y una ingesta de feed nuevo siguen sin comprobarse independientemente.
+No presento este resultado como prueba del Job principal, todavía pendiente.
+
 ## Qué sigue
 
-El cierre ya está comprobado para ambos snapshots; el siguiente incremento es implementar plan_silver.
-Ese planificador leerá los intentos, sus cierres y la auditoría Silver.
-Sustituirá las listas fijas por pendientes calculados.
-Después adaptaré notebook 06 y crearé el Job principal.
+Plan_silver ya tiene un piloto NO_WORK comprobado y notebook 06 reconoce ambos snapshots existentes.
+Preparé una variante parametrizada del Job Bronze para seleccionar la versión desde sus parámetros generales.
+La [configuración del Job](bronze_job_configuration.md) describe el cambio manual; la validación 2026 ya está contrastada con su auditoría.
+Después comprobaré la entrega de listas de descubrimiento y prepararé el Job principal.
 Notebook 01 mantiene sus correcciones Realtime pendientes en otro incremento.
 No cambio Archify ni habilito horarios automáticos durante esta transición.
 

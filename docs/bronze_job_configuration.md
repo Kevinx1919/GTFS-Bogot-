@@ -76,3 +76,54 @@ No importo esta plantilla como un Job adicional sin revisar el riesgo de escrito
 La comprobación local valida JSON, dependencias y referencias; no sustituye una validación en Databricks.
 
 La [guía de descubrimiento](bronze_discovery.md) contiene los campos para mi primera comprobación.
+
+## Variante parametrizada: preparación local
+
+La [variante parametrizada](../databricks/jobs/gtfs_bogota_bronze_parameterized.template.json) conserva las cinco tareas y el paralelo existente.
+Añade solamente `requested_feed_version` como parámetro general, con default 2025-10-28.
+Raw traduce ese parámetro a su widget `feed_version`.
+Las otras cuatro tareas siguen recibiendo versión y hash desde los task values de Raw.
+Exijo la entrega de task values en Raw y validación mediante `require_task_values=true`.
+No añado descubrimiento, un For each ni una llamada a Silver en este incremento.
+La plantilla original conserva la exportación anterior para comparación.
+No desplegué esta variante desde el agente.
+
+Elegí un nombre distinto para la versión solicitada.
+Un parámetro general llamado `feed_version` reemplazaría el valor del mismo nombre definido en las tareas.
+Así conservo explícitamente la versión entregada por Raw para el resto de la cadena.
+No creo un parámetro general `snapshot_sha256`.
+La [documentación de parámetros](https://docs.databricks.com/aws/en/jobs/job-parameters) describe esa precedencia.
+
+### Cambio manual del Job existente
+
+1. Abro `gtfs_bogota_bronze_manual` y edito sus parámetros generales.
+2. Añado `requested_feed_version`, inicialmente con 2025-10-28.
+3. En `raw_gtfs`, reemplazo su valor fijo de `feed_version` por `{{job.parameters.requested_feed_version}}`.
+4. En `raw_gtfs`, añado `require_task_values=true`.
+5. En `validar_bronze`, añado `require_task_values=true` y conservo las referencias de versión y hash desde Raw.
+6. Conservo los parámetros de versión y hash de las otras tres tareas.
+7. Guardo y solicito una ejecución con `requested_feed_version=2026-09-29`.
+8. Reviso el resultado de calidad y los indicadores de reutilización antes de continuar.
+
+Si ya existe un parámetro general `feed_version` o `snapshot_sha256`, reviso su colisión antes de ejecutar.
+La exportación de partida no contenía esos parámetros generales.
+La configuración del entorno continúa usando los defaults comprobados del notebook o sus parámetros de tarea existentes.
+Los parámetros generales de catálogo, Volumes y coordinador siguen previstos para la integración posterior.
+No creo un segundo Job que pueda competir con el existente.
+Sustituyo `/Workspace/REPO_ROOT` fuera de Git si utilizo la plantilla completa.
+
+Para 2026 espero validación completa y elegibilidad para Silver, si las fuentes no cambiaron.
+Las cinco advertencias de esquema conocidas son compatibles con esa elegibilidad.
+Esta comprobación no equivale a procesar una versión nueva ni a comprobar el coordinador.
+
+### Resultado de la comprobación 2026
+
+El 14 de noviembre revisé la salida de la ejecución solicitada con 2026-09-29.
+Su corrida de calidad es 6bccbeb8-4d57-4042-8ef7-5c81fa700bd3.
+El cierre terminó WARNING con cero fallos, cinco advertencias, validación completa y elegibilidad para Silver.
+Genie confirmó bronze_snapshot_v2 en STARTED y CLOSED y 69 controles reconciliados.
+Las cinco advertencias corresponden a cambios de columnas ya conocidos frente a 2025.
+La [evidencia](bronze_automation.md#comprobación-del-flujo-bronze-2026-y-contraste-mediante-genie) precisa el alcance.
+No reexporté el Job modificado ni comprobé sus parámetros efectivos mediante Jobs API.
+No afirmo que esta auditoría demuestre por sí sola cada ajuste de la interfaz.
+El siguiente incremento prepara el Job principal y la entrega de listas desde descubrimiento.

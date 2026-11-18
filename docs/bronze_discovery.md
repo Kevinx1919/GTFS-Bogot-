@@ -1,6 +1,8 @@
 # Mi descubrimiento de pendientes Bronze
 
-**Estado:** implementación local; falta comprobar notebook 06 en Workspace.
+**Estado:** selección explícita comprobada en Workspace para 2025-10-28 y 2026-09-29.
+Ambas versiones devolvieron COMPLETE / VALIDATED_BRONZE_CLOSURE.
+La emisión de task values de notebook 06 y el camino con trabajo de ingesta siguen pendientes.
 No modifiqué el Job desplegado ni habilité programación.
 
 ## Qué resuelve
@@ -153,3 +155,10 @@ Comprueban dos corridas: control sin duplicar el ítem y una observación adicio
 La segunda corrida entrega task values; la primera mantiene deshabilitada esa entrega.
 La imagen offline no incluía requests; corregí el doble HTTP de la prueba sin instalar paquetes.
 No consulté el portal real ni ejecuté el notebook en Databricks durante estas pruebas.
+
+## Resultado comprobado en Workspace
+
+La selección explícita reconoció 2026-09-29 con `COMPLETE / VALIDATED_BRONZE_CLOSURE`.
+Repetí la comprobación para 2025-10-28 con el mismo resultado.
+No presento esa evidencia como una prueba de entrega de task values al Workflow.
+La variante parametrizada del Job Bronze es el siguiente incremento de configuración.

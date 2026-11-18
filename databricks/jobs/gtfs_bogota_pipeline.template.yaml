@@ -1,0 +1,187 @@
+# Plantilla portable: sustituye REPO_ROOT y ambos job_id=0 antes de guardar.
+# Documento YAML con sintaxis JSON; representa el mismo Job que la plantilla JSON.
+{
+  "resources": {
+    "jobs": {
+      "gtfs_bogota_pipeline": {
+        "name": "gtfs_bogota_pipeline",
+        "description": "Coordinador manual de descubrimiento, Bronze y Silver. Piloto inicial acotado a 2026-09-29; sin horario.",
+        "max_concurrent_runs": 1,
+        "queue": {
+          "enabled": true
+        },
+        "performance_target": "PERFORMANCE_OPTIMIZED",
+        "parameters": [
+          {
+            "name": "repo_root",
+            "default": "/Workspace/REPO_ROOT"
+          },
+          {
+            "name": "catalog",
+            "default": "workspace"
+          },
+          {
+            "name": "schema",
+            "default": "gtfs_bogota"
+          },
+          {
+            "name": "raw_volume",
+            "default": "raw_gtfs"
+          },
+          {
+            "name": "staging_volume",
+            "default": "staging_gtfs"
+          },
+          {
+            "name": "max_metadata_rows",
+            "default": "5000"
+          },
+          {
+            "name": "bronze_selection_mode",
+            "default": "explicit_version"
+          },
+          {
+            "name": "bronze_explicit_version",
+            "default": "2026-09-29"
+          },
+          {
+            "name": "bronze_start_date",
+            "default": ""
+          },
+          {
+            "name": "bronze_end_date",
+            "default": ""
+          },
+          {
+            "name": "bronze_max_versions",
+            "default": "1"
+          },
+          {
+            "name": "bronze_reprocess_completed",
+            "default": "false"
+          },
+          {
+            "name": "silver_feed_version_from",
+            "default": "2026-09-29"
+          },
+          {
+            "name": "silver_feed_version_to",
+            "default": "2026-09-29"
+          },
+          {
+            "name": "silver_max_snapshots",
+            "default": "20"
+          }
+        ],
+        "environments": [
+          {
+            "environment_key": "discovery",
+            "spec": {
+              "environment_version": "4",
+              "dependencies": []
+            }
+          }
+        ],
+        "tasks": [
+          {
+            "task_key": "plan_bronze",
+            "run_if": "ALL_SUCCESS",
+            "environment_key": "discovery",
+            "notebook_task": {
+              "notebook_path": "/Workspace/REPO_ROOT/databricks/notebooks/06_discover_static_gtfs_catalog",
+              "source": "WORKSPACE",
+              "base_parameters": {
+                "repo_root": "{{job.parameters.repo_root}}",
+                "catalog": "{{job.parameters.catalog}}",
+                "schema": "{{job.parameters.schema}}",
+                "max_metadata_rows": "{{job.parameters.max_metadata_rows}}",
+                "emit_task_values": "true",
+                "selection_mode": "{{job.parameters.bronze_selection_mode}}",
+                "explicit_version": "{{job.parameters.bronze_explicit_version}}",
+                "start_date": "{{job.parameters.bronze_start_date}}",
+                "end_date": "{{job.parameters.bronze_end_date}}",
+                "max_versions": "{{job.parameters.bronze_max_versions}}",
+                "reprocess_completed": "{{job.parameters.bronze_reprocess_completed}}"
+              }
+            }
+          },
+          {
+            "task_key": "has_bronze_work",
+            "depends_on": [
+              {
+                "task_key": "plan_bronze"
+              }
+            ],
+            "run_if": "ALL_SUCCESS",
+            "condition_task": {
+              "op": "GREATER_THAN",
+              "left": "{{tasks.plan_bronze.values.planned_count}}",
+              "right": "0"
+            }
+          },
+          {
+            "task_key": "ingest_bronze",
+            "depends_on": [
+              {
+                "task_key": "has_bronze_work",
+                "outcome": "true"
+              }
+            ],
+            "run_if": "ALL_SUCCESS",
+            "for_each_task": {
+              "inputs": "{{tasks.plan_bronze.values.ingestion_work_items}}",
+              "concurrency": 1,
+              "task": {
+                "task_key": "ingest_bronze_snapshot",
+                "run_if": "ALL_SUCCESS",
+                "run_job_task": {
+                  "job_id": 0,
+                  "job_parameters": {
+                    "repo_root": "{{job.parameters.repo_root}}",
+                    "catalog": "{{job.parameters.catalog}}",
+                    "schema": "{{job.parameters.schema}}",
+                    "raw_volume": "{{job.parameters.raw_volume}}",
+                    "staging_volume": "{{job.parameters.staging_volume}}",
+                    "requested_feed_version": "{{input.feed_version}}",
+                    "coordinator_run_id": "{{job.run_id}}",
+                    "require_task_values": "true"
+                  }
+                }
+              }
+            }
+          },
+          {
+            "task_key": "publish_silver",
+            "depends_on": [
+              {
+                "task_key": "plan_bronze"
+              },
+              {
+                "task_key": "has_bronze_work"
+              },
+              {
+                "task_key": "ingest_bronze"
+              }
+            ],
+            "run_if": "NONE_FAILED",
+            "run_job_task": {
+              "job_id": 0,
+              "job_parameters": {
+                "repo_root": "{{job.parameters.repo_root}}",
+                "catalog": "{{job.parameters.catalog}}",
+                "schema": "{{job.parameters.schema}}",
+                "staging_volume": "{{job.parameters.staging_volume}}",
+                "mode": "publish",
+                "verify_history": "true",
+                "max_metadata_rows": "{{job.parameters.max_metadata_rows}}",
+                "max_snapshots": "{{job.parameters.silver_max_snapshots}}",
+                "feed_version_from": "{{job.parameters.silver_feed_version_from}}",
+                "feed_version_to": "{{job.parameters.silver_feed_version_to}}"
+              }
+            }
+          }
+        ]
+      }
+    }
+  }
+}

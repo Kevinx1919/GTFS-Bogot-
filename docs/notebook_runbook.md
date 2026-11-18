@@ -624,3 +624,12 @@ La tabla del plan mostró diecinueve COMPLETE, un OUT_OF_SCOPE y dos RESOLVED, s
 No obtuve un contador independiente de iteraciones desde las consultas de metadata realizadas.
 No confundo una ejecución del contenedor con una iteración de su tarea interna.
 El [registro](silver_planner.md) documenta los límites y deja pendiente la corrida con trabajo nuevo.
+
+## Uso de notebook 06 dentro del coordinador
+
+La [guía del Job principal](pipeline_coordinator.md) conserva el mapeo de sus parámetros a los seis bloques existentes de notebook 06.
+La tarea plan_bronze fija emit_task_values=true y recibe selección y rango desde parámetros con prefijo bronze_.
+La condición has_bronze_work consume planned_count; el For each consume ingestion_work_items solo en la rama true.
+No añadí bloques al notebook para coordinar Jobs mediante código Python.
+Lakeflow conserva esa responsabilidad en las tareas declarativas del padre.
+La creación y ejecución del padre todavía necesitan su comprobación en Workspace.
