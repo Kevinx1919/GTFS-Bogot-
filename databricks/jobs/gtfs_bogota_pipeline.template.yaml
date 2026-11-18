@@ -157,9 +157,6 @@
                 "task_key": "plan_bronze"
               },
               {
-                "task_key": "has_bronze_work"
-              },
-              {
                 "task_key": "ingest_bronze"
               }
             ],

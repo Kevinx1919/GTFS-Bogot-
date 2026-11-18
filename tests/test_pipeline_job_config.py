@@ -56,6 +56,19 @@ class PipelineJobConfigTests(unittest.TestCase):
                 self.assertEqual(eligible({"plan_bronze": "SUCCEEDED", "has_bronze_work": "SUCCEEDED", "ingest_bronze": state}), expected)
         self.assertFalse(eligible({"plan_bronze": "FAILED", "has_bronze_work": "UPSTREAM_FAILED", "ingest_bronze": "UPSTREAM_FAILED"}))
 
+    def test_condition_edges_require_outcomes_and_silver_joins_outside_the_branch(self):
+        tasks = task_map(job())
+        conditions = {name for name, task in tasks.items() if "condition_task" in task}
+        for name, task in tasks.items():
+            for dependency in task.get("depends_on", []):
+                if dependency["task_key"] in conditions:
+                    with self.subTest(task=name, source=dependency["task_key"]):
+                        self.assertIn(dependency.get("outcome"), {"true", "false"})
+        silver = tasks["publish_silver"]
+        # El plan ejecutado evita la exclusión en cascada cuando Bronze no tiene trabajo.
+        self.assertEqual({d["task_key"] for d in silver["depends_on"]}, {"plan_bronze", "ingest_bronze"})
+        self.assertEqual(silver["run_if"], "NONE_FAILED")
+
     def test_references_and_dag_resolve_without_child_task_values(self):
         configuration = job(); tasks = task_map(configuration)
         names = {p["name"] for p in configuration["parameters"]}

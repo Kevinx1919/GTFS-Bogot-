@@ -271,7 +271,8 @@ Antes de declarar completo el coordinador comprobaré su entrega de listas vací
 
 Preparé la [plantilla del Job principal](pipeline_coordinator.md), su representación YAML y un renderizador sin llamadas a Databricks.
 Uso una condición explícita para no iniciar iteraciones Bronze cuando planned_count es cero.
-La llamada Silver depende también del plan y la condición, con NONE_FAILED para reunir las ramas sin ocultar fallos.
+La llamada Silver depende del plan y del For each, con NONE_FAILED para reunir las ramas sin ocultar fallos.
+El For each depende de la condición con outcome=true; Silver no tiene un enlace directo a esa condición.
 Conservo una iteración Bronze y una corrida principal simultáneas; los hijos mantienen sus propios límites.
 Los defaults del piloto seleccionan 2026-09-29, ya validado, y un rango Silver del mismo snapshot.
 No añadí una tabla de cierre global; el historial del principal y las auditorías existentes conservan la evidencia inicial.

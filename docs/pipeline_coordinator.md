@@ -38,9 +38,12 @@ publish_silver / Run Job Silver
 | plan_bronze | Actualizar catálogo y descubrir pendientes. | Notebook 06, selección y límites explícitos; emit_task_values=true. | Metadata del catálogo y lista ingestion_work_items; no descarga ZIP. |
 | has_bronze_work | Separar trabajo de ausencia de novedades. | Task value planned_count mayor que cero. | Condición del Workflow; sin tablas ni cómputo Spark. |
 | ingest_bronze | Llamar al Job Bronze por cada versión. | Rama true y lista del plan; concurrencia uno. | El Job hijo descarga, carga y valida mediante sus cinco tareas. |
-| publish_silver | Ejecutar el Job Silver con plan_silver. | Depende del plan, la condición y el For each; run_if=NONE_FAILED. | El Job hijo determina pendientes y publica solo lo necesario. |
+| publish_silver | Ejecutar el Job Silver con plan_silver. | Depende del plan y del For each; run_if=NONE_FAILED. | El Job hijo determina pendientes y publica solo lo necesario. |
 
-La dependencia de Silver incluye tareas previas que sí ejecutaron.
+Silver depende directamente de plan_bronze e ingest_bronze.
+No depende directamente de has_bronze_work: una dependencia directa de condición necesita outcome explícito.
+Ingest_bronze conserva su dependencia has_bronze_work con outcome=true.
+La dependencia directa del plan incluye una tarea que sí ejecutó.
 Así la exclusión de Bronze por falta de trabajo no excluye toda la rama Silver.
 NONE_FAILED permite continuar con ramas excluidas y bloquea fallos previos.
 El piloto debe comprobar ese comportamiento en el motor real.
@@ -183,3 +186,15 @@ No desplegué, activé horarios ni modifiqué los Jobs existentes.
 - [Condiciones y dependencias](https://docs.databricks.com/aws/en/jobs/run-if).
 - [If/else](https://docs.databricks.com/aws/en/jobs/tasks/if-else).
 - [Límites Free Edition](https://docs.databricks.com/aws/en/getting-started/free-edition-limitations).
+
+## Corrección del primer intento de guardado
+
+El 17 de noviembre Databricks rechazó la dependencia directa de publish_silver hacia has_bronze_work sin outcome.
+La plantilla inicial contenía esa dependencia inválida; la comprobación local anterior no cubría esa restricción.
+Retiré únicamente ese enlace y mantuve plan_bronze e ingest_bronze como dependencias de Silver.
+Con NONE_FAILED, el plan satisfactorio permite continuar cuando ingest_bronze queda excluido.
+Un fallo de la condición se propaga a ingest_bronze y bloquea la promoción mediante Silver.
+No añadí outcome=true a Silver porque impediría el camino sin novedades.
+Añadí una regresión que exige outcome en cada enlace directo a una condición.
+La comprobación del guardado y las ramas en Workspace sigue pendiente.
+El archivo render_pipeline.py es un generador Python; el editor recibe la configuración YAML generada.

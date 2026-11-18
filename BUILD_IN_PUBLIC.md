@@ -790,6 +790,17 @@ No creé ni ejecuté el Job principal y no modifiqué los Jobs hijos desde el ag
 Faltan la creación en Workspace, el piloto NO_WORK y el camino con trabajo antes de activar programación.
 No cambié Archify.
 
+### Hito 52 — Corregir el enlace condicional del coordinador
+
+**Fecha:** 17 de noviembre de 2026.
+El editor rechazó la plantilla porque publish_silver dependía directamente de has_bronze_work sin indicar outcome.
+Corregí mi configuración: Silver depende del plan y del ciclo Bronze con NONE_FAILED.
+El ciclo conserva su dependencia de la condición con outcome=true.
+Así preparo el camino sin novedades sin añadir una rama obligatoria a Silver.
+Añadí una prueba de regresión para los enlaces directos hacia condiciones.
+Regeneré los archivos JSON/YAML del entorno; falta comprobar su guardado y ejecución en Workspace.
+No modifiqué los Jobs desplegados desde el agente ni cambié Archify.
+
 ## Qué no publicar
 
 - Access tokens, secretos, archivos `.env`, cookies, hostnames privados o identificadores de cuenta.
