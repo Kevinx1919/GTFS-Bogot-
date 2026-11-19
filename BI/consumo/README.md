@@ -4,7 +4,8 @@ La conexión Databricks existente permite incorporar las nuevas tablas cuando es
 No necesito exportar CSV ni importar todas las tablas Silver.
 El manifiesto sources_plan.json define columnas y relaciones propuestas; no modifica el PBIP por sí solo.
 
-El publicador diario está implementado localmente y requiere validación y publicación en Workspace.
+El hecho diario ya está publicado en Workspace para 2026 con 305.165 filas únicas.
+La incorporación al modelo local Power BI sigue pendiente.
 Después importaré gold_gtfs_route_service_day con las quince columnas de negocio del manifiesto.
 Conservaré las claves de fuente para relacionar datos y las ocultaré en la vista normal.
 No importaré los tres campos técnicos de publicación como indicadores.
@@ -35,3 +36,12 @@ El boceto anterior deja de ser la base de diseño.
 El siguiente reporte partirá de preguntas, comparaciones y acciones, con identidad roja y amarilla.
 No reutilizaré su distribución por obligación ni mostraré versión/hash como protagonista.
 La implementación visual empieza después de comprobar las nuevas fuentes de negocio.
+
+
+## Fuentes de mapa y extremos horarios preparadas localmente
+
+El manifiesto conserva seis campos del puente ruta–ubicación y diecisiete de extremos horarios.
+Ambas entidades tienen publicador local y requieren validate y publish en Workspace.
+Las [guías de ruta–ubicación](../../docs/gold_route_stop_execution.md) y [extremos](../../docs/gold_trip_timing_execution.md) conservan los pasos.
+El mapa filtrará puntos mediante existencia de parejas; las medidas de intervalos usarán elegibilidad y precisión.
+No marqué esas dos tablas como importadas en el modelo Power BI.

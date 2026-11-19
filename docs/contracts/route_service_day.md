@@ -1,6 +1,6 @@
 # Mi contrato Gold: route_service_day_v1
 
-**Estado:** primer publicador implementado localmente; validación en Databricks pendiente.
+**Estado:** publicado en Databricks para el horizonte 2026; pendiente de incorporación a Power BI.
 **Destino:** gold_gtfs_route_service_day.
 **Pregunta:** ¿qué programación declara cada ruta para una fecha y qué cambia entre dos fechas?
 
@@ -121,3 +121,21 @@ No ejecuté una integración Delta nativa nueva ni una publicación en Workspace
 La persistencia por ámbito reutiliza el helper ya existente.
 
 Validé sintaxis Python, los dos bloques del notebook sin resultados guardados, sus quince campos de consumo y enlaces documentales.
+
+
+## Primera publicación diaria en Workspace
+
+Ejecuté el publicador y obtuve SUCCEEDED, persisted=true y reconciled=true.
+La ejecución Gold es 3b65045e-5afb-431b-93d0-1b40315b485d y la regla route_service_day_v1.
+Publiqué 305.165 filas y 305.165 claves distintas de ruta y fecha.
+Encontré 1.045 rutas con programación dentro del horizonte 2026 completo.
+El total acumulado es 25.418.801 viajes-día declarados; no son viajes distintos ni viajes operados.
+El resumen informó cero filas inválidas y cero viajes del catálogo sin días activos.
+
+Fijé versiones Delta silver_audit=55, gold_audit=3, trip_coverage=0 y service_dates=0.
+Conservé las ejecuciones fuente de cobertura 8d48f208-89a1-4c7b-9369-136be92d7a51 y fechas 8aed94d4-eaae-4faf-b776-7810447bd99e.
+
+El aviso WindowExpression procede de las ventanas que buscan la última ejecución en auditorías ya filtradas por fuente y entidad.
+No corresponde al agregado distribuido de rutas y fechas.
+La publicación terminó correctamente; el aviso no requiere repetirla por sí solo.
+La incorporación de esta tabla a Power BI sigue pendiente.

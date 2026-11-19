@@ -1,5 +1,5 @@
 {
-  "status": "pending_workspace_validation_and_publication",
+  "status": "published_in_workspace_pending_power_bi_import",
   "existing": [
     "gold_gtfs_trip_coverage",
     "silver_gtfs_routes",
@@ -43,7 +43,8 @@
         "cardinality": "many_to_one",
         "direction": "single"
       }
-    ]
+    ],
+    "published_gold_run_id": "3b65045e-5afb-431b-93d0-1b40315b485d"
   },
   "map": {
     "visual": "Azure Maps",
@@ -59,7 +60,52 @@
       "stop_id",
       "parent_station"
     ],
-    "route_filter_dependency": "gold_gtfs_route_stop (not implemented)",
+    "route_filter_dependency": "gold_gtfs_route_stop (implemented locally, not published)",
     "date_scope": "published_network_catalog; no daily filter until a service-aware bridge is defined"
+  },
+  "map_bridge": {
+    "name": "gold_gtfs_route_stop",
+    "status": "implemented_locally_pending_workspace_validation",
+    "required_columns": [
+      "source_feed_version",
+      "source_sha256",
+      "route_id",
+      "stop_id",
+      "published_visit_count",
+      "declared_trip_count"
+    ],
+    "relationships": [
+      "silver_gtfs_routes.route_key -> gold_gtfs_route_stop.route_key",
+      "silver_gtfs_stops.stop_key -> gold_gtfs_route_stop.stop_key"
+    ],
+    "direction": "single_from_dimensions",
+    "map_visual_filter": "Ubicación relacionada = IF(COUNTROWS(gold_gtfs_route_stop)>0,1,0); filter equals 1"
+  },
+  "trip_timing": {
+    "name": "gold_gtfs_trip_timing",
+    "status": "implemented_locally_pending_workspace_validation",
+    "relationship": "silver_gtfs_trips.trip_key -> gold_gtfs_trip_timing.trip_key; single direction",
+    "eligible_filter": "timing_status=eligible",
+    "precision_field": "endpoint_time_precision",
+    "date_scope": "trip catalog; explicit active-service logic required for date filtering",
+    "required_columns": [
+      "source_feed_version",
+      "source_sha256",
+      "trip_id",
+      "route_id",
+      "service_id",
+      "visit_count",
+      "first_stop_id",
+      "last_stop_id",
+      "first_stop_sequence",
+      "last_stop_sequence",
+      "first_departure_time_seconds",
+      "last_arrival_time_seconds",
+      "frequency_window_count",
+      "is_frequency_template",
+      "endpoint_time_precision",
+      "timing_status",
+      "published_span_seconds"
+    ]
   }
 }

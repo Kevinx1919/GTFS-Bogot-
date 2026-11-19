@@ -200,3 +200,28 @@ El manifiesto BI/consumo/sources_plan.json identifica columnas y relaciones del 
 El mapa usará coordenadas reales del catálogo, con tipos de ubicación separados.
 El puente ruta–ubicación sigue pendiente antes de filtrar ese mapa por componente o ruta.
 El boceto anterior deja de ser la base de diseño; no sustituye las preguntas ni condiciona la nueva composición.
+
+
+## Cierre de publicación diaria
+
+Publiqué route_service_day_v1 para 2026 con 305.165 claves únicas y 1.045 rutas en el horizonte.
+La ejecución 3b65045e-5afb-431b-93d0-1b40315b485d terminó SUCCEEDED y reconciled=true.
+El resumen conserva 25.418.801 viajes-día declarados y cero filas inválidas.
+La incorporación a Power BI y las nuevas medidas diarias siguen pendientes.
+La [guía de ejecución](gold_route_service_day_execution.md) conserva la evidencia y sus límites.
+
+
+## Incremento ruta–ubicación
+
+Implementé localmente route_stop_v1 y notebook 23, con contrato, conciliación y publicación por ámbito.
+La validación y publicación en Workspace siguen pendientes.
+La [guía](gold_route_stop_execution.md) explica el paso siguiente y el filtro del mapa.
+No avancé a extremos horarios ni marqué el mapa Power BI como implementado.
+
+
+## Incremento de extremos horarios
+
+Cerré el contrato e implementé localmente trip_timing_v1 y notebook 24.
+La [guía](gold_trip_timing_execution.md) conserva los campos, categorías y límites de consumo.
+Ruta–ubicación y extremos horarios siguen pendientes de validar y publicar en Workspace.
+No marqué estas tablas como importadas en Power BI ni amplié el Job principal.

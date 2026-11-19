@@ -685,3 +685,25 @@ La [ficha](contracts/route_service_day.md) define grano, ausencias, tipos y lím
 No descargo archivos ni instalo paquetes en estos bloques.
 El flujo usa Spark/Delta administrados y el repositorio completo.
 No modifiqué el Job principal ni publiqué la tabla en Workspace desde la implementación local.
+
+
+## Notebook Gold 23 — Ruta–ubicación
+
+| Bloque | Propósito | Entrada | Salida y efectos | Validación |
+| --- | --- | --- | --- | --- |
+| 1 | Resolver repositorio y releer widgets. | repo_root, catálogo, schema, versión, hash y modo. | Variables locales e importación, sin escrituras. | Raíz absoluta y repositorio completo; identidad validada al ejecutar el procesador. |
+| 2 | Construir y conciliar parejas únicas y publicar según el modo. | Cuatro fuentes Silver y auditoría con versiones Delta fijadas. | Resumen; validate sin escrituras; publish reemplaza el ámbito Gold y registra STARTED/CLOSED. | Claves únicas, metadata vigente, referencias completas, ubicaciones elegibles, visitas conciliadas y ejecución destino comprobada. |
+
+La [guía de ejecución](gold_route_stop_execution.md) y el [contrato](contracts/route_stop.md) documentan este bloque.
+No instala dependencias ni ejecuta Jobs. Los valores iniciales corresponden a 2026 y son parámetros.
+
+
+## Notebook Gold 24 — Extremos horarios publicados
+
+| Bloque | Propósito | Entrada | Salida y efectos | Validación |
+| --- | --- | --- | --- | --- |
+| 1 | Resolver repositorio y releer identidad y modo. | repo_root, catálogo, schema, versión, hash y mode. | Variables e importación, sin escrituras. | Raíz absoluta y módulo presente; identidad validada al ejecutar. |
+| 2 | Preparar extremos y clasificar todos los viajes, con publicación explícita. | Trips, stop_times, frequencies y auditoría Silver fijados por versión Delta. | Resumen; validate sin escritura; publish escribe Gold y eventos de auditoría. | Fuentes vigentes, claves y referencias, filas/visitas/ventanas conciliadas y categorías excluyentes. |
+
+La [guía](gold_trip_timing_execution.md) y el [contrato](contracts/trip_timing.md) explican reglas, precisión y ausencias.
+No instala librerías ni modifica el Job principal. Los parámetros iniciales corresponden al caso 2026.
