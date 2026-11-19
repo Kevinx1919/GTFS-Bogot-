@@ -1,0 +1,65 @@
+{
+  "status": "pending_workspace_validation_and_publication",
+  "existing": [
+    "gold_gtfs_trip_coverage",
+    "silver_gtfs_routes",
+    "silver_gtfs_agency",
+    "silver_gtfs_stops"
+  ],
+  "next_table": {
+    "name": "gold_gtfs_route_service_day",
+    "required_columns": [
+      "source_feed_version",
+      "source_sha256",
+      "route_id",
+      "service_date",
+      "declared_trip_count",
+      "trips_without_frequency_count",
+      "frequency_template_count",
+      "frequency_window_count",
+      "trips_without_visits_count",
+      "trips_with_one_visit_count",
+      "trips_with_multiple_visits_count",
+      "active_service_count",
+      "source_temporal_warning",
+      "analysis_window_start",
+      "analysis_window_end"
+    ],
+    "exclude_from_import": [
+      "gold_run_id",
+      "gold_rule_version",
+      "gold_loaded_at_utc"
+    ],
+    "relationships": [
+      {
+        "from": "gold_gtfs_route_service_day.route_key",
+        "to": "silver_gtfs_routes.route_key",
+        "cardinality": "many_to_one",
+        "direction": "single"
+      },
+      {
+        "from": "gold_gtfs_route_service_day.service_date",
+        "to": "dim_gtfs_fecha.fecha",
+        "cardinality": "many_to_one",
+        "direction": "single"
+      }
+    ]
+  },
+  "map": {
+    "visual": "Azure Maps",
+    "table": "silver_gtfs_stops",
+    "id": "stop_key",
+    "latitude": "stop_lat",
+    "longitude": "stop_lon",
+    "latitude_aggregation": "DoNotSummarize",
+    "longitude_aggregation": "DoNotSummarize",
+    "legend": "location_type",
+    "tooltips": [
+      "stop_name",
+      "stop_id",
+      "parent_station"
+    ],
+    "route_filter_dependency": "gold_gtfs_route_stop (not implemented)",
+    "date_scope": "published_network_catalog; no daily filter until a service-aware bridge is defined"
+  }
+}

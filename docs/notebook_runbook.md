@@ -671,3 +671,17 @@ El padre todavía no ejecuta Gold; la validación y publicación en Workspace si
 La [evaluación](remaining_silver_assessment.md) precisa controles, utilidad y límites.
 Los seis SQL terminaron satisfactoriamente mediante Genie; el notebook completo no tiene ejecución documentada en Workspace.
 No constituye un contrato Silver implementado ni una etapa obligatoria del Job.
+
+
+## Notebook Gold 22 — Programación por ruta y fecha
+
+| Bloque | Propósito | Entrada | Salida y efectos | Validación y decisiones |
+| --- | --- | --- | --- | --- |
+| 1 / configuración | Resolver el repositorio y releer todos los widgets. | repo_root, catálogo, schema, versión, hash, horizonte y modo. | Variables locales e importación; sin escrituras. | Ruta absoluta, repositorio completo, horizonte ISO entre 1 y 366 días. Los valores iniciales corresponden a 2026 y son parámetros. |
+| 2 / ejecución | Preparar el hecho diario con fuentes fijadas y publicar solo en mode=publish. | Cobertura Gold auditada, fechas activas Silver, versiones Delta y auditorías. | Resumen JSON; validate no escribe; publish escribe el ámbito Gold y eventos STARTED/CLOSED. | Claves únicas, metadata vigente, linaje Silver actual, horizonte completo, categorías conciliadas y viajes-día reconciliados por servicio. |
+
+La [guía de ejecución](gold_route_service_day_execution.md) conserva campos, muestra real y pasos de consumo.
+La [ficha](contracts/route_service_day.md) define grano, ausencias, tipos y límites.
+No descargo archivos ni instalo paquetes en estos bloques.
+El flujo usa Spark/Delta administrados y el repositorio completo.
+No modifiqué el Job principal ni publiqué la tabla en Workspace desde la implementación local.

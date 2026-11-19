@@ -9,4 +9,10 @@ Los futuros publicadores mantendrán separados validación, escritura e identida
 Notebook 20 ejecuta gtfs_gold/trip_coverage.py para validar o publicar la primera entidad Gold.
 El modo inicial validate no escribe tablas ni auditorías Gold.
 Publish reemplaza solamente el snapshot seleccionado y registra su auditoría Gold.
-El despliegue en Workspace sigue pendiente; no añadí esta tarea al coordinador.
+La cobertura 2026 ya está publicada y consumida en Power BI; no añadí esa tarea al coordinador.
+
+
+Notebook 22 ejecuta gtfs_gold/route_service_day.py para preparar programación declarada por ruta y fecha.
+El primer paso es validate y la publicación en Workspace sigue pendiente para esta entidad nueva.
+Reutiliza la cobertura existente y fechas activas, sin volver a agregar stop_times.
+La guía docs/gold_route_service_day_execution.md conserva configuración y comprobaciones.

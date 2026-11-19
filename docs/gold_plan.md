@@ -141,3 +141,16 @@ La integración completa requiere además su configuración Spark/Delta y resolu
 Conservo la evidencia previa de las dos integraciones Gold; esta revisión no la sustituye.
 Validé sintaxis Python, notebooks sin resultados persistidos y enlaces de documentación.
 No instalé paquetes dentro del repositorio ni ejecuté Jobs de Databricks.
+
+## Preparación del siguiente incremento
+
+Implementé localmente route_service_day y su notebook 22, con contrato y modo validate sin escrituras.
+La publicación en Workspace y la incorporación al modelo Power BI siguen pendientes.
+La [guía de ejecución](gold_route_service_day_execution.md) conserva la muestra de negocio consultada con Genie.
+El manifiesto BI/consumo/sources_plan.json identifica columnas y relaciones del próximo hecho.
+El mapa usará coordenadas reales del catálogo, con tipos de ubicación separados.
+El puente ruta–ubicación sigue pendiente antes de filtrar ese mapa por componente o ruta.
+El boceto anterior deja de ser la base de diseño; no sustituye las preguntas ni condiciona la nueva composición.
+
+La cobertura Gold 2026 ya está publicada y consumida. El nuevo procesador diario sigue pendiente de validar y publicar en Workspace.
+El [plan narrativo](power_bi_storytelling_plan.md) define las preguntas que guían este incremento.
