@@ -1,0 +1,4 @@
+# Conservo los bytes de los HTML y JSON generados y verificados.
+# Los espacios de la plantilla HTML no se corrigen a mano.
+**/*.html -text -whitespace
+**/*.json -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol

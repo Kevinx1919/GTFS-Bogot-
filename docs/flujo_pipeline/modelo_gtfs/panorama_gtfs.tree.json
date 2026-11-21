@@ -1,0 +1,519 @@
+{
+  "schema_version": 1,
+  "diagram_type": "tree",
+  "meta": {
+    "title": "Mi modelo GTFS: alcance y crecimiento",
+    "locale": "es",
+    "output": "docs/flujo_pipeline/modelo_gtfs/panorama_gtfs.html",
+    "quality_profile": "showcase",
+    "repository": {
+      "url": "https://github.com/Kevinx1919/GTFS-Bogot-.git",
+      "revision": "5c23d4e327fb9d90f407dbfc12678623106e4ad6"
+    },
+    "views": [
+      {
+        "id": "actual",
+        "label": "Lo implementado",
+        "focus": [
+          "hoy",
+          "agency",
+          "routes",
+          "ubicaciones",
+          "stops",
+          "shapes",
+          "servicios",
+          "calendar",
+          "calendar_dates",
+          "service_dates",
+          "viajes",
+          "trips",
+          "frequencies",
+          "stop_times"
+        ],
+        "note": "Diez entidades con contrato implementado y cierre funcional confirmado durante el desarrollo."
+      },
+      {
+        "id": "programacion",
+        "label": "Servicios y viajes",
+        "focus": [
+          "servicios",
+          "calendar",
+          "calendar_dates",
+          "service_dates",
+          "viajes",
+          "trips",
+          "frequencies",
+          "stop_times"
+        ],
+        "note": "Calendarios y viajes están publicados. El planificador dinámico tiene piloto sin trabajo comprobado."
+      },
+      {
+        "id": "territorio",
+        "label": "Ubicaciones y contexto",
+        "focus": [
+          "ubicaciones",
+          "stops",
+          "shapes",
+          "contexto",
+          "feed_info",
+          "fare_attributes",
+          "fare_rules"
+        ],
+        "note": "Distingo geometrías, ubicaciones, tarifas y metadata; los opcionales dependen de la fuente."
+      }
+    ]
+  },
+  "layout": {
+    "direction": "right"
+  },
+  "nodes": [
+    {
+      "id": "gtfs",
+      "label": "Mi modelo GTFS",
+      "sublabel": "Implementación y alcance pendiente",
+      "sources": [
+        {
+          "path": "docs/silver_design.md",
+          "line": 62,
+          "end_line": 79,
+          "label": "Plan de entidades Silver"
+        }
+      ]
+    },
+    {
+      "id": "hoy",
+      "label": "Silver implementada",
+      "sublabel": "Referencias publicadas",
+      "sources": [
+        {
+          "path": "databricks/config/silver_entities.json",
+          "line": 1,
+          "end_line": 18,
+          "label": "Registro de entidades"
+        },
+        {
+          "path": "docs/silver_execution.md",
+          "line": 846,
+          "end_line": 860,
+          "label": "Cierre funcional de stop_times"
+        }
+      ],
+      "parent": "gtfs"
+    },
+    {
+      "id": "agency",
+      "label": "agency",
+      "sublabel": "Agencias o marcas · PUBLICADA",
+      "sources": [
+        {
+          "path": "databricks/gtfs_silver/agency_spark.py",
+          "line": 46,
+          "end_line": 58,
+          "label": "Esquema explícito de agency"
+        },
+        {
+          "path": "databricks/gtfs_silver/spark_validation.py",
+          "line": 98,
+          "end_line": 112,
+          "label": "Procedencia, regla y salidas"
+        }
+      ],
+      "parent": "hoy"
+    },
+    {
+      "id": "routes",
+      "label": "routes",
+      "sublabel": "Catálogo de rutas · PUBLICADA",
+      "sources": [
+        {
+          "path": "databricks/gtfs_silver/routes_spark.py",
+          "line": 14,
+          "end_line": 21,
+          "label": "Campos y tipos de routes"
+        },
+        {
+          "path": "databricks/gtfs_silver/spark_validation.py",
+          "line": 98,
+          "end_line": 112,
+          "label": "Procedencia, regla y salidas"
+        }
+      ],
+      "parent": "hoy"
+    },
+    {
+      "id": "ubicaciones",
+      "label": "Ubicaciones y trazados",
+      "sublabel": "Dos contratos publicados",
+      "sources": [
+        {
+          "path": "docs/silver_design.md",
+          "line": 62,
+          "end_line": 79,
+          "label": "Plan de entidades Silver"
+        }
+      ],
+      "parent": "gtfs"
+    },
+    {
+      "id": "stops",
+      "label": "stops",
+      "sublabel": "Ubicaciones y padres · PUBLICADA",
+      "sources": [
+        {
+          "path": "databricks/gtfs_silver/stops_spark.py",
+          "line": 14,
+          "end_line": 19,
+          "label": "Campos y tipos de stops"
+        },
+        {
+          "path": "databricks/gtfs_silver/spark_validation.py",
+          "line": 98,
+          "end_line": 112,
+          "label": "Procedencia, regla y salidas"
+        }
+      ],
+      "parent": "ubicaciones"
+    },
+    {
+      "id": "shapes",
+      "label": "shape_points",
+      "sublabel": "Puntos ordenados · PUBLICADA",
+      "sources": [
+        {
+          "path": "databricks/gtfs_silver/shape_points_spark.py",
+          "line": 13,
+          "end_line": 18,
+          "label": "Campos de puntos de trazado"
+        },
+        {
+          "path": "databricks/gtfs_silver/spark_validation.py",
+          "line": 98,
+          "end_line": 112,
+          "label": "Procedencia, regla y salidas"
+        }
+      ],
+      "parent": "ubicaciones"
+    },
+    {
+      "id": "servicios",
+      "label": "Servicios y calendario",
+      "sublabel": "Fuentes y derivación publicadas",
+      "sources": [
+        {
+          "path": "docs/silver_design.md",
+          "line": 62,
+          "end_line": 79,
+          "label": "Plan de entidades Silver"
+        }
+      ],
+      "parent": "gtfs"
+    },
+    {
+      "id": "calendar",
+      "label": "calendar",
+      "sublabel": "Patrón semanal · PUBLICADA",
+      "sources": [
+        {
+          "path": "databricks/gtfs_silver/calendars_spark.py",
+          "line": 15,
+          "end_line": 21,
+          "label": "Esquemas de calendarios"
+        },
+        {
+          "path": "databricks/gtfs_silver/spark_validation.py",
+          "line": 98,
+          "end_line": 112,
+          "label": "Procedencia, regla y salidas"
+        }
+      ],
+      "parent": "servicios"
+    },
+    {
+      "id": "calendar_dates",
+      "label": "calendar_dates",
+      "sublabel": "Excepciones por fecha · PUBLICADA",
+      "sources": [
+        {
+          "path": "databricks/gtfs_silver/calendars_spark.py",
+          "line": 15,
+          "end_line": 21,
+          "label": "Esquemas de calendarios"
+        },
+        {
+          "path": "databricks/gtfs_silver/spark_validation.py",
+          "line": 98,
+          "end_line": 112,
+          "label": "Procedencia, regla y salidas"
+        }
+      ],
+      "parent": "servicios"
+    },
+    {
+      "id": "service_dates",
+      "label": "service_dates",
+      "sublabel": "Días activos de 2026 · PUBLICADA",
+      "sources": [
+        {
+          "path": "databricks/gtfs_silver/service_dates_spark.py",
+          "line": 107,
+          "end_line": 122,
+          "label": "Esquema derivado"
+        },
+        {
+          "path": "databricks/gtfs_silver/publication.py",
+          "line": 211,
+          "end_line": 225,
+          "label": "Campos finales y clave"
+        }
+      ],
+      "parent": "servicios"
+    },
+    {
+      "id": "viajes",
+      "label": "Viajes y horarios",
+      "sublabel": "Viajes, frecuencias y visitas publicadas",
+      "sources": [
+        {
+          "path": "docs/silver_design.md",
+          "line": 62,
+          "end_line": 79,
+          "label": "Plan de entidades Silver"
+        }
+      ],
+      "parent": "gtfs"
+    },
+    {
+      "id": "trips",
+      "label": "trips",
+      "sublabel": "Viajes plantilla · PUBLICADA",
+      "sources": [
+        {
+          "path": "databricks/gtfs_silver/trips_spark.py",
+          "line": 14,
+          "end_line": 17,
+          "label": "Campos de trips"
+        },
+        {
+          "path": "databricks/gtfs_silver/spark_validation.py",
+          "line": 98,
+          "end_line": 112,
+          "label": "Procedencia, regla y salidas"
+        }
+      ],
+      "parent": "viajes"
+    },
+    {
+      "id": "frequencies",
+      "label": "frequencies",
+      "sublabel": "Ventanas e intervalos · PUBLICADA",
+      "sources": [
+        {
+          "path": "databricks/gtfs_silver/frequencies_spark.py",
+          "line": 129,
+          "end_line": 133,
+          "label": "Campos fuente y derivados"
+        },
+        {
+          "path": "databricks/gtfs_silver/spark_validation.py",
+          "line": 98,
+          "end_line": 112,
+          "label": "Procedencia, regla y salidas"
+        }
+      ],
+      "parent": "viajes"
+    },
+    {
+      "id": "stop_times",
+      "label": "stop_times",
+      "sublabel": "Visitas y horas · PUBLICADA",
+      "sources": [
+        {
+          "path": "databricks/gtfs_silver/stop_times_spark.py",
+          "line": 180,
+          "end_line": 193,
+          "label": "Campos y diagnóstico"
+        },
+        {
+          "path": "databricks/gtfs_silver/spark_validation.py",
+          "line": 98,
+          "end_line": 112,
+          "label": "Procedencia, regla y salidas"
+        },
+        {
+          "path": "docs/silver_execution.md",
+          "line": 846,
+          "end_line": 860,
+          "label": "Cierre funcional de stop_times"
+        }
+      ],
+      "parent": "viajes"
+    },
+    {
+      "id": "contexto",
+      "label": "Tarifas y metadata",
+      "sublabel": "EVALUADAS · SEGÚN USO",
+      "sources": [
+        {
+          "path": "docs/remaining_silver_assessment.md",
+          "line": 1,
+          "end_line": 24,
+          "label": "No son dependencias obligatorias del MVP"
+        }
+      ],
+      "parent": "gtfs"
+    },
+    {
+      "id": "feed_info",
+      "label": "feed_info",
+      "sublabel": "Metadata del feed, si existe",
+      "sources": [
+        {
+          "path": "docs/remaining_silver_assessment.md",
+          "line": 33,
+          "end_line": 43,
+          "label": "Evaluación sin publicación Silver"
+        }
+      ],
+      "parent": "contexto"
+    },
+    {
+      "id": "fare_attributes",
+      "label": "fare_attributes",
+      "sublabel": "Tarifas publicadas, si existen",
+      "sources": [
+        {
+          "path": "docs/remaining_silver_assessment.md",
+          "line": 45,
+          "end_line": 68,
+          "label": "Evaluación sin publicación Silver"
+        }
+      ],
+      "parent": "contexto"
+    },
+    {
+      "id": "fare_rules",
+      "label": "fare_rules",
+      "sublabel": "Reglas tarifarias, si existen",
+      "sources": [
+        {
+          "path": "docs/remaining_silver_assessment.md",
+          "line": 70,
+          "end_line": 83,
+          "label": "Evaluación sin publicación Silver"
+        }
+      ],
+      "parent": "contexto"
+    },
+    {
+      "id": "operacion",
+      "parent": "gtfs",
+      "label": "Control y consumo",
+      "sublabel": "Plan, Gold y consumo",
+      "sources": [
+        {
+          "path": "docs/gold_plan.md",
+          "line": 10,
+          "end_line": 34,
+          "label": "Estado y siguiente decisión"
+        }
+      ]
+    },
+    {
+      "id": "planificador",
+      "parent": "operacion",
+      "label": "plan_silver · 8b",
+      "sublabel": "Dinámico · piloto NO_WORK",
+      "sources": [
+        {
+          "path": "databricks/jobs/gtfs_bogota_silver_planned.template.json",
+          "line": 59,
+          "end_line": 85,
+          "label": "Emite listas y alimenta bucles"
+        },
+        {
+          "path": "docs/silver_planner.md",
+          "line": 1,
+          "end_line": 20,
+          "label": "Estado del planificador"
+        }
+      ]
+    },
+    {
+      "id": "cobertura",
+      "parent": "operacion",
+      "label": "Cuatro hechos Gold",
+      "sublabel": "2026 · publicados e importados",
+      "sources": [
+        {
+          "path": "databricks/gtfs_gold/trip_coverage.py",
+          "line": 29,
+          "end_line": 42,
+          "label": "Cobertura"
+        },
+        {
+          "path": "databricks/gtfs_gold/route_service_day.py",
+          "line": 32,
+          "end_line": 49,
+          "label": "Programación diaria"
+        },
+        {
+          "path": "databricks/gtfs_gold/trip_timing.py",
+          "line": 44,
+          "end_line": 70,
+          "label": "Extremos horarios"
+        }
+      ]
+    },
+    {
+      "id": "consumo",
+      "parent": "operacion",
+      "label": "Power BI",
+      "sublabel": "Cuatro paneles · menú confirmado",
+      "sources": [
+        {
+          "path": "docs/power_bi_user_stories.md",
+          "line": 47,
+          "end_line": 57,
+          "label": "Preguntas de negocio"
+        }
+      ]
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "Cómo leo las ramas",
+      "items": [
+        "Las ramas agrupan responsabilidades. No representan joins ni el orden del Job.",
+        "El ERD muestra las columnas y referencias. El recorrido del Job muestra la serialización."
+      ]
+    },
+    {
+      "dot": "emerald",
+      "title": "Lo que ya funciona",
+      "items": [
+        "Diez entidades tienen contrato implementado y cierre funcional. Service_dates cubre solamente 2026.",
+        "Shape_points viene de shapes.txt. Service_dates es una derivación; no un TXT adicional.",
+        "Este estado documenta las comprobaciones del desarrollo; no consulta Databricks en vivo."
+      ]
+    },
+    {
+      "dot": "amber",
+      "title": "Cierre de la primera versión",
+      "items": [
+        "Las tres entidades opcionales se incorporarán solo si una pregunta necesita tarifas o metadata adicional.",
+        "Gold de 2026 ya está publicado e importado. El reporte usa cuatro páginas con menú nativo y estado activo.",
+        "Quedan revisión integral, actualización manual completa y entrega. El coordinador aún no automatiza Gold ni Power BI."
+      ]
+    },
+    {
+      "dot": "slate",
+      "title": "Código y comprobaciones de desarrollo",
+      "items": [
+        "Las referencias fijan el código en 5c23d4e327fb. No prueban por sí mismas una publicación o un clic.",
+        "El estado del 20 de noviembre procede de las ejecuciones y revisiones confirmadas durante el desarrollo. Las definiciones PBIP locales todavía tienen cambios sin commit.",
+        "Este HTML es documentación: no ejecuta Jobs ni consulta datos en vivo."
+      ]
+    }
+  ]
+}

@@ -1,0 +1,49 @@
+// Cantidad para una fecha única dentro del horizonte publicado; mantiene ausencia fuera del ámbito.
+Panorama · Rutas =
+VAR F = SELECTEDVALUE ( dim_gtfs_fecha[fecha] )
+VAR Desde = CALCULATE ( MIN ( gold_gtfs_route_service_day[analysis_window_start] ), REMOVEFILTERS ( dim_gtfs_fecha ) )
+VAR Hasta = CALCULATE ( MAX ( gold_gtfs_route_service_day[analysis_window_end] ), REMOVEFILTERS ( dim_gtfs_fecha ) )
+RETURN IF ( NOT ISBLANK(F) && NOT ISBLANK(Desde) && F >= Desde && F <= Hasta, COALESCE ( DISTINCTCOUNT ( gold_gtfs_route_service_day[route_key] ), 0 ) )
+
+// Mismo indicador en la fecha de comparación; conserva ruta y componente.
+Panorama · Rutas comparación =
+VAR F = SELECTEDVALUE ( dim_gtfs_fecha_comparacion[fecha] )
+RETURN IF ( NOT ISBLANK(F), CALCULATE ( [Panorama · Rutas], REMOVEFILTERS(dim_gtfs_fecha), TREATAS ( {F}, dim_gtfs_fecha[fecha] ) ) )
+
+// Cantidad para una fecha única dentro del horizonte publicado; mantiene ausencia fuera del ámbito.
+Panorama · Viajes sin frecuencia =
+VAR F = SELECTEDVALUE ( dim_gtfs_fecha[fecha] )
+VAR Desde = CALCULATE ( MIN ( gold_gtfs_route_service_day[analysis_window_start] ), REMOVEFILTERS ( dim_gtfs_fecha ) )
+VAR Hasta = CALCULATE ( MAX ( gold_gtfs_route_service_day[analysis_window_end] ), REMOVEFILTERS ( dim_gtfs_fecha ) )
+RETURN IF ( NOT ISBLANK(F) && NOT ISBLANK(Desde) && F >= Desde && F <= Hasta, COALESCE ( SUM ( gold_gtfs_route_service_day[trips_without_frequency_count] ), 0 ) )
+
+// Mismo indicador en la fecha de comparación; conserva ruta y componente.
+Panorama · Viajes comparación =
+VAR F = SELECTEDVALUE ( dim_gtfs_fecha_comparacion[fecha] )
+RETURN IF ( NOT ISBLANK(F), CALCULATE ( [Panorama · Viajes sin frecuencia], REMOVEFILTERS(dim_gtfs_fecha), TREATAS ( {F}, dim_gtfs_fecha[fecha] ) ) )
+
+// Cantidad para una fecha única dentro del horizonte publicado; mantiene ausencia fuera del ámbito.
+Panorama · Plantillas =
+VAR F = SELECTEDVALUE ( dim_gtfs_fecha[fecha] )
+VAR Desde = CALCULATE ( MIN ( gold_gtfs_route_service_day[analysis_window_start] ), REMOVEFILTERS ( dim_gtfs_fecha ) )
+VAR Hasta = CALCULATE ( MAX ( gold_gtfs_route_service_day[analysis_window_end] ), REMOVEFILTERS ( dim_gtfs_fecha ) )
+RETURN IF ( NOT ISBLANK(F) && NOT ISBLANK(Desde) && F >= Desde && F <= Hasta, COALESCE ( SUM ( gold_gtfs_route_service_day[frequency_template_count] ), 0 ) )
+
+// Mismo indicador en la fecha de comparación; conserva ruta y componente.
+Panorama · Plantillas comparación =
+VAR F = SELECTEDVALUE ( dim_gtfs_fecha_comparacion[fecha] )
+RETURN IF ( NOT ISBLANK(F), CALCULATE ( [Panorama · Plantillas], REMOVEFILTERS(dim_gtfs_fecha), TREATAS ( {F}, dim_gtfs_fecha[fecha] ) ) )
+
+// El gráfico usa plantillas si todo el contexto publicado se expresa por frecuencia.
+Panorama · Usa plantillas =
+VAR SinF = CALCULATE ( SUM(gold_gtfs_route_service_day[trips_without_frequency_count]), REMOVEFILTERS(dim_gtfs_fecha) )
+VAR ConF = CALCULATE ( SUM(gold_gtfs_route_service_day[frequency_template_count]), REMOVEFILTERS(dim_gtfs_fecha) )
+RETURN SinF = 0 && ConF > 0
+
+// Unidad homogénea del gráfico: plantillas o viajes sin frecuencia; el título identifica la unidad.
+Panorama · Volumen =
+IF ( [Panorama · Usa plantillas], [Panorama · Plantillas], [Panorama · Viajes sin frecuencia] )
+
+// Unidad del gráfico evaluada en la comparación.
+Panorama · Volumen comparación =
+IF ( [Panorama · Usa plantillas], [Panorama · Plantillas comparación], [Panorama · Viajes comparación] )

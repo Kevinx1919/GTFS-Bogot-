@@ -1,0 +1,101 @@
+// Encabezado de componente y ruta; identidad técnica en los filtros.
+Panorama · Encabezado HTML =
+VAR C=SELECTEDVALUE(silver_gtfs_agency[report_component],"Todo el sistema")
+VAR Ruta=IF(ISFILTERED(silver_gtfs_routes[route_short_name])," · Ruta " & SELECTEDVALUE(silver_gtfs_routes[route_short_name],"seleccionada"),"")
+RETURN "<header class='page-heading'><div><p class='section-label'>Movilidad Bogotá / Oferta planificada</p><h1>Panorama de oferta</h1></div><div class='scope'><strong>" & C & Ruta & "</strong><span>Compara el calendario. Explora la red.</span></div></header>"
+
+// Cantidades separadas y perfiles semanales reales. Cada micrográfico usa escala propia.
+Panorama · Indicadores HTML =
+VAR F=SELECTEDVALUE(dim_gtfs_fecha[fecha])
+VAR B=SELECTEDVALUE(dim_gtfs_fecha_comparacion[fecha])
+VAR Inicio=F-WEEKDAY(F,2)+1
+VAR Semana=ADDCOLUMNS(CALENDAR(Inicio,Inicio+6),"_r",VAR D=[Date] RETURN CALCULATE([Panorama · Rutas],REMOVEFILTERS(dim_gtfs_fecha),TREATAS({D},dim_gtfs_fecha[fecha])),"_v",VAR D=[Date] RETURN CALCULATE([Panorama · Viajes sin frecuencia],REMOVEFILTERS(dim_gtfs_fecha),TREATAS({D},dim_gtfs_fecha[fecha])),"_p",VAR D=[Date] RETURN CALCULATE([Panorama · Plantillas],REMOVEFILTERS(dim_gtfs_fecha),TREATAS({D},dim_gtfs_fecha[fecha])))
+VAR Tarjetas=CONCATENATEX({1,2,3},VAR I=[Value] VAR A=SWITCH(I,1,[Panorama · Rutas],2,[Panorama · Viajes sin frecuencia],[Panorama · Plantillas]) VAR VB=SWITCH(I,1,[Panorama · Rutas comparación],2,[Panorama · Viajes comparación],[Panorama · Plantillas comparación]) VAR Maximo=MAX(1,MAXX(Semana,SWITCH(I,1,[_r],2,[_v],[_p])))
+ VAR Mini=CONCATENATEX(Semana,VAR D=[Date] VAR V=SWITCH(I,1,[_r],2,[_v],[_p]) VAR H=DIVIDE(V,Maximo,0)*35 VAR X=3+(D-Inicio)*12 RETURN "<rect x='" & FORMAT(X,"0","en-US") & "' y='" & FORMAT(40-H,"0.0","en-US") & "' width='7' height='" & FORMAT(H,"0.0","en-US") & "' rx='2' fill='" & IF(D=F,"#DD212C",IF(D=B,"#FFC928","#CCD2C8")) & "'><title>" & FORMAT(D,"ddd d","es-CO") & ": " & FORMAT(V,"#,0","es-CO") & "</title></rect>","",[Date],ASC)
+ RETURN "<article class='metric-card'><div class='metric-label'>" & SWITCH(I,1,"Rutas con programación",2,"Viajes sin frecuencias","Plantillas por frecuencia") & "</div><div class='metric-middle'><strong>" & IF(ISBLANK(A),"—",FORMAT(A,"#,0","es-CO")) & "</strong><div class='mini-profile'><svg viewBox='0 0 88 45' role='img' aria-label='Perfil de siete días'>" & Mini & "</svg><span>Perfil de 7 días</span></div></div><p><span class='date-dot a'>A</span>" & FORMAT(F,"d mmm","es-CO") & " <span class='compare-value'><span class='date-dot b'>B</span>" & IF(ISBLANK(VB),"—",FORMAT(VB,"#,0","es-CO")) & "</span></p><small>" & IF(ISBLANK(A)||ISBLANK(VB),"Selecciona dos fechas válidas.",FORMAT(A-VB,"+#,0;-#,0;0","es-CO") & " frente a " & FORMAT(B,"ddd d","es-CO")) & IF(I=3," · No son salidas","") & "</small></article>","",[Value],ASC)
+RETURN IF(ISBLANK(F),"<div class='metrics-stack'><article class='metric-card'>Selecciona una fecha.</article></div>","<div class='metrics-stack'>" & Tarjetas & "</div>")
+
+// 28 días de calendario publicado y ranking. No representa evolución de operación observada.
+Panorama · Semana HTML =
+VAR F=SELECTEDVALUE(dim_gtfs_fecha[fecha])
+VAR B=SELECTEDVALUE(dim_gtfs_fecha_comparacion[fecha])
+VAR Inicio=F-WEEKDAY(F,2)+1-21
+VAR Fin=Inicio+27
+VAR Freq=[Panorama · Usa plantillas]
+VAR Serie=ADDCOLUMNS(CALENDAR(Inicio,Fin),"_v",VAR D=[Date] RETURN CALCULATE(IF(Freq,[Panorama · Plantillas],[Panorama · Viajes sin frecuencia]),REMOVEFILTERS(dim_gtfs_fecha),TREATAS({D},dim_gtfs_fecha[fecha])))
+VAR Maximo=MAXX(Serie,[_v])
+VAR Paso=IF(Maximo>10000,10000,IF(Maximo>1000,1000,IF(Maximo>100,100,IF(Maximo>10,10,1))))
+VAR Techo=MAX(1,CEILING(Maximo,Paso))
+VAR Bars=CONCATENATEX(Serie,VAR D=[Date] VAR I=D-Inicio VAR H=DIVIDE([_v],Techo,0)*100 VAR X=45+I*15.2 RETURN IF(WEEKDAY(D,2)>5,"<rect x='" & FORMAT(X-2,"0.0","en-US") & "' y='20' width='15.2' height='110' fill='#F0F2EC'/>","") & "<g><title>" & FORMAT(D,"dddd d mmm","es-CO") & ": " & IF(ISBLANK([_v]),"Fuera del horizonte",FORMAT([_v],"#,0","es-CO")) & "</title><rect class='day-bar' x='" & FORMAT(X,"0.0","en-US") & "' y='" & FORMAT(125-H,"0.0","en-US") & "' width='9' height='" & FORMAT(H,"0.0","en-US") & "' rx='2' fill='" & IF(D=F,"#DD212C",IF(D=B,"#FFC928",IF(D>=F-WEEKDAY(F,2)+1,"#D99B9F","#BFC8B8"))) & "'/>" & IF(WEEKDAY(D,2)=1,"<text x='" & FORMAT(X,"0.0","en-US") & "' y='150' class='axis'>" & FORMAT(D,"d mmm","es-CO") & "</text>","") & IF(D=F,"<path d='M" & FORMAT(X+4.5,"0.0","en-US") & " 12V128' stroke='#DD212C' stroke-dasharray='2 3' opacity='.55'/><circle cx='" & FORMAT(X+4.5,"0.0","en-US") & "' cy='" & FORMAT(125-H,"0.0","en-US") & "' r='3' fill='#DD212C'/>","") & "</g>","",[Date],ASC)
+VAR Unidad=IF(Freq,"Plantillas por frecuencia","Viajes sin frecuencias")
+RETURN IF(ISBLANK(F),"<section class='panel evolution-panel'><h2>Selecciona una fecha.</h2></section>","<section class='panel evolution-panel'><div class='evolution-main'><div class='panel-head'><h2>El patrón de cuatro semanas</h2><span>" & FORMAT(Inicio,"d mmm","es-CO") & " — " & FORMAT(Fin,"d mmm","es-CO") & "</span></div><p class='subtitle'>" & Unidad & " · Fines de semana sombreados</p><svg viewBox='0 0 490 160' role='img' aria-label='Veintiocho días de programación'><path d='M40 25H477M40 75H477M40 125H477' stroke='#E5E8E0'/><text x='34' y='29' text-anchor='end' class='axis'>" & IF(Techo>=1000,FORMAT(Techo/1000,"0","es-CO") & "k",FORMAT(Techo,"0","es-CO")) & "</text><text x='34' y='129' text-anchor='end' class='axis'>0</text>" & Bars & "</svg><div class='legend'><span><i class='a'></i>A · Analizada</span><span><i class='b'></i>B · Comparada, si entra en el período</span></div></div>" & [Panorama · Rutas HTML] & "</section>")
+
+// Puntos conectados con escala común. Retira solo el filtro de componente; conserva ruta.
+Panorama · Componentes HTML =
+VAR Freq=[Panorama · Usa plantillas]
+VAR BaseC=CALCULATETABLE(ADDCOLUMNS(VALUES(silver_gtfs_agency[report_component]),"_a",CALCULATE(IF(Freq,[Panorama · Plantillas],[Panorama · Viajes sin frecuencia])),"_b",CALCULATE(IF(Freq,[Panorama · Plantillas comparación],[Panorama · Viajes comparación]))),REMOVEFILTERS(silver_gtfs_agency[report_component]))
+VAR Maximo=MAX(1,MAXX(BaseC,MAX([_a],[_b])))
+VAR Filas=CONCATENATEX(BaseC,VAR Nombre=silver_gtfs_agency[report_component] VAR Orden=SWITCH(Nombre,"Zonal (SITP)",1,"Troncal",2,"Alimentación",3,"Dual",4,5) VAR XA=DIVIDE([_a],Maximo,0)*145+195 VAR XB=DIVIDE([_b],Maximo,0)*145+195 VAR Y=(Orden-1)*31+13 RETURN "<g><title>" & Nombre & ": A " & FORMAT([_a],"#,0","es-CO") & "; B " & FORMAT([_b],"#,0","es-CO") & "</title><text x='0' y='" & FORMAT(Y,"0","en-US") & "' class='comp-name'>" & Nombre & "</text><text x='0' y='" & FORMAT(Y+13,"0","en-US") & "' class='axis'>A " & FORMAT([_a],"#,0","es-CO") & " · B " & FORMAT([_b],"#,0","es-CO") & "</text><path d='M195 " & FORMAT(Y,"0","en-US") & "H340' stroke='#E5E8E0' stroke-width='1'/><path d='M" & FORMAT(XA,"0.0","en-US") & " " & FORMAT(Y,"0","en-US") & "H" & FORMAT(XB,"0.0","en-US") & "' stroke='#AEB7AA' stroke-width='2'/><circle cx='" & FORMAT(XB,"0.0","en-US") & "' cy='" & FORMAT(Y,"0","en-US") & "' r='4.5' fill='#FFF' stroke='#D5A000' stroke-width='2'/><circle cx='" & FORMAT(XA,"0.0","en-US") & "' cy='" & FORMAT(Y,"0","en-US") & "' r='3.6' fill='#DD212C'/><text x='432' y='" & FORMAT(Y+4,"0","en-US") & "' text-anchor='end' class='comp-delta'>" & FORMAT([_a]-[_b],"+#,0;-#,0;0","es-CO") & "</text></g>","")
+RETURN IF(ISBLANK([Panorama · Volumen])||ISBLANK([Panorama · Volumen comparación]),"<section class='panel components-panel'><h2>Selecciona dos fechas.</h2><p class='empty'>La comparación necesita una fecha analizada y una fecha comparada.</p></section>","<section class='panel components-panel'><div class='panel-head'><h2>El cambio por componente</h2><span>A − B</span></div><p class='subtitle'>Referencia del sistema · " & IF(Freq,"Plantillas","Viajes sin frecuencias") & "</p><svg viewBox='-2 -3 438 163' role='img' aria-label='Comparación por componente'>" & Filas & "</svg><p class='chart-foot'>● A analizada &nbsp; ◯ B comparada · Mantiene el filtro de ruta.</p></section>")
+
+// Tres mayores diferencias absolutas, incrustadas en el panel temporal. Conserva una unidad por selección.
+Panorama · Rutas HTML =
+VAR Freq=[Panorama · Usa plantillas]
+VAR BaseR=ADDCOLUMNS(SUMMARIZE(silver_gtfs_routes,silver_gtfs_routes[route_key],silver_gtfs_routes[route_short_name],silver_gtfs_routes[route_id]),"_a",CALCULATE(IF(Freq,[Panorama · Plantillas],[Panorama · Viajes sin frecuencia])),"_b",CALCULATE(IF(Freq,[Panorama · Plantillas comparación],[Panorama · Viajes comparación])))
+VAR Datos=FILTER(BaseR,[_a]>0||[_b]>0)
+VAR Deltas=ADDCOLUMNS(Datos,"_d",[_a]-[_b])
+VAR Top3=TOPN(3,Deltas,ABS([_d]),DESC,silver_gtfs_routes[route_key],ASC)
+VAR Maximo=MAX(1,MAXX(Top3,ABS([_d])))
+VAR Filas=CONCATENATEX(Top3,VAR Nombre=SUBSTITUTE(SUBSTITUTE(SUBSTITUTE(COALESCE(silver_gtfs_routes[route_short_name],silver_gtfs_routes[route_id]),"&","&amp;"),"<","&lt;"),">","&gt;") RETURN "<div class='rank-row'><div><strong>" & Nombre & "</strong><span>" & FORMAT([_d],"+#,0;-#,0;0","es-CO") & "</span></div><div class='rank-track'><i style='width:" & FORMAT(DIVIDE(ABS([_d]),Maximo,0)*100,"0.0","en-US") & "%;background:" & IF([_d]<0,"#7B252B","#DD212C") & "'></i></div><small>A " & FORMAT([_a],"#,0","es-CO") & " · B " & FORMAT([_b],"#,0","es-CO") & "</small></div>","",ABS([_d]),DESC)
+RETURN IF(ISBLANK([Panorama · Volumen])||ISBLANK([Panorama · Volumen comparación]),"<section class='route-ranking'><h2>Selecciona dos fechas.</h2><p class='empty'>La comparación necesita una fecha analizada y una fecha comparada.</p></section>","<aside class='route-ranking'><h3>Rutas que más cambian</h3><p>" & IF(Freq,"Plantillas","Viajes sin frecuencias") & " · A − B</p>" & IF(COUNTROWS(Datos)=0,"<p class='empty'>Sin programación en estas fechas.</p>",Filas) & "</aside>")
+
+// Variación, mayor diferencia por componente y conjuntos de rutas. No atribuye causas operativas.
+Panorama · Lectura HTML =
+VAR A=[Panorama · Volumen]
+VAR B=[Panorama · Volumen comparación]
+VAR Delta=A-B
+VAR Freq=[Panorama · Usa plantillas]
+VAR Unidad=IF(Freq,"plantillas por frecuencia","viajes sin frecuencias")
+VAR FB=SELECTEDVALUE(dim_gtfs_fecha_comparacion[fecha])
+VAR Grupos=ADDCOLUMNS(VALUES(silver_gtfs_agency[report_component]),"_a",CALCULATE(IF(Freq,[Panorama · Plantillas],[Panorama · Viajes sin frecuencia])),"_b",CALCULATE(IF(Freq,[Panorama · Plantillas comparación],[Panorama · Viajes comparación])))
+VAR GruposD=ADDCOLUMNS(Grupos,"_d",[_a]-[_b])
+VAR Mayor=TOPN(1,GruposD,ABS([_d]),DESC,silver_gtfs_agency[report_component],ASC)
+VAR Nombre=MAXX(Mayor,silver_gtfs_agency[report_component])
+VAR Diferencia=MAXX(Mayor,[_d])
+VAR RA=FILTER(VALUES(gold_gtfs_route_service_day[route_key]),NOT ISBLANK(gold_gtfs_route_service_day[route_key]))
+VAR RB=CALCULATETABLE(VALUES(gold_gtfs_route_service_day[route_key]),REMOVEFILTERS(dim_gtfs_fecha),TREATAS({FB},dim_gtfs_fecha[fecha]))
+VAR Comunes=COALESCE(COUNTROWS(INTERSECT(RA,RB)),0)
+VAR SoloA=COALESCE(COUNTROWS(EXCEPT(RA,RB)),0)
+VAR SoloB=COALESCE(COUNTROWS(EXCEPT(RB,RA)),0)
+VAR Total=Comunes+SoloA+SoloB
+VAR Principal=IF(ISBLANK(A)||ISBLANK(B),"—",IF(B=0,FORMAT(A,"#,0","es-CO"),FORMAT(DIVIDE(Delta,B),"+0.0%;-0.0%;0.0%","es-CO")))
+RETURN IF(ISBLANK([Panorama · Volumen])||ISBLANK([Panorama · Volumen comparación]),"<section class='insight-panel'><h2>Selecciona dos fechas.</h2><p class='empty'>La comparación necesita una fecha analizada y una fecha comparada.</p></section>","<section class='insight-panel'><p class='insight-kicker'>Lectura de la selección</p><h2>" & IF(ISBLANK(A)||ISBLANK(B),"Elige dos fechas.",IF(Delta=0,"La cantidad se mantiene.","Dos días, distinta programación.")) & "</h2><div class='insight-number'>" & Principal & "</div><p class='insight-unit'>" & Unidad & IF(B=0," en la fecha analizada."," frente a la fecha comparada.") & "</p><div class='paired-values'><span>A <strong>" & FORMAT(A,"#,0","es-CO") & "</strong></span><span>B <strong>" & FORMAT(B,"#,0","es-CO") & "</strong></span></div><div class='contributor'><span>Mayor diferencia del contexto</span><strong>" & COALESCE(Nombre,"Sin programación") & " <b>" & FORMAT(Diferencia,"+#,0;-#,0;0","es-CO") & "</b></strong></div><div class='route-presence'><div><strong>" & FORMAT(Comunes,"0") & "</strong><span>En ambas</span></div><div><strong>" & FORMAT(SoloA,"0") & "</strong><span>Solo A</span></div><div><strong>" & FORMAT(SoloB,"0") & "</strong><span>Solo B</span></div></div><div class='presence-track'><i style='width:" & FORMAT(DIVIDE(Comunes,Total,0)*100,"0.0","en-US") & "%'></i><i style='width:" & FORMAT(DIVIDE(SoloA,Total,0)*100,"0.0","en-US") & "%'></i><i style='width:" & FORMAT(DIVIDE(SoloB,Total,0)*100,"0.0","en-US") & "%'></i></div><small>Rutas presentes en el calendario; no mide operación real.</small></section>")
+
+// Navegación compacta; secciones futuras sin acciones simuladas.
+Panorama · Navegación HTML =
+"<aside class='sidebar-inner'><div class='brand'><svg viewBox='0 0 34 38' aria-hidden='true'><rect x='4' y='3' width='26' height='29' rx='6' fill='#DD212C'/><rect x='8' y='8' width='18' height='10' rx='2' fill='#FFF'/><path d='M9 23H25' stroke='#FFC928' stroke-width='3'/><circle cx='10' cy='29' r='2' fill='#FFF'/><circle cx='24' cy='29' r='2' fill='#FFF'/><path d='M8 33V36M26 33V36' stroke='#252A23' stroke-width='3'/></svg><strong>Movilidad<br>Bogotá</strong></div><div class='sidebar-note'><span class='brand-rule'></span><strong>Lee el servicio previsto.</strong><p>GTFS estático<br>Oferta planificada</p></div></aside>"
+
+// Fuente y límite de negocio del Panorama.
+Panorama · Fuente HTML =
+"<footer class='source-strip'><strong>Fuente: GTFS de TransMilenio · 2026</strong><span>Oferta planificada. No representa pasajeros, cumplimiento ni vehículos en operación.</span></footer>"
+
+// Ubicaciones vinculadas a rutas programadas en A. Claves de snapshot y relaciones virtuales. Escala uniforme con corrección coseno. Sin mapa base ni trayectos inventados.
+Panorama · Mapa HTML =
+VAR F=SELECTEDVALUE(dim_gtfs_fecha[fecha])
+VAR Rutas=FILTER(VALUES(gold_gtfs_route_service_day[route_key]),NOT ISBLANK(gold_gtfs_route_service_day[route_key]))
+VAR Keys=CALCULATETABLE(VALUES(gold_gtfs_route_stop[stop_key]),TREATAS(Rutas,gold_gtfs_route_stop[route_key]))
+VAR Puntos=FILTER(CALCULATETABLE(SUMMARIZE(silver_gtfs_stops,silver_gtfs_stops[stop_key],silver_gtfs_stops[stop_lat],silver_gtfs_stops[stop_lon]),TREATAS(Keys,silver_gtfs_stops[stop_key])),NOT ISBLANK(silver_gtfs_stops[stop_lat])&&NOT ISBLANK(silver_gtfs_stops[stop_lon]))
+VAR N=COUNTROWS(Puntos)
+VAR LatMin=MINX(Puntos,silver_gtfs_stops[stop_lat])
+VAR LatMax=MAXX(Puntos,silver_gtfs_stops[stop_lat])
+VAR LonMin=MINX(Puntos,silver_gtfs_stops[stop_lon])
+VAR LonMax=MAXX(Puntos,silver_gtfs_stops[stop_lon])
+VAR Coseno=COS(DIVIDE(LatMin+LatMax,2)*PI()/180)
+VAR RangoX=MAX(.0001,(LonMax-LonMin)*Coseno)
+VAR RangoY=MAX(.0001,LatMax-LatMin)
+VAR Escala=MIN(450/RangoX,230/RangoY)
+VAR OffsetX=300-RangoX*Escala/2
+VAR OffsetY=145-RangoY*Escala/2
+VAR Trazos=CONCATENATEX(Puntos,"M" & FORMAT(OffsetX+(silver_gtfs_stops[stop_lon]-LonMin)*Coseno*Escala,"0.0","en-US") & "," & FORMAT(OffsetY+(LatMax-silver_gtfs_stops[stop_lat])*Escala,"0.0","en-US") & "h.1","",silver_gtfs_stops[stop_key],ASC)
+VAR Dibujo="<svg viewBox='0 0 600 290' role='img' aria-label='Ubicaciones GTFS de rutas programadas para la fecha analizada'><path d='M60 30H550M60 90H550M60 150H550M60 210H550M60 270H550M100 20V275M200 20V275M300 20V275M400 20V275M500 20V275' stroke='#DCE2D6' stroke-width='1'/><path d='" & Trazos & "' fill='none' stroke='#DD212C' stroke-width='" & IF(N<20,"6",IF(N<150,"3.2","1.8")) & "' stroke-linecap='round' opacity='.72'/><g class='north'><text x='565' y='35' text-anchor='middle'>N</text><path d='M565 45L560 61H570Z' fill='#252A23'/><path d='M565 61V80' stroke='#252A23'/></g><text x='20' y='282' class='geo-label'>" & FORMAT(LatMin,"0.000","en-US") & "° — " & FORMAT(LatMax,"0.000","en-US") & "° N</text><text x='580' y='282' text-anchor='end' class='geo-label'>" & FORMAT(LonMin,"0.000","en-US") & "° — " & FORMAT(LonMax,"0.000","en-US") & "°</text></svg>"
+RETURN IF(ISBLANK(F),"<section class='map-panel'><h2>Una red de ubicaciones</h2><p class='map-empty'>Selecciona una fecha analizada.</p></section>","<section class='map-panel'><div class='map-heading'><div><p class='section-label'>Red del catálogo vinculada a rutas de A</p><h2>Una red de ubicaciones</h2></div><span class='map-date'>A · " & FORMAT(F,"d mmm","es-CO") & "</span></div><div class='map-body'>" & IF(N=0,"<p class='map-empty'>La selección no tiene ubicaciones relacionadas con coordenadas.</p>",Dibujo) & "</div><div class='map-summary'><div><strong>" & FORMAT(COALESCE(N,0),"#,0","es-CO") & "</strong><span>Ubicaciones únicas</span></div><div><strong>" & FORMAT(COALESCE(COUNTROWS(Rutas),0),"#,0","es-CO") & "</strong><span>Rutas programadas</span></div><p>Coordenadas GTFS.<br>Escala adaptada a la selección.</p></div></section>")

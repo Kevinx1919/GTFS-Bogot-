@@ -1,0 +1,88 @@
+{
+  "agency": {
+    "enabled": true,
+    "validator": "agency_v1",
+    "bronze_table": "bronze_gtfs_agency",
+    "max_driver_rows": 1000,
+    "depends_on": []
+  },
+  "routes": {
+    "enabled": true,
+    "validator": "routes_v1",
+    "bronze_table": "bronze_gtfs_routes",
+    "depends_on": [
+      "agency"
+    ]
+  },
+  "stops": {
+    "enabled": true,
+    "validator": "stops_v1",
+    "bronze_table": "bronze_gtfs_stops",
+    "depends_on": []
+  },
+  "calendar": {
+    "enabled": true,
+    "validator": "calendar_v1",
+    "bronze_table": "bronze_gtfs_calendar",
+    "depends_on": []
+  },
+  "calendar_dates": {
+    "enabled": true,
+    "validator": "calendar_dates_v1",
+    "bronze_table": "bronze_gtfs_calendar_dates",
+    "depends_on": [],
+    "depends_on_if_published": [
+      "calendar"
+    ]
+  },
+  "service_dates": {
+    "enabled": true,
+    "validator": "service_dates_v1",
+    "source_layer": "silver",
+    "depends_on": [],
+    "depends_on_if_published": [
+      "calendar",
+      "calendar_dates"
+    ]
+  },
+  "shape_points": {
+    "enabled": true,
+    "validator": "shape_points_v1",
+    "bronze_table": "bronze_gtfs_shapes",
+    "depends_on": []
+  },
+  "trips": {
+    "enabled": true,
+    "validator": "trips_v1",
+    "bronze_table": "bronze_gtfs_trips",
+    "depends_on": [
+      "routes"
+    ],
+    "depends_on_if_published": [
+      "calendar",
+      "calendar_dates",
+      "shape_points"
+    ]
+  },
+  "frequencies": {
+    "enabled": true,
+    "validator": "frequencies_v1",
+    "bronze_table": "bronze_gtfs_frequencies",
+    "depends_on": [
+      "trips"
+    ]
+  },
+  "stop_times": {
+    "enabled": true,
+    "validator": "stop_times_v1",
+    "bronze_table": "bronze_gtfs_stop_times",
+    "depends_on": [
+      "trips",
+      "stops"
+    ],
+    "depends_on_if_published": [
+      "frequencies"
+    ],
+    "persist_result": false
+  }
+}

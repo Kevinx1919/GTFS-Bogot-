@@ -1,0 +1,3 @@
+-- Rutas publicadas del contexto snapshot/agencia. No representa aperturas físicas ni operación observada.
+Rutas publicadas =
+    COALESCE ( COUNTROWS ( 'silver_gtfs_routes' ), 0 )

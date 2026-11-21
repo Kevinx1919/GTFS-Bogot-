@@ -1,0 +1,43 @@
+model Model
+	culture: es-MX
+	defaultPowerBIDataSourceVersion: powerBI_V3
+	sourceQueryCulture: es-CO
+	valueFilterBehavior: independent
+	dataAccessOptions
+		legacyRedirects
+		returnErrorValuesAsNull
+
+annotation __PBI_TimeIntelligenceEnabled = 1
+
+annotation PBI_QueryOrder = ["silver_gtfs_agency","silver_gtfs_calendar","silver_gtfs_calendar_dates","silver_gtfs_frequencies","silver_gtfs_routes","silver_gtfs_service_dates","silver_gtfs_stops","silver_gtfs_trips","gold_gtfs_trip_coverage"]
+
+annotation PBI_ProTooling = ["MCP-PBIModeling","DevMode"]
+
+ref table silver_gtfs_agency
+ref table silver_gtfs_calendar
+ref table DateTableTemplate_815378cd-8240-4be2-8d64-1a6316868aab
+ref table LocalDateTable_24bfaed8-257e-45ca-8cde-0b4c372e871f
+ref table LocalDateTable_1cd177a4-710a-463a-9d3e-d2fac8f5c4e3
+ref table silver_gtfs_calendar_dates
+ref table LocalDateTable_592f1c12-e49e-42b5-9a50-a88ed2791165
+ref table silver_gtfs_frequencies
+ref table silver_gtfs_routes
+ref table silver_gtfs_service_dates
+ref table LocalDateTable_159888c7-559f-4ecf-a9d2-f65638c5bc35
+ref table LocalDateTable_2a6b3e2d-4b3d-4d52-b518-295809993b86
+ref table LocalDateTable_37c3119e-c578-40e2-9d89-fbab9a0554db
+ref table silver_gtfs_stops
+ref table silver_gtfs_trips
+ref table dim_gtfs_snapshot
+ref table dim_gtfs_service
+ref table dim_gtfs_fecha
+ref table gold_gtfs_trip_coverage
+ref table gold_gtfs_route_service_day
+ref table gold_gtfs_route_stop
+ref table gold_gtfs_trip_timing
+ref table dim_gtfs_fecha_comparacion
+
+ref expression DatabricksServerHostname
+ref expression DatabricksHttpPath
+
+ref cultureInfo es-MX

@@ -1,0 +1,487 @@
+/// Gold de consumo verificada para 2026. Conserva grano y ausencias del contrato.
+table gold_gtfs_trip_timing
+	lineageTag: 5a0569a8-fc9d-409d-8c77-7b415e481c59
+
+	/// Selección explícita de servicios activos; conserva identidad de snapshot, ruta y componente.
+	measure 'Programación · Viajes activos' =
+			VAR Servicios=VALUES(silver_gtfs_service_dates[service_key])
+			VAR K=CALCULATETABLE(VALUES(silver_gtfs_trips[trip_key]),TREATAS(Servicios,silver_gtfs_trips[service_key]))
+			VAR T=CALCULATETABLE(gold_gtfs_trip_timing,TREATAS(K,gold_gtfs_trip_timing[trip_key]))
+			VAR E=FILTER(T,gold_gtfs_trip_timing[timing_status]="eligible")
+			RETURN IF(NOT ISBLANK([Panorama · Rutas]),COALESCE(COUNTROWS(T),0))
+		formatString: #,0
+		displayFolder: Programación\Métricas
+		lineageTag: eed6c575-f15d-4f3d-a91e-843058f8bd43
+
+	/// Selección explícita de servicios activos; conserva identidad de snapshot, ruta y componente.
+	measure 'Programación · Elegibles' =
+			VAR Servicios=VALUES(silver_gtfs_service_dates[service_key])
+			VAR K=CALCULATETABLE(VALUES(silver_gtfs_trips[trip_key]),TREATAS(Servicios,silver_gtfs_trips[service_key]))
+			VAR T=CALCULATETABLE(gold_gtfs_trip_timing,TREATAS(K,gold_gtfs_trip_timing[trip_key]))
+			VAR E=FILTER(T,gold_gtfs_trip_timing[timing_status]="eligible")
+			RETURN IF(NOT ISBLANK([Panorama · Rutas]),COALESCE(COUNTROWS(E),0))
+		formatString: #,0
+		displayFolder: Programación\Métricas
+		lineageTag: 6c7cd06a-66a0-452e-9bd5-e2e9b3e1b97d
+
+	/// Selección explícita de servicios activos; conserva identidad de snapshot, ruta y componente.
+	measure 'Programación · Primera salida segundos' =
+			VAR Servicios=VALUES(silver_gtfs_service_dates[service_key])
+			VAR K=CALCULATETABLE(VALUES(silver_gtfs_trips[trip_key]),TREATAS(Servicios,silver_gtfs_trips[service_key]))
+			VAR T=CALCULATETABLE(gold_gtfs_trip_timing,TREATAS(K,gold_gtfs_trip_timing[trip_key]))
+			VAR E=FILTER(T,gold_gtfs_trip_timing[timing_status]="eligible")
+			RETURN IF(NOT ISBLANK([Panorama · Rutas]),MINX(E,gold_gtfs_trip_timing[first_departure_time_seconds]))
+		formatString: #,0
+		displayFolder: Programación\Métricas
+		lineageTag: 76df640a-f4dc-48a2-a7c4-ce13ca3419fa
+
+	/// Selección explícita de servicios activos; conserva identidad de snapshot, ruta y componente.
+	measure 'Programación · Última llegada segundos' =
+			VAR Servicios=VALUES(silver_gtfs_service_dates[service_key])
+			VAR K=CALCULATETABLE(VALUES(silver_gtfs_trips[trip_key]),TREATAS(Servicios,silver_gtfs_trips[service_key]))
+			VAR T=CALCULATETABLE(gold_gtfs_trip_timing,TREATAS(K,gold_gtfs_trip_timing[trip_key]))
+			VAR E=FILTER(T,gold_gtfs_trip_timing[timing_status]="eligible")
+			RETURN IF(NOT ISBLANK([Panorama · Rutas]),MAXX(E,gold_gtfs_trip_timing[last_arrival_time_seconds]))
+		formatString: #,0
+		displayFolder: Programación\Métricas
+		lineageTag: 67dc0711-660e-4ee8-9da0-f0a9e0a9a600
+
+	/// Selección explícita de servicios activos; conserva identidad de snapshot, ruta y componente.
+	measure 'Programación · Ventanas activas' =
+			VAR Servicios=VALUES(silver_gtfs_service_dates[service_key])
+			VAR K=CALCULATETABLE(VALUES(silver_gtfs_trips[trip_key]),TREATAS(Servicios,silver_gtfs_trips[service_key]))
+			VAR T=CALCULATETABLE(gold_gtfs_trip_timing,TREATAS(K,gold_gtfs_trip_timing[trip_key]))
+			VAR E=FILTER(T,gold_gtfs_trip_timing[timing_status]="eligible")
+			RETURN IF(NOT ISBLANK([Panorama · Rutas]),COALESCE(CALCULATE(COUNTROWS(silver_gtfs_frequencies),TREATAS(K,silver_gtfs_frequencies[trip_key])),0))
+		formatString: #,0
+		displayFolder: Programación\Métricas
+		lineageTag: 02a04266-61d3-419f-935a-4d47e85adfa8
+
+	/// Selección explícita de servicios activos; conserva identidad de snapshot, ruta y componente.
+	measure 'Programación · Excluidos' = IF(NOT ISBLANK([Panorama · Rutas]),[Programación · Viajes activos]-[Programación · Elegibles])
+		formatString: #,0
+		displayFolder: Programación\Métricas
+		lineageTag: 23112167-322b-47d2-8cff-75feee2c8d6e
+
+	/// Selección explícita de servicios activos; conserva identidad de snapshot, ruta y componente.
+	measure 'Programación · Elegibles B' = VAR F=SELECTEDVALUE(dim_gtfs_fecha_comparacion[fecha]) RETURN IF(NOT ISBLANK(F),CALCULATE([Programación · Elegibles],REMOVEFILTERS(dim_gtfs_fecha),TREATAS({F},dim_gtfs_fecha[fecha])))
+		formatString: #,0
+		displayFolder: Programación\Métricas
+		lineageTag: eaa84324-dabb-4335-bc25-3a1be792d740
+
+	/// Selección explícita de servicios activos; conserva identidad de snapshot, ruta y componente.
+	measure 'Programación · Primera salida B segundos' = VAR F=SELECTEDVALUE(dim_gtfs_fecha_comparacion[fecha]) RETURN IF(NOT ISBLANK(F),CALCULATE([Programación · Primera salida segundos],REMOVEFILTERS(dim_gtfs_fecha),TREATAS({F},dim_gtfs_fecha[fecha])))
+		formatString: #,0
+		displayFolder: Programación\Métricas
+		lineageTag: 941eb21a-3e0f-48db-93ef-f3112a8ed817
+
+	/// Selección explícita de servicios activos; conserva identidad de snapshot, ruta y componente.
+	measure 'Programación · Última llegada B segundos' = VAR F=SELECTEDVALUE(dim_gtfs_fecha_comparacion[fecha]) RETURN IF(NOT ISBLANK(F),CALCULATE([Programación · Última llegada segundos],REMOVEFILTERS(dim_gtfs_fecha),TREATAS({F},dim_gtfs_fecha[fecha])))
+		formatString: #,0
+		displayFolder: Programación\Métricas
+		lineageTag: a93718f8-7e75-4f22-830e-c647c497e3f2
+
+	/// Selección explícita de servicios activos; conserva identidad de snapshot, ruta y componente.
+	measure 'Programación · Encabezado HTML' = VAR C=SELECTEDVALUE(silver_gtfs_agency[report_component],"Todo el sistema") VAR R=IF(HASONEVALUE(silver_gtfs_routes[route_key])," · Ruta " & SELECTEDVALUE(silver_gtfs_routes[route_short_name]),"") RETURN "<header class='page-heading'><div><p class='section-label'>Movilidad Bogotá / Calendario y horas publicadas</p><h1>Programación</h1></div><div class='scope'><strong>" & C & R & "</strong><span>Del patrón diario al detalle de los viajes.</span></div></header>"
+		displayFolder: Programación\Presentación HTML
+		lineageTag: cd4f1731-a084-4cb2-a4c2-52100b290b8f
+
+	/// Cantidades y extremos de viajes elegibles. Horas GTFS sin módulo 24, A/B separados de plantillas.
+	measure 'Programación · Indicadores HTML' =
+			VAR Datos={1,2,3,4}
+			VAR Tarjetas=CONCATENATEX(Datos,VAR I=[Value] VAR A=SWITCH(I,1,[Programación · Elegibles],2,[Programación · Primera salida segundos],3,[Programación · Última llegada segundos],[Panorama · Plantillas]) VAR B=SWITCH(I,1,[Programación · Elegibles B],2,[Programación · Primera salida B segundos],3,[Programación · Última llegada B segundos],[Panorama · Plantillas comparación]) VAR VA=IF(I IN {2,3},IF(ISBLANK(A),"—",FORMAT(INT(A/3600),"00") & ":" & FORMAT(INT(MOD(A,3600)/60),"00") & ":" & FORMAT(MOD(A,60),"00")),IF(ISBLANK(A),"—",FORMAT(A,"#,0","es-CO"))) VAR VB=IF(I IN {2,3},IF(ISBLANK(B),"—",FORMAT(INT(B/3600),"00") & ":" & FORMAT(INT(MOD(B,3600)/60),"00") & ":" & FORMAT(MOD(B,60),"00")),IF(ISBLANK(B),"—",FORMAT(B,"#,0","es-CO"))) RETURN "<article><span>" & SWITCH(I,1,"Viajes con extremos elegibles",2,"Primera salida publicada",3,"Última llegada publicada","Plantillas activas") & "</span><strong>" & VA & "</strong><small>" & IF(I=1,"De " & IF(ISBLANK([Programación · Viajes activos]),"—",FORMAT([Programación · Viajes activos],"#,0","es-CO")) & " viajes activos · B: " & VB,IF(I IN {2,3},"Hora de servicio · B: " & VB,"Ventanas A: " & IF(ISBLANK([Programación · Ventanas activas]),"—",FORMAT([Programación · Ventanas activas],"0")) & " · B: " & VB & " plantillas")) & "</small></article>","",[Value],ASC) RETURN "<section class='program-kpis'>" & Tarjetas & "</section>"
+		displayFolder: Programación\Presentación HTML
+		lineageTag: 06625760-7333-4a42-94c7-a6d6164b2ae6
+
+	/// Muestra limitada a seis primeros viajes elegibles de A. Tooltip conserva ID y precisión; no es una lista completa.
+	measure 'Programación · Muestra HTML' =
+			VAR Servicios=VALUES(silver_gtfs_service_dates[service_key])
+			VAR K=CALCULATETABLE(VALUES(silver_gtfs_trips[trip_key]),TREATAS(Servicios,silver_gtfs_trips[service_key]))
+			VAR T=CALCULATETABLE(gold_gtfs_trip_timing,TREATAS(K,gold_gtfs_trip_timing[trip_key]))
+			VAR E=FILTER(T,gold_gtfs_trip_timing[timing_status]="eligible")
+			VAR Primeros=TOPN(6,E,gold_gtfs_trip_timing[first_departure_time_seconds],ASC,gold_gtfs_trip_timing[trip_key],ASC)
+			VAR Filas=CONCATENATEX(Primeros,VAR S=gold_gtfs_trip_timing[first_departure_time_seconds] VAR L=gold_gtfs_trip_timing[last_arrival_time_seconds] VAR Ruta=LOOKUPVALUE(silver_gtfs_routes[route_short_name],silver_gtfs_routes[route_id],gold_gtfs_trip_timing[route_id],silver_gtfs_routes[source_sha256],gold_gtfs_trip_timing[source_sha256],silver_gtfs_routes[source_feed_version],gold_gtfs_trip_timing[source_feed_version]) VAR ViajeTexto=SUBSTITUTE(SUBSTITUTE(SUBSTITUTE(gold_gtfs_trip_timing[trip_id],"&","&amp;"),"<","&lt;"),"'","&#39;") RETURN "<tr title='Viaje " & ViajeTexto & " · " & gold_gtfs_trip_timing[endpoint_time_precision] & "'><td>" & COALESCE(Ruta,"Sin nombre") & "</td><td>" & IF(ISBLANK(S),"—",FORMAT(INT(S/3600),"00") & ":" & FORMAT(INT(MOD(S,3600)/60),"00") & ":" & FORMAT(MOD(S,60),"00")) & "</td><td>" & IF(ISBLANK(L),"—",FORMAT(INT(L/3600),"00") & ":" & FORMAT(INT(MOD(L,3600)/60),"00") & ":" & FORMAT(MOD(L,60),"00")) & "</td></tr>","",gold_gtfs_trip_timing[first_departure_time_seconds],ASC)
+			RETURN "<div class='trip-sample'><div class='sample-heading'><h3>Primeros viajes elegibles de A</h3><span>" & FORMAT(COALESCE(COUNTROWS(Primeros),0),"0") & " de " & FORMAT(COALESCE(COUNTROWS(E),0),"#,0","es-CO") & "</span></div>" & IF(COUNTROWS(E)=0,"<p class='program-empty'>Sin ejemplos elegibles. Revisa las ventanas y las exclusiones.</p>","<table><thead><tr><th>Ruta</th><th>Salida</th><th>Llegada final</th></tr></thead><tbody>" & Filas & "</tbody></table>") & "</div>"
+		displayFolder: Programación\Presentación HTML
+		lineageTag: 81e2cf74-cd56-4c46-b0a2-b5f315b11a41
+
+	/// Calendario mensual de cantidades diarias. Cero, fecha externa y ausencia se distinguen; no etiqueta festivos.
+	measure 'Programación · Calendario HTML' =
+			VAR F=SELECTEDVALUE(dim_gtfs_fecha[fecha]) VAR B=SELECTEDVALUE(dim_gtfs_fecha_comparacion[fecha]) VAR Mes=DATE(YEAR(F),MONTH(F),1) VAR Ultimo=EOMONTH(F,0) VAR Inicio=Mes-WEEKDAY(Mes,2)+1 VAR Freq=[Panorama · Usa plantillas]
+			VAR Dias=ADDCOLUMNS(CALENDAR(Inicio,Inicio+41),"_v",VAR D=[Date] RETURN IF(MONTH(D)=MONTH(F),CALCULATE(IF(Freq,[Panorama · Plantillas],[Panorama · Viajes sin frecuencia]),REMOVEFILTERS(dim_gtfs_fecha),TREATAS({D},dim_gtfs_fecha[fecha]))))
+			VAR Maximo=MAX(1,MAXX(Dias,[_v]))
+			VAR Celdas=CONCATENATEX(Dias,VAR D=[Date] VAR V=[_v] VAR Fuera=MONTH(D)<>MONTH(F) VAR Capa=IF(ISBLANK(V)||V=0,0,1+INT(DIVIDE(V,Maximo)*3)) RETURN "<div class='calendar-day level-" & FORMAT(Capa,"0") & IF(Fuera," outside","") & IF(D=F," selected-a",IF(D=B && NOT(Fuera)," selected-b","")) & "' title='" & FORMAT(D,"dddd d mmm","es-CO") & IF(Fuera,"",": " & IF(ISBLANK(V),"Fuera del horizonte",FORMAT(V,"#,0","es-CO"))) & "'><span>" & IF(Fuera,"",FORMAT(D,"d")) & "</span><strong>" & IF(Fuera,"",IF(ISBLANK(V),"—",IF(V>=1000,FORMAT(V/1000,"0.0","es-CO") & "k",FORMAT(V,"0")))) & "</strong></div>","",[Date],ASC)
+			RETURN IF(ISBLANK(F),"<section class='panel calendar-panel'><h2>Selecciona una fecha analizada.</h2></section>","<section class='panel calendar-panel'><div class='panel-head'><h2>" & FORMAT(F,"mmmm yyyy","es-CO") & "</h2><span>Calendario de A</span></div><p class='subtitle'>" & IF(Freq,"Plantillas por frecuencia","Viajes sin frecuencias") & " por día · k = miles</p><div class='calendar-weekdays'><span>L</span><span>M</span><span>X</span><span>J</span><span>V</span><span>S</span><span>D</span></div><div class='calendar-grid'>" & Celdas & "</div><div class='calendar-legend'><span><i class='outline-a'></i>A analizada</span><span><i class='outline-b'></i>B comparada, si está en el mes</span></div>" & [Programación · Muestra HTML] & "</section>")
+		displayFolder: Programación\Presentación HTML
+		lineageTag: 24fb37eb-fd65-4fe6-ab6c-c9f5388f1c66
+
+	/// Distribución de primeras salidas, una por viaje elegible y fecha; conciliable con elegibles, sin expandir plantillas.
+	measure 'Programación · Horas HTML' =
+			VAR Servicios=VALUES(silver_gtfs_service_dates[service_key])
+			VAR K=CALCULATETABLE(VALUES(silver_gtfs_trips[trip_key]),TREATAS(Servicios,silver_gtfs_trips[service_key]))
+			VAR T=CALCULATETABLE(gold_gtfs_trip_timing,TREATAS(K,gold_gtfs_trip_timing[trip_key]))
+			VAR E=FILTER(T,gold_gtfs_trip_timing[timing_status]="eligible")
+			VAR FechaB=SELECTEDVALUE(dim_gtfs_fecha_comparacion[fecha])
+			VAR ServiciosB=CALCULATETABLE(VALUES(silver_gtfs_service_dates[service_key]),REMOVEFILTERS(dim_gtfs_fecha),TREATAS({FechaB},dim_gtfs_fecha[fecha]))
+			VAR KB=CALCULATETABLE(VALUES(silver_gtfs_trips[trip_key]),TREATAS(ServiciosB,silver_gtfs_trips[service_key]))
+			VAR TB=CALCULATETABLE(gold_gtfs_trip_timing,TREATAS(KB,gold_gtfs_trip_timing[trip_key]))
+			VAR EB=FILTER(TB,gold_gtfs_trip_timing[timing_status]="eligible")
+			VAR F=SELECTEDVALUE(dim_gtfs_fecha[fecha])
+			VAR HA=MAXX(E,INT(gold_gtfs_trip_timing[first_departure_time_seconds]/3600)) VAR HB=MAXX(EB,INT(gold_gtfs_trip_timing[first_departure_time_seconds]/3600)) VAR Limite=MAX(24,MAX(HA,HB))
+			VAR Horas=ADDCOLUMNS(GENERATESERIES(0,Limite),"_a",VAR H=[Value] RETURN COALESCE(COUNTROWS(FILTER(E,INT(gold_gtfs_trip_timing[first_departure_time_seconds]/3600)=H)),0),"_b",VAR H=[Value] RETURN COALESCE(COUNTROWS(FILTER(EB,INT(gold_gtfs_trip_timing[first_departure_time_seconds]/3600)=H)),0))
+			VAR Maximo=MAX(1,MAXX(Horas,MAX([_a],[_b]))) VAR Ancho=740/(Limite+1)
+			VAR Pico=TOPN(1,Horas,[_a],DESC,[Value],ASC) VAR PicoH=MAXX(Pico,[Value])
+			VAR Barras=CONCATENATEX(Horas,VAR H=[Value] VAR X=40+H*Ancho VAR AA=DIVIDE([_a],Maximo)*104 VAR BB=DIVIDE([_b],Maximo)*104 RETURN "<g><title>" & FORMAT(H,"00") & ":00 · A " & FORMAT([_a],"#,0","es-CO") & " · B " & FORMAT([_b],"#,0","es-CO") & "</title><rect x='" & FORMAT(X,"0.0","en-US") & "' y='" & FORMAT(124-AA,"0.0","en-US") & "' width='" & FORMAT(Ancho*.32,"0.0","en-US") & "' height='" & FORMAT(AA,"0.0","en-US") & "' rx='1' fill='#DD212C'/><rect x='" & FORMAT(X+Ancho*.38,"0.0","en-US") & "' y='" & FORMAT(124-BB,"0.0","en-US") & "' width='" & FORMAT(Ancho*.32,"0.0","en-US") & "' height='" & FORMAT(BB,"0.0","en-US") & "' rx='1' fill='#FFC928'/>" & IF(MOD(H,4)=0,"<text x='" & FORMAT(X,"0.0","en-US") & "' y='146' class='axis'>" & FORMAT(H,"00") & "h</text>","") & "</g>","",[Value],ASC)
+			VAR SinElegibles=COALESCE(COUNTROWS(E),0)+COALESCE(COUNTROWS(EB),0)=0
+			RETURN IF(ISBLANK([Panorama · Rutas])||ISBLANK(FechaB),"<section class='panel hourly-panel'><h2>Selecciona dos fechas.</h2><p class='program-empty'>El cálculo necesita una fecha válida dentro del horizonte publicado.</p></section>","<section class='panel hourly-panel'><div class='panel-head'><h2>Primeras salidas declaradas por hora</h2><span>" & IF(COUNTROWS(E)>0,"Mayor concentración A: " & FORMAT(PicoH,"00") & "h","") & "</span></div><p class='subtitle'>Un conteo por viaje elegible · Hora de servicio</p>" & IF(ISBLANK(F),"<p class='program-empty'>Selecciona una fecha analizada.</p>",IF(SinElegibles,"<p class='program-empty'>Sin salidas individuales elegibles. Revisa las ventanas de frecuencia y los motivos de exclusión.</p>","<svg viewBox='0 0 810 154' role='img' aria-label='Primeras salidas de viajes elegibles por hora para A y B'><path d='M36 20H790M36 72H790M36 124H790' stroke='#E1E6D9'/><text x='31' y='24' text-anchor='end' class='axis'>" & IF(Maximo>=1000,FORMAT(Maximo/1000,"0.0","es-CO") & "k",FORMAT(Maximo,"0")) & "</text><text x='31' y='128' text-anchor='end' class='axis'>0</text>" & Barras & "</svg>")) & "<div class='legend'><span><i class='a'></i>A analizada</span><span><i class='b'></i>B comparada</span><span>24h o más continúa al día siguiente.</span></div></section>")
+		displayFolder: Programación\Presentación HTML
+		lineageTag: eceee111-e56e-4577-b0ee-e537fc296cb2
+
+	/// Hasta ocho ventanas activas de A. Mantiene segundos y exact_times; no convierte headway en espera.
+	measure 'Programación · Frecuencias HTML' =
+			VAR Servicios=VALUES(silver_gtfs_service_dates[service_key])
+			VAR K=CALCULATETABLE(VALUES(silver_gtfs_trips[trip_key]),TREATAS(Servicios,silver_gtfs_trips[service_key]))
+			VAR T=CALCULATETABLE(gold_gtfs_trip_timing,TREATAS(K,gold_gtfs_trip_timing[trip_key]))
+			VAR E=FILTER(T,gold_gtfs_trip_timing[timing_status]="eligible")
+			VAR F=SELECTEDVALUE(dim_gtfs_fecha[fecha]) VAR W=CALCULATETABLE(silver_gtfs_frequencies,TREATAS(K,silver_gtfs_frequencies[trip_key])) VAR N=COALESCE(COUNTROWS(W),0) VAR Muestra=TOPN(8,W,silver_gtfs_frequencies[start_time_seconds],ASC,silver_gtfs_frequencies[trip_key],ASC) VAR Tope=MAX(86400,MAXX(W,silver_gtfs_frequencies[end_time_seconds]))
+			VAR Filas=CONCATENATEX(Muestra,VAR I=RANKX(Muestra,FORMAT(silver_gtfs_frequencies[start_time_seconds],"00000000") & silver_gtfs_frequencies[trip_key],,ASC,DENSE) VAR Y=I*25 VAR X=DIVIDE(silver_gtfs_frequencies[start_time_seconds],Tope)*190+110 VAR Ancho=DIVIDE(silver_gtfs_frequencies[end_time_seconds]-silver_gtfs_frequencies[start_time_seconds],Tope)*190 RETURN "<g><title>" & silver_gtfs_frequencies[trip_id] & " · exact_times=" & FORMAT(silver_gtfs_frequencies[exact_times_effective],"0") & "</title><text x='0' y='" & FORMAT(Y,"0") & "' class='axis'>" & LEFT(silver_gtfs_frequencies[start_time],5) & "–" & LEFT(silver_gtfs_frequencies[end_time],5) & "</text><rect x='110' y='" & FORMAT(Y-9,"0") & "' width='190' height='9' rx='3' fill='#E6EADB'/><rect x='" & FORMAT(X,"0.0","en-US") & "' y='" & FORMAT(Y-9,"0") & "' width='" & FORMAT(MAX(1,Ancho),"0.0","en-US") & "' height='9' rx='3' fill='#DD212C'/><text x='390' y='" & FORMAT(Y,"0") & "' text-anchor='end' class='frequency-gap'>" & FORMAT(silver_gtfs_frequencies[headway_secs],"0") & " s</text></g>","",silver_gtfs_frequencies[start_time_seconds],ASC)
+			RETURN IF(ISBLANK([Panorama · Rutas]),"<section class='panel frequency-panel'><h2>Selecciona una fecha analizada.</h2><p class='program-empty'>El cálculo necesita una fecha válida dentro del horizonte publicado.</p></section>","<section class='panel frequency-panel'><div class='panel-head'><h2>Ventanas de frecuencia en A</h2><span>" & FORMAT(MIN(8,N),"0") & " de " & FORMAT(N,"0") & "</span></div><p class='subtitle'>Intervalo publicado en segundos</p>" & IF(ISBLANK(F),"<p class='program-empty'>Selecciona una fecha analizada.</p>",IF(N=0,"<div class='no-frequency'><strong>Sin ventanas activas</strong><p>La selección se lee mediante sus viajes declarados, cuando tienen horarios elegibles.</p></div>","<svg viewBox='-2 0 400 " & FORMAT(MAX(70,MIN(8,N)*25+15),"0") & "' role='img' aria-label='Ventanas e intervalos de frecuencia publicados'>" & Filas & "</svg>")) & "<p class='program-note'>No convierto intervalos en espera ni genero salidas individuales. El código exact_times está en cada tooltip.</p></section>")
+		displayFolder: Programación\Presentación HTML
+		lineageTag: 95d64314-47d9-4158-8018-f7e8a06f0868
+
+	/// Denominadores y precisión de extremos; motivos excluyentes y límites del cálculo.
+	measure 'Programación · Alcance HTML' =
+			VAR Servicios=VALUES(silver_gtfs_service_dates[service_key])
+			VAR K=CALCULATETABLE(VALUES(silver_gtfs_trips[trip_key]),TREATAS(Servicios,silver_gtfs_trips[service_key]))
+			VAR T=CALCULATETABLE(gold_gtfs_trip_timing,TREATAS(K,gold_gtfs_trip_timing[trip_key]))
+			VAR E=FILTER(T,gold_gtfs_trip_timing[timing_status]="eligible")
+			VAR F=SELECTEDVALUE(dim_gtfs_fecha[fecha]) VAR Total=COALESCE(COUNTROWS(T),0) VAR NE=COALESCE(COUNTROWS(E),0) VAR Excl=Total-NE VAR Exact=COALESCE(COUNTROWS(FILTER(E,gold_gtfs_trip_timing[endpoint_time_precision]="exact_as_published")),0) VAR Aprox=COALESCE(COUNTROWS(FILTER(E,gold_gtfs_trip_timing[endpoint_time_precision]="approximate")),0) VAR Unknown=NE-Exact-Aprox
+			VAR Razones=CONCATENATEX(FILTER(ADDCOLUMNS({"no_visits","one_visit","frequency_template","missing_endpoints","reversed_endpoints"},"_n",VAR Codigo=[Value] RETURN COALESCE(COUNTROWS(FILTER(T,gold_gtfs_trip_timing[timing_status]=Codigo)),0)),[_n]>0),VAR Codigo=[Value] VAR N=[_n] RETURN IF(N>0,"<span>" & SWITCH(Codigo,"no_visits","Sin visitas","one_visit","Una visita","frequency_template","Plantillas","missing_endpoints","Extremos ausentes","Extremos invertidos") & ": <b>" & FORMAT(N,"#,0","es-CO") & "</b></span>","")," · ")
+			RETURN IF(ISBLANK([Panorama · Rutas]),"<section class='scope-panel'><h2>Selecciona una fecha analizada.</h2><p class='program-empty'>El cálculo necesita una fecha válida dentro del horizonte publicado.</p></section>","<section class='scope-panel'><p class='insight-kicker'>Cómo leer los horarios</p><h2>Los extremos necesitan contexto.</h2><div class='eligible-total'><strong>" & IF(ISBLANK(F),"—",FORMAT(NE,"#,0","es-CO")) & "</strong><span>de " & FORMAT(Total,"#,0","es-CO") & " viajes activos son elegibles en A.</span></div><dl><div><dt>Exactos según publicación</dt><dd>" & FORMAT(Exact,"#,0","es-CO") & "</dd></div><div><dt>Aproximados publicados</dt><dd>" & FORMAT(Aprox,"#,0","es-CO") & "</dd></div><div><dt>Precisión desconocida</dt><dd>" & FORMAT(Unknown,"#,0","es-CO") & "</dd></div></dl><div class='excluded'><strong>" & FORMAT(Excl,"#,0","es-CO") & " fuera del perfil horario</strong><p>" & IF(Excl=0,"Ningún viaje activo queda excluido por estas reglas.",Razones) & "</p></div><small>Los extremos no prueban continuidad, puntualidad ni duración observada. Exacto publicado no significa exactitud operacional.</small></section>")
+		displayFolder: Programación\Presentación HTML
+		lineageTag: 2a7edf5b-62f6-457d-9797-dee0d1779d4d
+
+	/// Navegación compartida con Panorama; acciones reales mediante botones nativos.
+	measure 'Programación · Navegación HTML' = "<aside class='sidebar-inner'><div class='brand'><svg viewBox='0 0 34 38' aria-hidden='true'><rect x='4' y='3' width='26' height='29' rx='6' fill='#DD212C'/><rect x='8' y='8' width='18' height='10' rx='2' fill='#FFF'/><path d='M9 23H25' stroke='#FFC928' stroke-width='3'/><circle cx='10' cy='29' r='2' fill='#FFF'/><circle cx='24' cy='29' r='2' fill='#FFF'/><path d='M8 33V36M26 33V36' stroke='#252A23' stroke-width='3'/></svg><strong>Movilidad<br>Bogotá</strong></div><div class='sidebar-note'><span class='brand-rule'></span><strong>Lee el servicio previsto.</strong><p>GTFS estático<br>Oferta planificada</p></div></aside>"
+		displayFolder: Programación\Presentación HTML
+		lineageTag: cfc35390-4b96-4df0-b91b-ed1ab02ce3c1
+
+	/// Selección explícita de servicios activos; conserva identidad de snapshot, ruta y componente.
+	measure 'Programación · Fuente HTML' = "<footer class='source-strip'><strong>Fuente: GTFS de TransMilenio · 2026</strong><span>Calendario y horas publicadas. No son operación observada, espera ni flota.</span></footer>"
+		displayFolder: Programación\Presentación HTML
+		lineageTag: 90a0f3fc-98ab-42f8-965b-eae81c8c8f0b
+
+	/// Disponibilidad de ambas Gold importadas para una identidad única. No sustituye su auditoría de publicación.
+	measure 'Revisión · Fuente disponible' = VAR P=SUMMARIZE(dim_gtfs_snapshot,dim_gtfs_snapshot[source_feed_version],dim_gtfs_snapshot[source_sha256]) VAR T=CALCULATE(COUNTROWS(gold_gtfs_trip_timing),REMOVEFILTERS(gold_gtfs_trip_timing),TREATAS(P,gold_gtfs_trip_timing[source_feed_version],gold_gtfs_trip_timing[source_sha256])) VAR C=CALCULATE(COUNTROWS(gold_gtfs_trip_coverage),REMOVEFILTERS(gold_gtfs_trip_coverage),TREATAS(P,gold_gtfs_trip_coverage[source_feed_version],gold_gtfs_trip_coverage[source_sha256])) RETURN HASONEVALUE(dim_gtfs_snapshot[snapshot_key])&&T>0&&C>0
+		displayFolder: Revisión\Métricas
+		lineageTag: 917b4e40-0bed-41b0-b693-32e1e395deed
+
+	/// Catálogo 2026 del contexto de componente y ruta. Las fechas no convierten casos en viajes diarios.
+	measure 'Revisión · Evaluados' =
+			VAR Base=CALCULATETABLE(gold_gtfs_trip_timing,REMOVEFILTERS(gold_gtfs_trip_timing[report_review_reason],gold_gtfs_trip_timing[timing_status],gold_gtfs_trip_timing[trip_id],gold_gtfs_trip_timing[trip_key],gold_gtfs_trip_timing[report_route_label]))
+			VAR Motivos=CALCULATETABLE(VALUES(gold_gtfs_trip_timing[timing_status]),REMOVEFILTERS(gold_gtfs_trip_timing[trip_id],gold_gtfs_trip_timing[trip_key],gold_gtfs_trip_timing[report_route_label]))
+			VAR Casos=FILTER(Base,gold_gtfs_trip_timing[timing_status]<>"eligible" && gold_gtfs_trip_timing[timing_status] IN Motivos)
+			RETURN IF([Revisión · Fuente disponible],COALESCE(COUNTROWS(Base),0))
+		formatString: #,0
+		displayFolder: Revisión\Métricas
+		lineageTag: 421a0134-7262-408c-a51e-e77919ffd063
+
+	/// Catálogo 2026 del contexto de componente y ruta. Las fechas no convierten casos en viajes diarios.
+	measure 'Revisión · Sin visitas' =
+			VAR Base=CALCULATETABLE(gold_gtfs_trip_timing,REMOVEFILTERS(gold_gtfs_trip_timing[report_review_reason],gold_gtfs_trip_timing[timing_status],gold_gtfs_trip_timing[trip_id],gold_gtfs_trip_timing[trip_key],gold_gtfs_trip_timing[report_route_label]))
+			VAR Motivos=CALCULATETABLE(VALUES(gold_gtfs_trip_timing[timing_status]),REMOVEFILTERS(gold_gtfs_trip_timing[trip_id],gold_gtfs_trip_timing[trip_key],gold_gtfs_trip_timing[report_route_label]))
+			VAR Casos=FILTER(Base,gold_gtfs_trip_timing[timing_status]<>"eligible" && gold_gtfs_trip_timing[timing_status] IN Motivos)
+			RETURN IF([Revisión · Fuente disponible],COALESCE(COUNTROWS(FILTER(Base,gold_gtfs_trip_timing[timing_status]="no_visits")),0))
+		formatString: #,0
+		displayFolder: Revisión\Métricas
+		lineageTag: f8fdfc26-a24d-417c-80bd-394e7fa64efc
+
+	/// Catálogo 2026 del contexto de componente y ruta. Las fechas no convierten casos en viajes diarios.
+	measure 'Revisión · Una visita' =
+			VAR Base=CALCULATETABLE(gold_gtfs_trip_timing,REMOVEFILTERS(gold_gtfs_trip_timing[report_review_reason],gold_gtfs_trip_timing[timing_status],gold_gtfs_trip_timing[trip_id],gold_gtfs_trip_timing[trip_key],gold_gtfs_trip_timing[report_route_label]))
+			VAR Motivos=CALCULATETABLE(VALUES(gold_gtfs_trip_timing[timing_status]),REMOVEFILTERS(gold_gtfs_trip_timing[trip_id],gold_gtfs_trip_timing[trip_key],gold_gtfs_trip_timing[report_route_label]))
+			VAR Casos=FILTER(Base,gold_gtfs_trip_timing[timing_status]<>"eligible" && gold_gtfs_trip_timing[timing_status] IN Motivos)
+			RETURN IF([Revisión · Fuente disponible],COALESCE(COUNTROWS(FILTER(Base,gold_gtfs_trip_timing[timing_status]="one_visit")),0))
+		formatString: #,0
+		displayFolder: Revisión\Métricas
+		lineageTag: 4fdd880d-1818-4ef2-87f3-c04f8bf5ef11
+
+	/// Catálogo 2026 del contexto de componente y ruta. Las fechas no convierten casos en viajes diarios.
+	measure 'Revisión · Plantillas' =
+			VAR Base=CALCULATETABLE(gold_gtfs_trip_timing,REMOVEFILTERS(gold_gtfs_trip_timing[report_review_reason],gold_gtfs_trip_timing[timing_status],gold_gtfs_trip_timing[trip_id],gold_gtfs_trip_timing[trip_key],gold_gtfs_trip_timing[report_route_label]))
+			VAR Motivos=CALCULATETABLE(VALUES(gold_gtfs_trip_timing[timing_status]),REMOVEFILTERS(gold_gtfs_trip_timing[trip_id],gold_gtfs_trip_timing[trip_key],gold_gtfs_trip_timing[report_route_label]))
+			VAR Casos=FILTER(Base,gold_gtfs_trip_timing[timing_status]<>"eligible" && gold_gtfs_trip_timing[timing_status] IN Motivos)
+			RETURN IF([Revisión · Fuente disponible],COALESCE(COUNTROWS(FILTER(Base,gold_gtfs_trip_timing[timing_status]="frequency_template")),0))
+		formatString: #,0
+		displayFolder: Revisión\Métricas
+		lineageTag: 7ebe307c-6fe0-47b2-a48b-f1eafd0d9a67
+
+	/// Catálogo 2026 del contexto de componente y ruta. Las fechas no convierten casos en viajes diarios.
+	measure 'Revisión · Elegibles' =
+			VAR Base=CALCULATETABLE(gold_gtfs_trip_timing,REMOVEFILTERS(gold_gtfs_trip_timing[report_review_reason],gold_gtfs_trip_timing[timing_status],gold_gtfs_trip_timing[trip_id],gold_gtfs_trip_timing[trip_key],gold_gtfs_trip_timing[report_route_label]))
+			VAR Motivos=CALCULATETABLE(VALUES(gold_gtfs_trip_timing[timing_status]),REMOVEFILTERS(gold_gtfs_trip_timing[trip_id],gold_gtfs_trip_timing[trip_key],gold_gtfs_trip_timing[report_route_label]))
+			VAR Casos=FILTER(Base,gold_gtfs_trip_timing[timing_status]<>"eligible" && gold_gtfs_trip_timing[timing_status] IN Motivos)
+			RETURN IF([Revisión · Fuente disponible],COALESCE(COUNTROWS(FILTER(Base,gold_gtfs_trip_timing[timing_status]="eligible")),0))
+		formatString: #,0
+		displayFolder: Revisión\Métricas
+		lineageTag: 1c16664f-73e9-45de-832e-692f93e442d0
+
+	/// Catálogo 2026 del contexto de componente y ruta. Las fechas no convierten casos en viajes diarios.
+	measure 'Revisión · Excluidos' =
+			VAR Base=CALCULATETABLE(gold_gtfs_trip_timing,REMOVEFILTERS(gold_gtfs_trip_timing[report_review_reason],gold_gtfs_trip_timing[timing_status],gold_gtfs_trip_timing[trip_id],gold_gtfs_trip_timing[trip_key],gold_gtfs_trip_timing[report_route_label]))
+			VAR Motivos=CALCULATETABLE(VALUES(gold_gtfs_trip_timing[timing_status]),REMOVEFILTERS(gold_gtfs_trip_timing[trip_id],gold_gtfs_trip_timing[trip_key],gold_gtfs_trip_timing[report_route_label]))
+			VAR Casos=FILTER(Base,gold_gtfs_trip_timing[timing_status]<>"eligible" && gold_gtfs_trip_timing[timing_status] IN Motivos)
+			RETURN IF([Revisión · Fuente disponible],COALESCE(COUNTROWS(FILTER(Base,gold_gtfs_trip_timing[timing_status]<>"eligible")),0))
+		formatString: #,0
+		displayFolder: Revisión\Métricas
+		lineageTag: 462435e8-e051-40c3-a068-fe587d916935
+
+	/// Catálogo 2026 del contexto de componente y ruta. Las fechas no convierten casos en viajes diarios.
+	measure 'Revisión · Casos del motivo' =
+			VAR Base=CALCULATETABLE(gold_gtfs_trip_timing,REMOVEFILTERS(gold_gtfs_trip_timing[report_review_reason],gold_gtfs_trip_timing[timing_status],gold_gtfs_trip_timing[trip_id],gold_gtfs_trip_timing[trip_key],gold_gtfs_trip_timing[report_route_label]))
+			VAR Motivos=CALCULATETABLE(VALUES(gold_gtfs_trip_timing[timing_status]),REMOVEFILTERS(gold_gtfs_trip_timing[trip_id],gold_gtfs_trip_timing[trip_key],gold_gtfs_trip_timing[report_route_label]))
+			VAR Casos=FILTER(Base,gold_gtfs_trip_timing[timing_status]<>"eligible" && gold_gtfs_trip_timing[timing_status] IN Motivos)
+			RETURN IF([Revisión · Fuente disponible],COALESCE(COUNTROWS(Casos),0))
+		formatString: #,0
+		displayFolder: Revisión\Métricas
+		lineageTag: 27413505-d653-44ca-984c-64d219360b63
+
+	/// Catálogo 2026 del contexto de componente y ruta. Las fechas no convierten casos en viajes diarios.
+	measure 'Revisión · Porcentaje excluido' = DIVIDE([Revisión · Excluidos],[Revisión · Evaluados])
+		formatString: 0.00%
+		displayFolder: Revisión\Métricas
+		lineageTag: 5f38f598-a329-4923-a876-d70492923ff3
+
+	/// Filtro de la tabla nativa: muestra solamente viajes excluidos del perfil horario. La selección del motivo se conserva.
+	measure 'Revisión · Mostrar caso' = IF(HASONEVALUE(gold_gtfs_trip_timing[trip_key])&&SELECTEDVALUE(gold_gtfs_trip_timing[timing_status])<>"eligible",1)
+		formatString: 0
+		displayFolder: Revisión\Métricas
+		lineageTag: a7dc8cd2-3bad-4de4-a7d7-b30a8d937143
+
+	/// Catálogo 2026 del contexto de componente y ruta. Las fechas no convierten casos en viajes diarios.
+	measure 'Revisión · Visitas del caso' = IF(HASONEVALUE(gold_gtfs_trip_timing[trip_key]),SUM(gold_gtfs_trip_timing[visit_count]))
+		formatString: #,0
+		displayFolder: Revisión\Métricas
+		lineageTag: 93aa6699-98bf-4c18-872e-974cb3d8f22c
+
+	/// Catálogo 2026 del contexto de componente y ruta. Las fechas no convierten casos en viajes diarios.
+	measure 'Revisión · Encabezado HTML' = VAR C=SELECTEDVALUE(silver_gtfs_agency[report_component],"Todo el sistema") VAR R=IF(HASONEVALUE(silver_gtfs_routes[route_key])," · " & SELECTEDVALUE(silver_gtfs_routes[report_route_label]),"") RETURN "<header class='page-heading'><div><p class='section-label'>Movilidad Bogotá / Del motivo al viaje que conviene revisar</p><h1>Revisión de información</h1></div><div class='scope'><strong>" & C & R & "</strong><span>Catálogo 2026 · No representa fallos operativos</span></div></header>"
+		displayFolder: Revisión\Presentación HTML
+		lineageTag: 9cedb8cc-8f59-4984-8a49-a195ba4cf076
+
+	/// Catálogo 2026 del contexto de componente y ruta. Las fechas no convierten casos en viajes diarios.
+	measure 'Revisión · Indicadores HTML' = VAR N=[Revisión · Evaluados] RETURN IF([Revisión · Fuente disponible],"<section class='review-kpis'><article><span>Viajes evaluados</span><strong>" & FORMAT(N,"#,0","es-CO") & "</strong><small>Catálogo del componente y ruta</small></article><article><span>Sin visitas publicadas</span><strong>" & FORMAT([Revisión · Sin visitas],"#,0","es-CO") & "</strong><small>" & IF(N=0,"Sin denominador",FORMAT(DIVIDE([Revisión · Sin visitas],N),"0.00%","es-CO") & " de los evaluados") & "</small></article><article><span>Con una sola visita</span><strong>" & FORMAT([Revisión · Una visita],"#,0","es-CO") & "</strong><small>No describe un recorrido completo</small></article><article><span>Fuera del perfil horario</span><strong>" & FORMAT([Revisión · Excluidos],"#,0","es-CO") & "</strong><small>Incluye plantillas; no implica error</small></article></section>","<section class='review-kpis'><p class='review-empty'>Falta evaluación Gold para esta identidad. La ausencia no equivale a cero casos.</p></section>")
+		displayFolder: Revisión\Presentación HTML
+		lineageTag: d7386dec-1f3a-432b-b10b-c91d5bcb1b00
+
+	/// Catálogo 2026 del contexto de componente y ruta. Las fechas no convierten casos en viajes diarios.
+	measure 'Revisión · Motivos HTML' =
+			VAR Base=CALCULATETABLE(gold_gtfs_trip_timing,REMOVEFILTERS(gold_gtfs_trip_timing[report_review_reason],gold_gtfs_trip_timing[timing_status],gold_gtfs_trip_timing[trip_id],gold_gtfs_trip_timing[trip_key],gold_gtfs_trip_timing[report_route_label]))
+			VAR Motivos=CALCULATETABLE(VALUES(gold_gtfs_trip_timing[timing_status]),REMOVEFILTERS(gold_gtfs_trip_timing[trip_id],gold_gtfs_trip_timing[trip_key],gold_gtfs_trip_timing[report_route_label]))
+			VAR Casos=FILTER(Base,gold_gtfs_trip_timing[timing_status]<>"eligible" && gold_gtfs_trip_timing[timing_status] IN Motivos)
+			VAR Total=COUNTROWS(Base) VAR Excl=[Revisión · Excluidos] VAR Elig=[Revisión · Elegibles]
+			VAR Defs={ ("no_visits","Sin visitas",1),("one_visit","Una visita",2),("frequency_template","Plantillas de frecuencia",3),("missing_endpoints","Sin extremos horarios",4),("reversed_endpoints","Extremos invertidos",5) }
+			VAR Filas=CONCATENATEX(Defs,VAR Code=[Value1] VAR N=COALESCE(COUNTROWS(FILTER(Base,gold_gtfs_trip_timing[timing_status]=Code)),0) VAR W=DIVIDE(N,MAX(1,Excl))*100 RETURN "<div class='reason-row'><span>" & [Value2] & "</span><span class='reason-track'><i style='width:" & FORMAT(W,"0.0","en-US") & "%;background:" & IF(Code="frequency_template","#FFC928",IF(Code="one_visit","#E98C94","#DD212C")) & "'></i></span><strong>" & FORMAT(N,"#,0","es-CO") & "</strong></div>","",[Value3],ASC)
+			RETURN IF([Revisión · Fuente disponible],"<section class='review-reasons'><p class='insight-kicker'>Contexto completo · Antes del motivo</p><div class='reason-total'><h2>" & FORMAT(Excl,"#,0","es-CO") & "</h2><span>fuera del perfil horario<br><strong>" & IF(Total=0,"—",FORMAT(DIVIDE(Excl,Total),"0.00%","es-CO")) & " de " & FORMAT(Total,"#,0","es-CO") & " evaluados</strong></span></div><div class='eligible-line'><span>Elegibles para extremos publicados</span><strong>" & FORMAT(Elig,"#,0","es-CO") & "</strong></div>" & Filas & "<p class='review-caution'>Los motivos no se superponen. Una plantilla usa ventanas de frecuencia; no constituye por sí misma un dato inválido.</p></section>","<section class='review-reasons'><p class='review-empty'>Falta evaluación Gold. No convierto esa ausencia en cero casos.</p></section>")
+		displayFolder: Revisión\Presentación HTML
+		lineageTag: 90937267-35f7-402d-992f-006506adae76
+
+	/// Catálogo 2026 del contexto de componente y ruta. Las fechas no convierten casos en viajes diarios.
+	measure 'Revisión · Rutas HTML' =
+			VAR Base=CALCULATETABLE(gold_gtfs_trip_timing,REMOVEFILTERS(gold_gtfs_trip_timing[report_review_reason],gold_gtfs_trip_timing[timing_status],gold_gtfs_trip_timing[trip_id],gold_gtfs_trip_timing[trip_key],gold_gtfs_trip_timing[report_route_label]))
+			VAR Motivos=CALCULATETABLE(VALUES(gold_gtfs_trip_timing[timing_status]),REMOVEFILTERS(gold_gtfs_trip_timing[trip_id],gold_gtfs_trip_timing[trip_key],gold_gtfs_trip_timing[report_route_label]))
+			VAR Casos=FILTER(Base,gold_gtfs_trip_timing[timing_status]<>"eligible" && gold_gtfs_trip_timing[timing_status] IN Motivos)
+			VAR Counts=GROUPBY(Casos,gold_gtfs_trip_timing[route_id],gold_gtfs_trip_timing[report_route_label],"_n",COUNTX(CURRENTGROUP(),1)) VAR TopR=TOPN(5,Counts,[_n],DESC,gold_gtfs_trip_timing[route_id],ASC) VAR Maximo=MAX(1,MAXX(TopR,[_n])) VAR Motivo=SELECTEDVALUE(gold_gtfs_trip_timing[report_review_reason],"Todos los motivos")
+			VAR Filas=CONCATENATEX(TopR,VAR IdRuta=gold_gtfs_trip_timing[route_id] VAR NTotal=COUNTROWS(FILTER(Base,gold_gtfs_trip_timing[route_id]=IdRuta)) RETURN "<div class='review-route'><div class='route-label'><strong>" & SUBSTITUTE(SUBSTITUTE(gold_gtfs_trip_timing[report_route_label],"&","&amp;"),"<","&lt;") & "</strong><span>" & FORMAT([_n],"#,0","es-CO") & " de " & FORMAT(NTotal,"#,0","es-CO") & " · " & FORMAT(DIVIDE([_n],NTotal),"0.0%","es-CO") & "</span></div><div class='review-route-track'><i style='width:" & FORMAT(DIVIDE([_n],Maximo)*100,"0.0","en-US") & "%'></i></div></div>","",[_n],DESC)
+			RETURN IF([Revisión · Fuente disponible],"<section class='review-routes'><div class='panel-head'><h2>¿En qué rutas concentro la revisión?</h2><span>Casos: " & FORMAT(COALESCE(COUNTROWS(Casos),0),"#,0","es-CO") & " · Rutas: " & FORMAT(COALESCE(COUNTROWS(Counts),0),"0") & "</span></div><p class='subtitle'>" & Motivo & " · Hasta cinco rutas por cantidad de casos</p>" & IF(COUNTROWS(Casos)=0,"<div class='review-clear'><strong>Sin casos para ese motivo.</strong><p>La selección no tiene viajes excluidos por estas reglas. No demuestra calidad completa ni operación observada.</p></div>",Filas) & "<p class='review-note'>Longitud relativa al máximo. Cada porcentaje usa todos los viajes de su propia ruta.</p></section>","<section class='review-routes'><p class='review-empty'>Selecciona una identidad con ambas fuentes Gold disponibles.</p></section>")
+		displayFolder: Revisión\Presentación HTML
+		lineageTag: 79795e59-1a0e-48e3-af0d-e142c7bf1407
+
+	/// Catálogo 2026 del contexto de componente y ruta. Las fechas no convierten casos en viajes diarios.
+	measure 'Revisión · Acción HTML' =
+			VAR Uno=HASONEVALUE(gold_gtfs_trip_timing[trip_key]) VAR Code=SELECTEDVALUE(gold_gtfs_trip_timing[timing_status]) VAR TripCode=SELECTEDVALUE(gold_gtfs_trip_timing[trip_id]) VAR Label=SELECTEDVALUE(gold_gtfs_trip_timing[report_route_label])
+			VAR SinCasos=[Revisión · Casos del motivo]=0 VAR Titulo=IF(SinCasos&&ISBLANK(Code),"Sin casos para esos filtros.",SWITCH(Code,"no_visits","Revisa la lista de visitas.","one_visit","Una visita no describe el recorrido.","frequency_template","Lee sus ventanas de frecuencia.","missing_endpoints","Consulta los extremos publicados.","reversed_endpoints","Revisa el orden de los extremos.","eligible","Este grupo entra al perfil horario.","Elige un motivo y consulta un viaje."))
+			VAR Mensaje=IF(SinCasos&&ISBLANK(Code),"No encuentro viajes excluidos en esta selección. Revisa otros motivos; este resultado no certifica operación ni calidad completa.",SWITCH(Code,"no_visits","El viaje está declarado, pero no relaciona visitas Silver. Revisa el archivo fuente antes de completar información.","one_visit","Conservo la visita disponible. No deduzco un recorrido entre dos ubicaciones ni reconstruyo otras visitas.","frequency_template","La plantilla necesita sus ventanas. No la convierto en una sola salida ni en un error del servicio.","missing_endpoints","Falta una hora extrema. Conservo la ausencia y no tomo otra hora intermedia como sustituto.","reversed_endpoints","La llegada final precede a la salida inicial. Conservo el diagnóstico y reviso la secuencia original.","eligible","Los extremos cumplen las reglas del perfil. Esa elegibilidad no certifica puntualidad ni un recorrido completo.","Selecciona una fila de la tabla para consultar su ID y motivo. Investiga la publicación antes de inferir fallos operativos."))
+			RETURN IF([Revisión · Fuente disponible],"<section class='review-action'><p class='section-label'>Siguiente revisión</p><h2>" & Titulo & "</h2>" & IF(Uno,"<p class='trip-reference'><strong>" & SUBSTITUTE(SUBSTITUTE(TripCode,"&","&amp;"),"<","&lt;") & "</strong><span>" & Label & " · Visitas: " & FORMAT(SELECTEDVALUE(gold_gtfs_trip_timing[visit_count]),"0") & " · Ventanas: " & FORMAT(SELECTEDVALUE(gold_gtfs_trip_timing[frequency_window_count]),"0") & "</span></p>","") & "<p class='action-text'>" & Mensaje & "</p><small>Fuente publicada ≠ operación observada.</small></section>","<section class='review-action'><p class='review-empty'>No hay evaluación disponible para consultar casos.</p></section>")
+		displayFolder: Revisión\Presentación HTML
+		lineageTag: f1e6d076-13fc-42ca-a7e9-4d461201f9f9
+
+	/// Catálogo 2026 del contexto de componente y ruta. Las fechas no convierten casos en viajes diarios.
+	measure 'Revisión · Tabla marco HTML' = "<section class='review-table-frame'><h2>Viajes para revisar</h2><p>El motivo filtra la lista. Una fila actualiza solo la ficha «Siguiente revisión».</p></section>"
+		displayFolder: Revisión\Presentación HTML
+		lineageTag: dd0ff686-0413-4ad5-b7c2-6bf72c4c1a3a
+
+	/// Catálogo 2026 del contexto de componente y ruta. Las fechas no convierten casos en viajes diarios.
+	measure 'Revisión · Tabla previa HTML' =
+			VAR Base=CALCULATETABLE(gold_gtfs_trip_timing,REMOVEFILTERS(gold_gtfs_trip_timing[report_review_reason],gold_gtfs_trip_timing[timing_status],gold_gtfs_trip_timing[trip_id],gold_gtfs_trip_timing[trip_key],gold_gtfs_trip_timing[report_route_label]))
+			VAR Motivos=CALCULATETABLE(VALUES(gold_gtfs_trip_timing[timing_status]),REMOVEFILTERS(gold_gtfs_trip_timing[trip_id],gold_gtfs_trip_timing[trip_key],gold_gtfs_trip_timing[report_route_label]))
+			VAR Casos=FILTER(Base,gold_gtfs_trip_timing[timing_status]<>"eligible" && gold_gtfs_trip_timing[timing_status] IN Motivos)
+			VAR TopC=TOPN(8,Casos,gold_gtfs_trip_timing[trip_id],ASC)
+			VAR Filas=CONCATENATEX(TopC,"<tr><td>" & gold_gtfs_trip_timing[report_route_label] & "</td><td>" & SUBSTITUTE(SUBSTITUTE(gold_gtfs_trip_timing[trip_id],"&","&amp;"),"<","&lt;") & "</td><td>" & gold_gtfs_trip_timing[report_review_reason] & "</td><td>" & FORMAT(gold_gtfs_trip_timing[visit_count],"0") & "</td></tr>","",gold_gtfs_trip_timing[trip_id],ASC)
+			RETURN IF([Revisión · Fuente disponible],"<div class='review-preview-table'><table><thead><tr><th>Ruta · ID</th><th>Viaje declarado</th><th>Motivo</th><th>Visitas</th></tr></thead><tbody>" & Filas & "</tbody></table>" & IF(COUNTROWS(Casos)=0,"<p class='review-empty'>Sin viajes para revisar con ese motivo.</p>","") & "</div>","<p class='review-empty'>Falta evaluación Gold.</p>")
+		displayFolder: Revisión\Presentación HTML
+		lineageTag: 479560f1-117f-4d3a-a8e8-03c50e87e8a1
+
+	/// Catálogo 2026 del contexto de componente y ruta. Las fechas no convierten casos en viajes diarios.
+	measure 'Revisión · Navegación HTML' = "<aside class='sidebar-inner'><div class='brand'><svg viewBox='0 0 34 38' aria-hidden='true'><rect x='4' y='3' width='26' height='29' rx='6' fill='#DD212C'/><rect x='8' y='8' width='18' height='10' rx='2' fill='#FFF'/><path d='M9 23H25' stroke='#FFC928' stroke-width='3'/><circle cx='10' cy='29' r='2' fill='#FFF'/><circle cx='24' cy='29' r='2' fill='#FFF'/><path d='M8 33V36M26 33V36' stroke='#252A23' stroke-width='3'/></svg><strong>Movilidad<br>Bogotá</strong></div><div class='sidebar-note'><span class='brand-rule'></span><strong>Lee el servicio previsto.</strong><p>GTFS estático<br>Oferta planificada</p></div></aside>"
+		displayFolder: Revisión\Presentación HTML
+		lineageTag: ea48e293-ca83-4c44-8a18-97a22748e98e
+
+	/// Catálogo 2026 del contexto de componente y ruta. Las fechas no convierten casos en viajes diarios.
+	measure 'Revisión · Fuente HTML' = "<footer class='source-strip'><strong>Fuente: cobertura y extremos Gold · GTFS 2026</strong><span>Catálogo de viajes. Motivos de revisión no equivalen a cancelaciones ni incumplimientos.</span></footer>"
+		displayFolder: Revisión\Presentación HTML
+		lineageTag: 8f9f2821-743d-43b6-8eaa-76c50bc5804a
+
+	/// Campo Gold de negocio; identidad fuente preservada.
+	column source_feed_version
+		dataType: string
+		isHidden
+		lineageTag: 876a472d-971e-4c7c-9b78-2639f5d93d45
+		summarizeBy: none
+		sourceColumn: source_feed_version
+
+	/// Campo Gold de negocio; identidad fuente preservada.
+	column source_sha256
+		dataType: string
+		isHidden
+		lineageTag: 7f1563b6-2606-4cd1-abe6-8edd9347c23a
+		summarizeBy: none
+		sourceColumn: source_sha256
+
+	/// Campo Gold de negocio; identidad fuente preservada.
+	column trip_id
+		dataType: string
+		isHidden
+		lineageTag: f85e085a-5fd0-4e7a-905c-6ffb8ca7ac32
+		summarizeBy: none
+		sourceColumn: trip_id
+
+	/// Campo Gold de negocio; identidad fuente preservada.
+	column route_id
+		dataType: string
+		isHidden
+		lineageTag: cf3a1cc7-1758-4758-a8b8-e2959f942f1a
+		summarizeBy: none
+		sourceColumn: route_id
+
+	/// Campo Gold de negocio; identidad fuente preservada.
+	column service_id
+		dataType: string
+		isHidden
+		lineageTag: dfa5ff18-39de-4f36-ba15-d1192890e6d3
+		summarizeBy: none
+		sourceColumn: service_id
+
+	/// Campo Gold de negocio; identidad fuente preservada.
+	column visit_count
+		dataType: int64
+		lineageTag: a154d850-d58f-4dbc-851f-f5841ad26a7a
+		summarizeBy: none
+		sourceColumn: visit_count
+
+	/// Campo Gold de negocio; identidad fuente preservada.
+	column first_stop_id
+		dataType: string
+		lineageTag: 568dcb6f-bffc-4e23-9bc4-1e948b61eb29
+		summarizeBy: none
+		sourceColumn: first_stop_id
+
+	/// Campo Gold de negocio; identidad fuente preservada.
+	column last_stop_id
+		dataType: string
+		lineageTag: 08db6230-9a24-4745-8da3-7a10a32315ee
+		summarizeBy: none
+		sourceColumn: last_stop_id
+
+	/// Campo Gold de negocio; identidad fuente preservada.
+	column first_stop_sequence
+		dataType: int64
+		lineageTag: c2989d59-6824-40fc-9e83-4885649aa864
+		summarizeBy: none
+		sourceColumn: first_stop_sequence
+
+	/// Campo Gold de negocio; identidad fuente preservada.
+	column last_stop_sequence
+		dataType: int64
+		lineageTag: 93336191-f43e-4be5-a2a7-026a69d5f2b0
+		summarizeBy: none
+		sourceColumn: last_stop_sequence
+
+	/// Campo Gold de negocio; identidad fuente preservada.
+	column first_departure_time_seconds
+		dataType: int64
+		lineageTag: 23440646-6bb0-43e5-8c87-89881a147abe
+		summarizeBy: none
+		sourceColumn: first_departure_time_seconds
+
+	/// Campo Gold de negocio; identidad fuente preservada.
+	column last_arrival_time_seconds
+		dataType: int64
+		lineageTag: 87841199-cec8-4c6d-b35e-6c93be021c8d
+		summarizeBy: none
+		sourceColumn: last_arrival_time_seconds
+
+	/// Campo Gold de negocio; identidad fuente preservada.
+	column frequency_window_count
+		dataType: int64
+		lineageTag: 81eb7e44-a7f0-427c-ae8f-9912c45eceac
+		summarizeBy: none
+		sourceColumn: frequency_window_count
+
+	/// Campo Gold de negocio; identidad fuente preservada.
+	column is_frequency_template
+		dataType: boolean
+		lineageTag: 007e9ffb-9148-49a9-988e-73cda84e16db
+		summarizeBy: none
+		sourceColumn: is_frequency_template
+
+	/// Campo Gold de negocio; identidad fuente preservada.
+	column endpoint_time_precision
+		dataType: string
+		lineageTag: 7d327dfc-4af5-481d-857a-2c53fd4a94df
+		summarizeBy: none
+		sourceColumn: endpoint_time_precision
+
+	/// Campo Gold de negocio; identidad fuente preservada.
+	column timing_status
+		dataType: string
+		lineageTag: abab8c7d-968c-4c73-8f24-1f045870d7b2
+		summarizeBy: none
+		sourceColumn: timing_status
+
+	/// Campo Gold de negocio; identidad fuente preservada.
+	column published_span_seconds
+		dataType: int64
+		lineageTag: 523a54ce-94c8-48db-90d7-486678a676d1
+		summarizeBy: none
+		sourceColumn: published_span_seconds
+
+	column trip_key = FORMAT ( LEN ( [source_feed_version] ), "0" ) & ":" & [source_feed_version] & ":" & [source_sha256] & ":" & [trip_id]
+		dataType: string
+		isHidden
+		lineageTag: a353f0aa-ffcb-4052-81c6-7d0eb0f8720d
+		summarizeBy: none
+
+	/// Etiqueta de presentación de timing_status; conserva la clasificación Gold sin modificar Databricks.
+	column report_review_reason = SWITCH([timing_status],"no_visits","Sin visitas","one_visit","Una visita","frequency_template","Plantilla por frecuencia","missing_endpoints","Sin extremos horarios","reversed_endpoints","Extremos invertidos","eligible","Elegible (referencia)","Estado no contemplado")
+		dataType: string
+		lineageTag: 657a0ce6-998e-4df0-8c94-fbc9aefb1ada
+		summarizeBy: none
+
+	/// Código e ID de la ruta dentro de su versión/hash, para el detalle nativo de revisión.
+	column report_route_label = LOOKUPVALUE(silver_gtfs_routes[report_route_label],silver_gtfs_routes[source_feed_version],[source_feed_version],silver_gtfs_routes[source_sha256],[source_sha256],silver_gtfs_routes[route_id],[route_id])
+		dataType: string
+		lineageTag: 43830956-6007-47b1-bddb-2ae0cac4993d
+		summarizeBy: none
+
+	partition gold_gtfs_trip_timing = m
+		mode: import
+		source =
+				let
+				    Origen = DatabricksMultiCloud.Catalogs(DatabricksServerHostname, DatabricksHttpPath, null),
+				    Catalogo = Origen{[Name = "workspace", Kind = "Database"]}[Data],
+				    Esquema = Catalogo{[Name = "gtfs_bogota", Kind = "Schema"]}[Data],
+				    Cobertura = Esquema{[Name = "gold_gtfs_trip_timing", Kind = "Table"]}[Data],
+				    Seleccion = Table.SelectColumns(Cobertura, {"source_feed_version", "source_sha256", "trip_id", "route_id", "service_id", "visit_count", "first_stop_id", "last_stop_id", "first_stop_sequence", "last_stop_sequence", "first_departure_time_seconds", "last_arrival_time_seconds", "frequency_window_count", "is_frequency_template", "endpoint_time_precision", "timing_status", "published_span_seconds"})
+				in
+				    Seleccion

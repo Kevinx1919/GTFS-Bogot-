@@ -1,0 +1,4 @@
+Ubicación relacionada =
+VAR Ubicaciones = VALUES ( silver_gtfs_stops[stop_key] )
+VAR Parejas = CALCULATE ( COUNTROWS ( gold_gtfs_route_stop ), TREATAS ( Ubicaciones, gold_gtfs_route_stop[stop_key] ) )
+RETURN IF ( Parejas > 0, 1, 0 )

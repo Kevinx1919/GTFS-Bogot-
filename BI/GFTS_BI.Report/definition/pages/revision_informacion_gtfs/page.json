@@ -1,0 +1,221 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/page/2.1.0/schema.json",
+  "name": "revision_informacion_gtfs",
+  "displayName": "Revisión de información",
+  "displayOption": "FitToPage",
+  "height": 900,
+  "width": 1440,
+  "objects": {
+    "background": [
+      {
+        "properties": {
+          "color": {
+            "solid": {
+              "color": {
+                "expr": {
+                  "Literal": {
+                    "Value": "'#E8EBE2'"
+                  }
+                }
+              }
+            }
+          },
+          "transparency": {
+            "expr": {
+              "Literal": {
+                "Value": "0D"
+              }
+            }
+          }
+        }
+      }
+    ]
+  },
+  "filterConfig": {
+    "filters": [
+      {
+        "name": "scope_source_feed_version",
+        "field": {
+          "Column": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "dim_gtfs_snapshot"
+              }
+            },
+            "Property": "source_feed_version"
+          }
+        },
+        "type": "Categorical",
+        "filter": {
+          "Version": 2,
+          "From": [
+            {
+              "Name": "s",
+              "Entity": "dim_gtfs_snapshot",
+              "Type": 0
+            }
+          ],
+          "Where": [
+            {
+              "Condition": {
+                "In": {
+                  "Expressions": [
+                    {
+                      "Column": {
+                        "Expression": {
+                          "SourceRef": {
+                            "Source": "s"
+                          }
+                        },
+                        "Property": "source_feed_version"
+                      }
+                    }
+                  ],
+                  "Values": [
+                    [
+                      {
+                        "Literal": {
+                          "Value": "'2026-09-29'"
+                        }
+                      }
+                    ]
+                  ]
+                }
+              }
+            }
+          ]
+        }
+      },
+      {
+        "name": "scope_source_sha256",
+        "field": {
+          "Column": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "dim_gtfs_snapshot"
+              }
+            },
+            "Property": "source_sha256"
+          }
+        },
+        "type": "Categorical",
+        "filter": {
+          "Version": 2,
+          "From": [
+            {
+              "Name": "s",
+              "Entity": "dim_gtfs_snapshot",
+              "Type": 0
+            }
+          ],
+          "Where": [
+            {
+              "Condition": {
+                "In": {
+                  "Expressions": [
+                    {
+                      "Column": {
+                        "Expression": {
+                          "SourceRef": {
+                            "Source": "s"
+                          }
+                        },
+                        "Property": "source_sha256"
+                      }
+                    }
+                  ],
+                  "Values": [
+                    [
+                      {
+                        "Literal": {
+                          "Value": "'08d14e0b3a5b9caa5451b722659871fd554e3273b94bdd770fdf81a26bf02097'"
+                        }
+                      }
+                    ]
+                  ]
+                }
+              }
+            }
+          ]
+        }
+      }
+    ]
+  },
+  "visualInteractions": [
+    {
+      "source": "a655bdc02fa04213ba06",
+      "target": "443e08410b8c435a965c",
+      "type": "NoFilter"
+    },
+    {
+      "source": "a655bdc02fa04213ba06",
+      "target": "d1eeeb1c2b9a46dd8743",
+      "type": "NoFilter"
+    },
+    {
+      "source": "a655bdc02fa04213ba06",
+      "target": "e2fb95cf15ac4c84964e",
+      "type": "NoFilter"
+    },
+    {
+      "source": "a655bdc02fa04213ba06",
+      "target": "1d37e39bca594c0899f6",
+      "type": "NoFilter"
+    },
+    {
+      "source": "a655bdc02fa04213ba06",
+      "target": "036f5383e04b42309bf4",
+      "type": "NoFilter"
+    },
+    {
+      "source": "a655bdc02fa04213ba06",
+      "target": "62c48c6858a340ce93b8",
+      "type": "DataFilter"
+    },
+    {
+      "source": "a655bdc02fa04213ba06",
+      "target": "7f26bc47236f4529be24",
+      "type": "NoFilter"
+    },
+    {
+      "source": "a655bdc02fa04213ba06",
+      "target": "85b170691ee64fa3b1c2",
+      "type": "NoFilter"
+    },
+    {
+      "source": "a655bdc02fa04213ba06",
+      "target": "6df88c98092a488d856c",
+      "type": "NoFilter"
+    },
+    {
+      "source": "a655bdc02fa04213ba06",
+      "target": "b96eb804714340e1b01e",
+      "type": "NoFilter"
+    },
+    {
+      "source": "a655bdc02fa04213ba06",
+      "target": "4c4c9c64940a4cf0a9a4",
+      "type": "NoFilter"
+    },
+    {
+      "source": "a655bdc02fa04213ba06",
+      "target": "3b779af5a242411aa005",
+      "type": "NoFilter"
+    },
+    {
+      "source": "a655bdc02fa04213ba06",
+      "target": "e0acdf38644c47fe9be8",
+      "type": "NoFilter"
+    },
+    {
+      "source": "a655bdc02fa04213ba06",
+      "target": "f6ec921ca4014f349ed7",
+      "type": "NoFilter"
+    },
+    {
+      "source": "a655bdc02fa04213ba06",
+      "target": "df93ce1d4fbd4712b96a",
+      "type": "NoFilter"
+    }
+  ]
+}

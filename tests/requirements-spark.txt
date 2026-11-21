@@ -1,0 +1,8 @@
+# Entorno local Linux de pruebas; no instalar PySpark/Delta en Databricks serverless.
+-r ../databricks/requirements-silver.txt
+pyspark==4.0.1
+py4j==0.10.9.9
+delta-spark==4.0.0
+# Compatibles también con Python 3.10 de la imagen Spark usada en las pruebas.
+importlib-metadata==8.7.0
+zipp==3.23.0

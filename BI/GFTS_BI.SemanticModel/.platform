@@ -1,0 +1,11 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/gitIntegration/platformProperties/2.0.0/schema.json",
+  "metadata": {
+    "type": "SemanticModel",
+    "displayName": "GFTS_BI"
+  },
+  "config": {
+    "version": "2.0",
+    "logicalId": "82dcfe4a-ec97-45d3-bd1d-d9f3f97cc3a7"
+  }
+}

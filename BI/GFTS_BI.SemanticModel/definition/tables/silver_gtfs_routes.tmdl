@@ -1,0 +1,149 @@
+table silver_gtfs_routes
+	lineageTag: c1d9f42a-2e26-4a25-b6cf-3a1ea6da0310
+
+	/// Rutas publicadas del contexto snapshot/agencia. No representa aperturas físicas ni operación observada.
+	measure 'Rutas publicadas' = COALESCE ( COUNTROWS ( 'silver_gtfs_routes' ), 0 )
+		formatString: #,0
+		displayFolder: Catálogo
+		lineageTag: e2508434-fce7-47b8-a491-e3a35d8a6c20
+
+	column route_id
+		dataType: string
+		lineageTag: fd172f42-4b31-4eec-a8b5-99aa1b5a4b85
+		summarizeBy: none
+		sourceColumn: route_id
+
+		annotation SummarizationSetBy = Automatic
+
+	column agency_id
+		dataType: string
+		lineageTag: 2b70320e-1201-477e-80f3-8c53460c0bfe
+		summarizeBy: none
+		sourceColumn: agency_id
+
+		annotation SummarizationSetBy = Automatic
+
+	column route_short_name
+		dataType: string
+		lineageTag: df096b5c-0007-4342-83bd-c03b3214bbd8
+		summarizeBy: none
+		sourceColumn: route_short_name
+
+		annotation SummarizationSetBy = Automatic
+
+	column route_long_name
+		dataType: string
+		lineageTag: 7fa64ff7-d435-47fa-be02-ec157b0435ca
+		summarizeBy: none
+		sourceColumn: route_long_name
+
+		annotation SummarizationSetBy = Automatic
+
+	column route_desc
+		dataType: string
+		lineageTag: 9e0af446-e3a1-43dd-b982-1b644ce70a22
+		summarizeBy: none
+		sourceColumn: route_desc
+
+		annotation SummarizationSetBy = Automatic
+
+	column route_type
+		dataType: int64
+		formatString: 0
+		lineageTag: f286a91e-d7cf-4e41-87e3-ec85222a8e31
+		summarizeBy: none
+		sourceColumn: route_type
+
+		annotation SummarizationSetBy = Automatic
+
+	column route_url
+		dataType: string
+		lineageTag: 5b0cdad1-fdf4-48d5-b54a-5388ddd48104
+		summarizeBy: none
+		sourceColumn: route_url
+
+		annotation SummarizationSetBy = Automatic
+
+	column route_color
+		dataType: string
+		lineageTag: e8e8fec7-08c0-4428-aed4-4515337102ff
+		summarizeBy: none
+		sourceColumn: route_color
+
+		annotation SummarizationSetBy = Automatic
+
+	column route_text_color
+		dataType: string
+		lineageTag: 6b3e9936-cc94-459f-b1fe-9d81c5691f9f
+		summarizeBy: none
+		sourceColumn: route_text_color
+
+		annotation SummarizationSetBy = Automatic
+
+	column route_sort_order
+		dataType: int64
+		formatString: 0
+		lineageTag: 21a98504-9b85-48ed-ab62-139b7ac8f95e
+		summarizeBy: none
+		sourceColumn: route_sort_order
+
+		annotation SummarizationSetBy = Automatic
+
+	column source_feed_version
+		dataType: string
+		isHidden
+		lineageTag: d00189a9-55b8-4e8f-a1e3-05cb70d7f411
+		summarizeBy: none
+		sourceColumn: source_feed_version
+
+		annotation SummarizationSetBy = Automatic
+
+	column source_sha256
+		dataType: string
+		isHidden
+		lineageTag: 81692b0b-8bb3-403b-83c7-e9a63fb5f0bd
+		summarizeBy: none
+		sourceColumn: source_sha256
+
+		annotation SummarizationSetBy = Automatic
+
+	/// Clave de consumo v1: longitud y versión fuente, más SHA-256. No modifica la identidad Silver.
+	column snapshot_key = FORMAT ( LEN ( [source_feed_version] ), "0" ) & ":" & [source_feed_version] & ":" & [source_sha256]
+		dataType: string
+		isHidden
+		lineageTag: c6ee44eb-df71-40bc-931e-34724a0e2ce1
+		summarizeBy: none
+
+	/// Clave de consumo v1 por snapshot e ID fuente sin conversiones ni eliminación de ceros.
+	column route_key = FORMAT ( LEN ( [source_feed_version] ), "0" ) & ":" & [source_feed_version] & ":" & [source_sha256] & ":" & [route_id]
+		dataType: string
+		isHidden
+		lineageTag: 26529feb-01c6-4acd-8503-d471edbfa537
+		summarizeBy: none
+
+	/// Clave de consumo v1 por snapshot e ID fuente sin conversiones ni eliminación de ceros.
+	column agency_key = FORMAT ( LEN ( [source_feed_version] ), "0" ) & ":" & [source_feed_version] & ":" & [source_sha256] & ":" & [agency_id]
+		dataType: string
+		isHidden
+		lineageTag: a7c4b2cc-0947-4685-aded-5244fe0c0a21
+		summarizeBy: none
+
+	/// Etiqueta de selección que distingue rutas con el mismo nombre corto. La identidad permanece en route_key por snapshot.
+	column report_route_label = COALESCE([route_short_name],[route_id]) & " · " & [route_id]
+		dataType: string
+		lineageTag: fde4092f-f740-4434-9342-1df57a34478e
+		summarizeBy: none
+
+	partition silver_gtfs_routes = m
+		mode: import
+		source =
+				let
+				  Origen = DatabricksMultiCloud.Catalogs(DatabricksServerHostname, DatabricksHttpPath, null),
+				  #"Navegación 1" = Origen{[Name = "workspace", Kind = "Database"]}[Data],
+				  #"Navegación 2" = #"Navegación 1"{[Name = "gtfs_bogota", Kind = "Schema"]}[Data],
+				  #"Navegación 3" = #"Navegación 2"{[Name = "silver_gtfs_routes", Kind = "Table"]}[Data],
+				  #"Columnas quitadas" = Table.RemoveColumns(#"Navegación 3", {"silver_loaded_at_utc", "silver_run_id", "silver_rule_version", "source_columns", "bronze_loaded_at_utc", "source_file_path"})
+				in
+				  #"Columnas quitadas"
+
+	annotation PBI_ResultType = Table

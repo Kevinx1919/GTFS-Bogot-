@@ -1,0 +1,275 @@
+table gold_gtfs_trip_coverage
+	lineageTag: e162c06c-587f-448f-a689-ae3fde53012e
+
+	/// Viajes declarados con evaluación Gold en el contexto. BLANK indica ausencia de filas Gold; no equivale a cero viajes declarados.
+	measure 'Viajes evaluados' = COUNTROWS ( 'gold_gtfs_trip_coverage' )
+		formatString: #,0
+		displayFolder: Cobertura
+		lineageTag: d7bfb3a0-8447-4d1e-b421-cbb7650225a0
+
+	/// Viajes evaluados sin visitas publicadas. Conserva filtros de snapshot, agencia, ruta y contexto de programación. BLANK si falta cobertura Gold.
+	measure 'Viajes sin visitas' =
+			VAR Universo =
+			    CALCULATE ( [Viajes evaluados], REMOVEFILTERS ( 'gold_gtfs_trip_coverage'[coverage_status] ) )
+			VAR Casos =
+			    CALCULATE ( [Viajes evaluados], KEEPFILTERS ( 'gold_gtfs_trip_coverage'[coverage_status] = "sin_visitas" ) )
+			RETURN
+			    IF ( ISBLANK ( Universo ), BLANK (), COALESCE ( Casos, 0 ) )
+		formatString: #,0
+		displayFolder: Cobertura
+		lineageTag: ae0efa9f-5c19-483e-b15f-a5f884523eb9
+
+	/// Viajes evaluados con una visita publicada; no demuestra recorrido entre ubicaciones. Conserva filtros de snapshot, agencia, ruta y contexto de programación. BLANK si falta cobertura Gold.
+	measure 'Viajes con una visita' =
+			VAR Universo =
+			    CALCULATE ( [Viajes evaluados], REMOVEFILTERS ( 'gold_gtfs_trip_coverage'[coverage_status] ) )
+			VAR Casos =
+			    CALCULATE ( [Viajes evaluados], KEEPFILTERS ( 'gold_gtfs_trip_coverage'[coverage_status] = "una_visita" ) )
+			RETURN
+			    IF ( ISBLANK ( Universo ), BLANK (), COALESCE ( Casos, 0 ) )
+		formatString: #,0
+		displayFolder: Cobertura
+		lineageTag: 05a816aa-4e2a-40f1-b83b-b9814f8c9b02
+
+	/// Viajes evaluados con dos o más visitas. No certifica recorrido completo. Conserva filtros de snapshot, agencia, ruta y contexto de programación. BLANK si falta cobertura Gold.
+	measure 'Viajes con varias visitas' =
+			VAR Universo =
+			    CALCULATE ( [Viajes evaluados], REMOVEFILTERS ( 'gold_gtfs_trip_coverage'[coverage_status] ) )
+			VAR Casos =
+			    CALCULATE ( [Viajes evaluados], KEEPFILTERS ( 'gold_gtfs_trip_coverage'[coverage_status] = "varias_visitas" ) )
+			RETURN
+			    IF ( ISBLANK ( Universo ), BLANK (), COALESCE ( Casos, 0 ) )
+		formatString: #,0
+		displayFolder: Cobertura
+		lineageTag: 79296597-283e-4bf9-ad70-2d35e6e8844b
+
+	/// Viajes sin visitas entre todos los viajes evaluados del mismo contexto. Retira solo el filtro de categoría del denominador; conserva snapshot/agencia/ruta/contexto de programación.
+	measure 'Porcentaje de viajes sin visitas' =
+			VAR Denominador =
+			    CALCULATE ( [Viajes evaluados], REMOVEFILTERS ( 'gold_gtfs_trip_coverage'[coverage_status] ) )
+			RETURN
+			    DIVIDE ( [Viajes sin visitas], Denominador )
+		formatString: 0.00%
+		displayFolder: Cobertura
+		lineageTag: eb90a792-c697-4966-b936-a357c77683fa
+
+	/// Visitas publicadas en los viajes evaluados del contexto. No cuenta usuarios ni vehículos.
+	measure 'Visitas publicadas' = SUM ( 'gold_gtfs_trip_coverage'[visit_count] )
+		formatString: #,0
+		displayFolder: Visitas
+		lineageTag: ac5f5ec5-93b6-4d6a-bfed-ebff8e58c27f
+
+	/// Visitas con arrival y departure presentes. Mide presencia de horas, no exactitud ni puntualidad.
+	measure 'Visitas con horas completas' = SUM ( 'gold_gtfs_trip_coverage'[complete_time_pair_count] )
+		formatString: #,0
+		displayFolder: Visitas
+		lineageTag: a923a13a-4a12-46ad-8985-5e4e074b7e83
+
+	/// Proporción de visitas con llegada y salida presentes. Denominador de visitas, no viajes. BLANK si no hay visitas.
+	measure 'Porcentaje de visitas con horas completas' = DIVIDE ( [Visitas con horas completas], [Visitas publicadas] )
+		formatString: 0.00%
+		displayFolder: Visitas
+		lineageTag: 800845a5-9164-4858-a4be-856691d01fb1
+
+	/// Ventanas publicadas agregadas por viaje y snapshot. No representa salidas exactas ni operación observada.
+	measure 'Ventanas evaluadas' = SUM ( 'gold_gtfs_trip_coverage'[frequency_window_count] )
+		formatString: #,0
+		displayFolder: Frecuencias
+		lineageTag: 7ef67231-a43f-47a9-a893-d015a85783fe
+
+	/// Indica qué versiones sostienen la evaluación y avisa de cobertura parcial frente al catálogo de viajes del contexto.
+	measure 'Estado cobertura Gold' =
+			VAR SnapshotsCatalogo = DISTINCTCOUNT ( 'silver_gtfs_trips'[snapshot_key] )
+			VAR SnapshotsEvaluados =
+			    CALCULATE ( DISTINCTCOUNT ( 'gold_gtfs_trip_coverage'[snapshot_key] ), REMOVEFILTERS ( 'gold_gtfs_trip_coverage'[coverage_status] ) )
+			VAR VersionesEvaluadas =
+			    CALCULATETABLE ( VALUES ( 'gold_gtfs_trip_coverage'[source_feed_version] ), REMOVEFILTERS ( 'gold_gtfs_trip_coverage'[coverage_status] ) )
+			RETURN
+			    IF (
+			        ISBLANK ( SnapshotsEvaluados ),
+			        "Sin cobertura Gold para el contexto seleccionado",
+			        IF ( SnapshotsEvaluados < SnapshotsCatalogo, "Cobertura parcial · ", "Cobertura Gold · " )
+			            & CONCATENATEX ( VersionesEvaluadas, 'gold_gtfs_trip_coverage'[source_feed_version], ", " )
+			    )
+		displayFolder: Contexto
+		lineageTag: 326c1409-d1bf-4bd1-bcc8-bf9d8b80d748
+
+	/// Título de General y snapshot del contexto. No muestra frescura de operación real.
+	measure 'General · Encabezado HTML' =
+			VAR VersionTexto = SELECTEDVALUE ( dim_gtfs_snapshot[source_feed_version], "Varios snapshots" )
+			RETURN "<header class='heading'><div><h1>Bogotá en movimiento</h1><p>Oferta publicada · General por componente</p></div><span class='snapshot-stamp'>GTFS estático / " & VersionTexto & "</span></header>"
+		displayFolder: Presentación HTML/General
+		lineageTag: ac022e1b-a1d4-4e61-aada-b2f2b84a168a
+
+	/// Marca propia del portafolio y accesos nativos. No utiliza el logotipo oficial.
+	measure 'General · Navegación HTML' = "<aside class='side-inner'><div class='brand'><span class='brand-mark'>B</span><div><strong>Bogotá<br>en movimiento</strong><small>GTFS / Lakehouse</small></div></div><p class='nav-section'>Explorar el reporte</p><div class='future-nav' style='top:201px'>Programación<small>En preparación</small></div><div class='future-nav' style='top:257px'>Red publicada<small>En preparación</small></div><div class='future-nav' style='top:313px'>Calidad<small>En preparación</small></div><p class='nav-lab'>Laboratorio</p><div class='side-foot'><strong>Oferta planificada</strong><p>Proyecto de portafolio<br>Fuente pública GTFS</p><small>La operación real requiere otras fuentes.</small><span class='brand-rule'></span></div></aside>"
+		displayFolder: Presentación HTML/General
+		lineageTag: c574c1f6-53c9-45c5-8c4d-7648b50686bd
+
+	/// Indicadores numéricos de catálogo y frecuencia. No confunde la plantilla con salidas reales.
+	measure 'General · Indicadores HTML' =
+			VAR Rutas = FORMAT ( [Rutas publicadas], "#,0", "es-CO" )
+			VAR Viajes = FORMAT ( [Viajes declarados], "#,0", "es-CO" )
+			VAR Plantillas = FORMAT ( [Plantillas con frecuencia], "#,0", "es-CO" )
+			RETURN "<section class='kpi-stack'><div><span>Rutas publicadas</span><strong>" & Rutas & "</strong><small>Catálogo del snapshot</small></div><div><span>Viajes declarados</span><strong class='lead-number'>" & Viajes & "</strong><small>No equivalen a viajes operados</small></div><div><span>Plantillas por frecuencia</span><strong>" & Plantillas & "</strong><small>No son salidas individuales</small></div></section>"
+		displayFolder: Presentación HTML/General
+		lineageTag: 58055f43-50f9-4a9f-8fc7-b0ed31dca190
+
+	/// Una barra por agencia con escala común. Power BI utiliza agency_key, nombre y snapshot como contexto para sus interacciones.
+	measure 'General · Agencia fila HTML' =
+			VAR NombreAgencia = SELECTEDVALUE ( silver_gtfs_agency[agency_name], "Agencia" )
+			VAR FilasAgencia = [Viajes declarados]
+			VAR MaximoVisible = MAXX ( ALLSELECTED ( silver_gtfs_agency[agency_key], silver_gtfs_agency[agency_name], silver_gtfs_agency[source_feed_version] ), CALCULATE ( [Viajes declarados] ) )
+			VAR PorcentajeAncho = FORMAT ( DIVIDE ( FilasAgencia, MaximoVisible, 0 ) * 100, "0.00", "en-US" )
+			VAR NombreSeguro = SUBSTITUTE ( SUBSTITUTE ( SUBSTITUTE ( NombreAgencia, "&", "&amp;" ), "<", "&lt;" ), ">", "&gt;" )
+			VAR EtiquetaVersion = IF ( HASONEVALUE ( dim_gtfs_snapshot[snapshot_key] ), "", "<small>" & SELECTEDVALUE ( silver_gtfs_agency[source_feed_version], "" ) & "</small>" )
+			RETURN "<div class='agency-row'><div class='agency-name'>" & NombreSeguro & EtiquetaVersion & "</div><div class='agency-track'><div class='agency-bar' style='width:" & PorcentajeAncho & "%'></div></div><span class='num'>" & FORMAT ( FilasAgencia, "#,0", "es-CO" ) & "</span></div>"
+		displayFolder: Presentación HTML/General
+		lineageTag: a8ac8629-852b-488f-86fd-ab859ef33982
+
+	/// Anillo SVG de tres categorías calculadas con Gold. Arcos proporcionales sin mínimos artificiales; ausencia Gold conserva el guion.
+	measure 'General · Cobertura HTML' =
+			VAR Total = [Viajes evaluados]
+			VAR Varias = [Viajes con varias visitas]
+			VAR Una = [Viajes con una visita]
+			VAR Sin = [Viajes sin visitas]
+			VAR PVarias = DIVIDE ( Varias, Total, 0 ) * 100
+			VAR PUna = DIVIDE ( Una, Total, 0 ) * 100
+			VAR PSin = DIVIDE ( Sin, Total, 0 ) * 100
+			VAR Arcos = "<circle cx='66' cy='66' r='54' pathLength='100' fill='none' stroke='#FFC928' stroke-width='10' stroke-dasharray='" & FORMAT ( PVarias, "0.0000", "en-US" ) & " 100' transform='rotate(-90 66 66)'/><circle cx='66' cy='66' r='54' pathLength='100' fill='none' stroke='#848D90' stroke-width='10' stroke-dasharray='" & FORMAT ( PUna, "0.0000", "en-US" ) & " 100' stroke-dashoffset='-" & FORMAT ( PVarias, "0.0000", "en-US" ) & "' transform='rotate(-90 66 66)'/><circle cx='66' cy='66' r='54' pathLength='100' fill='none' stroke='#DD212C' stroke-width='10' stroke-dasharray='" & FORMAT ( PSin, "0.0000", "en-US" ) & " 100' stroke-dashoffset='-" & FORMAT ( PVarias + PUna, "0.0000", "en-US" ) & "' transform='rotate(-90 66 66)'/>"
+			VAR Contenido = IF ( ISBLANK ( Total ), "<div class='coverage-empty'><strong>—</strong><p>Sin evaluación Gold para este contexto.</p></div>", "<div class='coverage-body'><div class='ring'><svg viewBox='0 0 132 132' role='img' aria-label='Composición de cobertura de visitas'><circle cx='66' cy='66' r='54' fill='none' stroke='#EEEFEA' stroke-width='10'/>" & Arcos & "</svg><div><strong>" & FORMAT ( DIVIDE ( Varias, Total ), "0.00%", "es-CO" ) & "</strong><span>varias visitas</span></div></div><dl><div><dt><i class='swatch several'></i>Varias</dt><dd>" & FORMAT ( Varias, "#,0", "es-CO" ) & "</dd></div><div><dt><i class='swatch one'></i>Una</dt><dd>" & FORMAT ( Una, "#,0", "es-CO" ) & "</dd></div><div><dt><i class='swatch missing'></i>Sin visitas</dt><dd>" & FORMAT ( Sin, "#,0", "es-CO" ) & "</dd></div></dl></div>" )
+			RETURN "<section class='panel coverage-panel'><h2>Cobertura de visitas</h2>" & Contenido & IF ( NOT ISBLANK ( Total ), "<p class='base-count'>Base: " & FORMAT ( Total, "#,0", "es-CO" ) & " viajes evaluados</p>", "" ) & "<p class='note'>Varias visitas no certifican un recorrido completo.</p></section>"
+		displayFolder: Presentación HTML/General
+		lineageTag: 6c957608-28e5-44a0-bed9-eba26cc31e79
+
+	/// Tres rutas con más casos sin visitas y barra proporcional por ruta. Conserva contexto y denominador de cada ruta.
+	measure 'General · Rutas revisión HTML' =
+			VAR RutasContexto = ADDCOLUMNS ( SUMMARIZE ( silver_gtfs_routes, silver_gtfs_routes[route_key], silver_gtfs_routes[route_id], silver_gtfs_routes[route_short_name] ), "_casos", CALCULATE ( [Viajes sin visitas] ), "_evaluados", CALCULATE ( [Viajes evaluados] ) )
+			VAR RutasConCasos = FILTER ( RutasContexto, [_casos] > 0 )
+			VAR PrimerasRutas = TOPN ( 3, RutasConCasos, [_casos], DESC, silver_gtfs_routes[route_key], ASC )
+			VAR FilasHTML = CONCATENATEX ( PrimerasRutas,
+			    VAR NombreRuta = COALESCE ( silver_gtfs_routes[route_short_name], silver_gtfs_routes[route_id] )
+			    RETURN "<tr><td>" & SUBSTITUTE ( SUBSTITUTE ( SUBSTITUTE ( NombreRuta, "&", "&amp;" ), "<", "&lt;" ), ">", "&gt;" ) & "</td><td class='num'>" & FORMAT ( [_casos], "#,0", "es-CO" ) & "</td><td class='num'>" & FORMAT ( [_evaluados], "#,0", "es-CO" ) & "</td><td class='num'><span class='rate-cell'><span class='rate-track'><i style='width:" & FORMAT ( DIVIDE ( [_casos], [_evaluados] ) * 100, "0.00", "en-US" ) & "%'></i></span>" & FORMAT ( DIVIDE ( [_casos], [_evaluados] ), "0.0%", "es-CO" ) & "</span></td></tr>", "", [_casos], DESC )
+			VAR Detalle = IF ( ISBLANK ( [Viajes evaluados] ), "<div class='empty-state'>Este contexto no tiene evaluación Gold.</div>", IF ( COUNTROWS ( RutasConCasos ) = 0, "<div class='empty-state'>No hay viajes sin visitas en el contexto seleccionado.</div>", "<table><thead><tr><th>Ruta</th><th class='num'>Sin visitas</th><th class='num'>Evaluados</th><th class='num'>Proporción</th></tr></thead><tbody>" & FilasHTML & "</tbody></table>" ) )
+			RETURN "<section class='panel review-panel'><div class='panel-head'><h2>Dónde revisar el dato</h2><span>" & IF ( ISBLANK ( [Viajes evaluados] ), "Sin evaluación", FORMAT ( COALESCE ( COUNTROWS ( RutasConCasos ), 0 ), "0", "es-CO" ) & " rutas con casos" ) & "</span></div><p class='panel-subtitle'>Tres rutas con más viajes sin visitas. No indica cancelaciones.</p>" & Detalle & "</section>"
+		displayFolder: Presentación HTML/General
+		lineageTag: c20addd5-1b02-4109-8c6a-46baffe1b149
+
+	/// Procedencia y alcance visibles; ausencia Gold explícita y sin convertir BLANK en cero.
+	measure 'General · Contexto HTML' =
+			VAR VersionTexto = SELECTEDVALUE ( dim_gtfs_snapshot[source_feed_version], "Varios snapshots" )
+			VAR HashTexto = SELECTEDVALUE ( dim_gtfs_snapshot[source_sha256], "" )
+			RETURN "<footer class='context-strip'><div><strong>" & [Estado cobertura Gold] & "</strong><span>Snapshot " & VersionTexto & " / SHA-256 " & IF ( HashTexto = "", "Varios", LEFT ( HashTexto, 12 ) & "…" ) & "</span></div><p>Oferta publicada, no operación observada.<br>Los casos sin visitas describen el dato del feed.</p></footer>"
+		displayFolder: Presentación HTML/General
+		lineageTag: 6b1aadc7-4847-4c28-a5d0-aff553dfdb9f
+
+	/// Ficha ilustrada por componente. Context debe incluir report_component para que Power BI pueda reconciliar su selección.
+	measure 'General · Componente ficha HTML' =
+			VAR Componente = IF ( HASONEVALUE ( silver_gtfs_agency[report_component] ), SELECTEDVALUE ( silver_gtfs_agency[report_component] ), IF ( ISFILTERED ( silver_gtfs_agency[report_component] ), "Varios componentes", "Todo el sistema" ) )
+			VAR Arte = SWITCH ( Componente, "Troncal", "<svg viewBox='0 0 640 235' role='img' aria-label='Ilustración de bus; no representa flota observada'><path d='M26 205h581' stroke='#D6D7D3' stroke-width='2'/><path d='M62 73 97 48h430l55 29-18 108H73z' fill='#DD212C'/><path d='M97 48h430l55 29H116z' fill='#F19A9E'/><path d='M62 73h54v110H73z' fill='#A51224'/><path d='M116 77h449l-9 51H116z' fill='#202C30'/><path d='M168 70v55' stroke='#9DAEB0' stroke-width='3'/><path d='M205 70v55' stroke='#9DAEB0' stroke-width='3'/><path d='M242 70v55' stroke='#9DAEB0' stroke-width='3'/><path d='M279 70v55' stroke='#9DAEB0' stroke-width='3'/><path d='M356 70v55' stroke='#9DAEB0' stroke-width='3'/><path d='M393 70v55' stroke='#9DAEB0' stroke-width='3'/><path d='M430 70v55' stroke='#9DAEB0' stroke-width='3'/><path d='M467 70v55' stroke='#9DAEB0' stroke-width='3'/><path d='M504 70v55' stroke='#9DAEB0' stroke-width='3'/><path d='M118 135h438v12H118z' fill='#FFC928'/><path d='M75 156h39v14H75z' fill='#FFC928'/><path d='M70 84h39v54H67z' fill='#202C30'/><path d='m74 87-5 45h10l20-45z' fill='#678084'/><path d='m128 80-5 43h22l29-43zM399 80l-29 43h24l28-43z' fill='#50666B'/><path d='M307 65h27v117h-27z' fill='#63676A'/><path d='M312 66v114' stroke='#C2C5C4' stroke-width='2'/><path d='M319 66v114' stroke='#C2C5C4' stroke-width='2'/><path d='M326 66v114' stroke='#C2C5C4' stroke-width='2'/><path d='M481 80h39v98h-39z' fill='#263236' stroke='#A6B4B5' stroke-width='2'/><path d='M500 82v94' stroke='#A6B4B5' stroke-width='2'/><path d='M74 146h12v8H74zM552 153h8v14h-8z' fill='#FFF4CD'/><path d='M116 183h438' stroke='#861527' stroke-width='5'/><ellipse cx='153' cy='183' rx='17' ry='22' fill='#24282A'/><ellipse cx='153' cy='183' rx='9' ry='13' fill='#AAB1B1'/><ellipse cx='153' cy='183' rx='4' ry='6' fill='#555F62'/><ellipse cx='376' cy='183' rx='17' ry='22' fill='#24282A'/><ellipse cx='376' cy='183' rx='9' ry='13' fill='#AAB1B1'/><ellipse cx='376' cy='183' rx='4' ry='6' fill='#555F62'/><ellipse cx='530' cy='183' rx='17' ry='22' fill='#24282A'/><ellipse cx='530' cy='183' rx='9' ry='13' fill='#AAB1B1'/><ellipse cx='530' cy='183' rx='4' ry='6' fill='#555F62'/><path d='M208 160h55' stroke='#FFF' stroke-width='3'/></svg>", "Zonal (SITP)", "<svg viewBox='0 0 640 235' role='img' aria-label='Ilustración de bus; no representa flota observada'><path d='M26 205h581' stroke='#D6D7D3' stroke-width='2'/><path d='M62 73 97 48h430l55 29-18 108H73z' fill='#004499'/><path d='M97 48h430l55 29H116z' fill='#7396C3'/><path d='M62 73h54v110H73z' fill='#A51224'/><path d='M116 77h449l-9 51H116z' fill='#202C30'/><path d='M168 70v55' stroke='#9DAEB0' stroke-width='3'/><path d='M205 70v55' stroke='#9DAEB0' stroke-width='3'/><path d='M242 70v55' stroke='#9DAEB0' stroke-width='3'/><path d='M279 70v55' stroke='#9DAEB0' stroke-width='3'/><path d='M356 70v55' stroke='#9DAEB0' stroke-width='3'/><path d='M393 70v55' stroke='#9DAEB0' stroke-width='3'/><path d='M430 70v55' stroke='#9DAEB0' stroke-width='3'/><path d='M467 70v55' stroke='#9DAEB0' stroke-width='3'/><path d='M504 70v55' stroke='#9DAEB0' stroke-width='3'/><path d='M118 135h438v12H118z' fill='#FFC928'/><path d='M75 156h39v14H75z' fill='#FFC928'/><path d='M70 84h39v54H67z' fill='#202C30'/><path d='m74 87-5 45h10l20-45z' fill='#678084'/><path d='m128 80-5 43h22l29-43zM399 80l-29 43h24l28-43z' fill='#50666B'/><path d='M481 80h39v98h-39z' fill='#263236' stroke='#A6B4B5' stroke-width='2'/><path d='M500 82v94' stroke='#A6B4B5' stroke-width='2'/><path d='M74 146h12v8H74zM552 153h8v14h-8z' fill='#FFF4CD'/><path d='M116 183h438' stroke='#861527' stroke-width='5'/><ellipse cx='153' cy='183' rx='17' ry='22' fill='#24282A'/><ellipse cx='153' cy='183' rx='9' ry='13' fill='#AAB1B1'/><ellipse cx='153' cy='183' rx='4' ry='6' fill='#555F62'/><ellipse cx='376' cy='183' rx='17' ry='22' fill='#24282A'/><ellipse cx='376' cy='183' rx='9' ry='13' fill='#AAB1B1'/><ellipse cx='376' cy='183' rx='4' ry='6' fill='#555F62'/><ellipse cx='530' cy='183' rx='17' ry='22' fill='#24282A'/><ellipse cx='530' cy='183' rx='9' ry='13' fill='#AAB1B1'/><ellipse cx='530' cy='183' rx='4' ry='6' fill='#555F62'/><path d='M208 160h55' stroke='#FFF' stroke-width='3'/></svg>", "Alimentación", "<svg viewBox='0 0 640 235' role='img' aria-label='Ilustración de bus; no representa flota observada'><path d='M26 205h581' stroke='#D6D7D3' stroke-width='2'/><path d='M62 73 97 48h430l55 29-18 108H73z' fill='#258146'/><path d='M97 48h430l55 29H116z' fill='#8BBC97'/><path d='M62 73h54v110H73z' fill='#A51224'/><path d='M116 77h449l-9 51H116z' fill='#202C30'/><path d='M168 70v55' stroke='#9DAEB0' stroke-width='3'/><path d='M205 70v55' stroke='#9DAEB0' stroke-width='3'/><path d='M242 70v55' stroke='#9DAEB0' stroke-width='3'/><path d='M279 70v55' stroke='#9DAEB0' stroke-width='3'/><path d='M356 70v55' stroke='#9DAEB0' stroke-width='3'/><path d='M393 70v55' stroke='#9DAEB0' stroke-width='3'/><path d='M430 70v55' stroke='#9DAEB0' stroke-width='3'/><path d='M467 70v55' stroke='#9DAEB0' stroke-width='3'/><path d='M504 70v55' stroke='#9DAEB0' stroke-width='3'/><path d='M118 135h438v12H118z' fill='#FFC928'/><path d='M75 156h39v14H75z' fill='#FFC928'/><path d='M70 84h39v54H67z' fill='#202C30'/><path d='m74 87-5 45h10l20-45z' fill='#678084'/><path d='m128 80-5 43h22l29-43zM399 80l-29 43h24l28-43z' fill='#50666B'/><path d='M481 80h39v98h-39z' fill='#263236' stroke='#A6B4B5' stroke-width='2'/><path d='M500 82v94' stroke='#A6B4B5' stroke-width='2'/><path d='M74 146h12v8H74zM552 153h8v14h-8z' fill='#FFF4CD'/><path d='M116 183h438' stroke='#861527' stroke-width='5'/><ellipse cx='153' cy='183' rx='17' ry='22' fill='#24282A'/><ellipse cx='153' cy='183' rx='9' ry='13' fill='#AAB1B1'/><ellipse cx='153' cy='183' rx='4' ry='6' fill='#555F62'/><ellipse cx='376' cy='183' rx='17' ry='22' fill='#24282A'/><ellipse cx='376' cy='183' rx='9' ry='13' fill='#AAB1B1'/><ellipse cx='376' cy='183' rx='4' ry='6' fill='#555F62'/><ellipse cx='530' cy='183' rx='17' ry='22' fill='#24282A'/><ellipse cx='530' cy='183' rx='9' ry='13' fill='#AAB1B1'/><ellipse cx='530' cy='183' rx='4' ry='6' fill='#555F62'/><path d='M208 160h55' stroke='#FFF' stroke-width='3'/></svg>", "Dual", "<svg viewBox='0 0 640 235' role='img' aria-label='Ilustración de bus; no representa flota observada'><path d='M26 205h581' stroke='#D6D7D3' stroke-width='2'/><path d='M62 73 97 48h430l55 29-18 108H73z' fill='#DD212C'/><path d='M97 48h430l55 29H116z' fill='#F19A9E'/><path d='M62 73h54v110H73z' fill='#A51224'/><path d='M116 77h449l-9 51H116z' fill='#202C30'/><path d='M168 70v55' stroke='#9DAEB0' stroke-width='3'/><path d='M205 70v55' stroke='#9DAEB0' stroke-width='3'/><path d='M242 70v55' stroke='#9DAEB0' stroke-width='3'/><path d='M279 70v55' stroke='#9DAEB0' stroke-width='3'/><path d='M356 70v55' stroke='#9DAEB0' stroke-width='3'/><path d='M393 70v55' stroke='#9DAEB0' stroke-width='3'/><path d='M430 70v55' stroke='#9DAEB0' stroke-width='3'/><path d='M467 70v55' stroke='#9DAEB0' stroke-width='3'/><path d='M504 70v55' stroke='#9DAEB0' stroke-width='3'/><path d='M118 135h438v12H118z' fill='#FFC928'/><path d='M75 156h39v14H75z' fill='#FFC928'/><path d='M70 84h39v54H67z' fill='#202C30'/><path d='m74 87-5 45h10l20-45z' fill='#678084'/><path d='m128 80-5 43h22l29-43zM399 80l-29 43h24l28-43z' fill='#50666B'/><path d='M481 80h39v98h-39z' fill='#263236' stroke='#A6B4B5' stroke-width='2'/><path d='M500 82v94' stroke='#A6B4B5' stroke-width='2'/><path d='M74 146h12v8H74zM552 153h8v14h-8z' fill='#FFF4CD'/><path d='M116 183h438' stroke='#861527' stroke-width='5'/><ellipse cx='153' cy='183' rx='17' ry='22' fill='#24282A'/><ellipse cx='153' cy='183' rx='9' ry='13' fill='#AAB1B1'/><ellipse cx='153' cy='183' rx='4' ry='6' fill='#555F62'/><ellipse cx='376' cy='183' rx='17' ry='22' fill='#24282A'/><ellipse cx='376' cy='183' rx='9' ry='13' fill='#AAB1B1'/><ellipse cx='376' cy='183' rx='4' ry='6' fill='#555F62'/><ellipse cx='530' cy='183' rx='17' ry='22' fill='#24282A'/><ellipse cx='530' cy='183' rx='9' ry='13' fill='#AAB1B1'/><ellipse cx='530' cy='183' rx='4' ry='6' fill='#555F62'/><path d='M208 160h55' stroke='#FFF' stroke-width='3'/></svg>", "TransMiCable", "<svg viewBox='0 0 640 235' role='img' aria-label='Ilustración de TransMiCable; no representa cabinas observadas'><path d='M30 55 614 17M30 61 614 23' stroke='#7A8588' stroke-width='2'/><path d='M314 39v38h28' fill='none' stroke='#49575B' stroke-width='7'/><path d='M259 80h139l26 44-17 77H248l-17-77z' fill='#DD212C'/><path d='M266 89h123l24 38-8 40H250l-8-40z' fill='#26383E'/><path d='M288 91v74m62-74v74' stroke='#AEC3C7' stroke-width='3'/><path d='m271 93-18 33h20l23-33z' fill='#698A92'/><path d='M251 174h153v10H251z' fill='#FFC928'/><path d='M92 186 152 103l71 94m218 0 63-89 76 78' fill='none' stroke='#D1D7D4' stroke-width='2'/><path d='M261 202v10m130-10v10' stroke='#4F5D61' stroke-width='4'/></svg>", "<svg viewBox='0 0 640 235' role='img' aria-label='Ilustración de integración de transportes; sin escala geográfica'><path d='M10 188h620M400 80l210-25' stroke='#C1C9C6' stroke-width='2'/><path d='M35 170h285l83-60h170' fill='none' stroke='#FFC928' stroke-width='7'/><path d='M102 213v-50l100-58h125' fill='none' stroke='#DD212C' stroke-width='7'/><path d='M349 213v-45l80-29h175' fill='none' stroke='#004499' stroke-width='5'/><circle cx='103' cy='170' r='6' fill='#FFF' stroke='#34444A' stroke-width='2'/><circle cx='206' cy='170' r='6' fill='#FFF' stroke='#34444A' stroke-width='2'/><circle cx='319' cy='170' r='6' fill='#FFF' stroke='#34444A' stroke-width='2'/><circle cx='403' cy='110' r='6' fill='#FFF' stroke='#34444A' stroke-width='2'/><circle cx='483' cy='110' r='6' fill='#FFF' stroke='#34444A' stroke-width='2'/><circle cx='202' cy='105' r='6' fill='#FFF' stroke='#34444A' stroke-width='2'/><circle cx='429' cy='139' r='6' fill='#FFF' stroke='#34444A' stroke-width='2'/><circle cx='569' cy='139' r='6' fill='#FFF' stroke='#34444A' stroke-width='2'/><rect x='46' y='117' width='210' height='43' rx='6' fill='#DD212C'/><rect x='54' y='123' width='193' height='20' rx='2' fill='#26383E'/><path d='M46 149h210v5H46z' fill='#FFC928'/><circle cx='77' cy='162' r='9' fill='#293033'/><circle cx='226' cy='162' r='9' fill='#293033'/><path d='M495 70v13' stroke='#4C595D' stroke-width='4'/><path d='M476 84h46l9 15-5 29h-53l-5-29z' fill='#DD212C'/><path d='M478 90h42l5 10-2 14h-47l-2-14z' fill='#26383E'/><path d='M475 118h48' stroke='#FFC928' stroke-width='4'/></svg>" )
+			RETURN "<div class='component-choice'>" & Arte & "<span>" & Componente & "</span></div>"
+		displayFolder: Presentación HTML/General
+		lineageTag: 0a4e9587-0c5b-4367-8873-efac32bc1068
+
+	/// Ficha e ilustración según el componente seleccionado. Recurso ilustrativo propio, sin evidencia de flota.
+	measure 'General · Transporte HTML' =
+			VAR Componente = IF ( HASONEVALUE ( silver_gtfs_agency[report_component] ), SELECTEDVALUE ( silver_gtfs_agency[report_component] ), IF ( ISFILTERED ( silver_gtfs_agency[report_component] ), "Varios componentes", "Todo el sistema" ) )
+			VAR Arte = SWITCH ( Componente, "Troncal", "<svg viewBox='0 0 640 235' role='img' aria-label='Ilustración de bus; no representa flota observada'><path d='M26 205h581' stroke='#D6D7D3' stroke-width='2'/><path d='M62 73 97 48h430l55 29-18 108H73z' fill='#DD212C'/><path d='M97 48h430l55 29H116z' fill='#F19A9E'/><path d='M62 73h54v110H73z' fill='#A51224'/><path d='M116 77h449l-9 51H116z' fill='#202C30'/><path d='M168 70v55' stroke='#9DAEB0' stroke-width='3'/><path d='M205 70v55' stroke='#9DAEB0' stroke-width='3'/><path d='M242 70v55' stroke='#9DAEB0' stroke-width='3'/><path d='M279 70v55' stroke='#9DAEB0' stroke-width='3'/><path d='M356 70v55' stroke='#9DAEB0' stroke-width='3'/><path d='M393 70v55' stroke='#9DAEB0' stroke-width='3'/><path d='M430 70v55' stroke='#9DAEB0' stroke-width='3'/><path d='M467 70v55' stroke='#9DAEB0' stroke-width='3'/><path d='M504 70v55' stroke='#9DAEB0' stroke-width='3'/><path d='M118 135h438v12H118z' fill='#FFC928'/><path d='M75 156h39v14H75z' fill='#FFC928'/><path d='M70 84h39v54H67z' fill='#202C30'/><path d='m74 87-5 45h10l20-45z' fill='#678084'/><path d='m128 80-5 43h22l29-43zM399 80l-29 43h24l28-43z' fill='#50666B'/><path d='M307 65h27v117h-27z' fill='#63676A'/><path d='M312 66v114' stroke='#C2C5C4' stroke-width='2'/><path d='M319 66v114' stroke='#C2C5C4' stroke-width='2'/><path d='M326 66v114' stroke='#C2C5C4' stroke-width='2'/><path d='M481 80h39v98h-39z' fill='#263236' stroke='#A6B4B5' stroke-width='2'/><path d='M500 82v94' stroke='#A6B4B5' stroke-width='2'/><path d='M74 146h12v8H74zM552 153h8v14h-8z' fill='#FFF4CD'/><path d='M116 183h438' stroke='#861527' stroke-width='5'/><ellipse cx='153' cy='183' rx='17' ry='22' fill='#24282A'/><ellipse cx='153' cy='183' rx='9' ry='13' fill='#AAB1B1'/><ellipse cx='153' cy='183' rx='4' ry='6' fill='#555F62'/><ellipse cx='376' cy='183' rx='17' ry='22' fill='#24282A'/><ellipse cx='376' cy='183' rx='9' ry='13' fill='#AAB1B1'/><ellipse cx='376' cy='183' rx='4' ry='6' fill='#555F62'/><ellipse cx='530' cy='183' rx='17' ry='22' fill='#24282A'/><ellipse cx='530' cy='183' rx='9' ry='13' fill='#AAB1B1'/><ellipse cx='530' cy='183' rx='4' ry='6' fill='#555F62'/><path d='M208 160h55' stroke='#FFF' stroke-width='3'/></svg>", "Zonal (SITP)", "<svg viewBox='0 0 640 235' role='img' aria-label='Ilustración de bus; no representa flota observada'><path d='M26 205h581' stroke='#D6D7D3' stroke-width='2'/><path d='M62 73 97 48h430l55 29-18 108H73z' fill='#004499'/><path d='M97 48h430l55 29H116z' fill='#7396C3'/><path d='M62 73h54v110H73z' fill='#A51224'/><path d='M116 77h449l-9 51H116z' fill='#202C30'/><path d='M168 70v55' stroke='#9DAEB0' stroke-width='3'/><path d='M205 70v55' stroke='#9DAEB0' stroke-width='3'/><path d='M242 70v55' stroke='#9DAEB0' stroke-width='3'/><path d='M279 70v55' stroke='#9DAEB0' stroke-width='3'/><path d='M356 70v55' stroke='#9DAEB0' stroke-width='3'/><path d='M393 70v55' stroke='#9DAEB0' stroke-width='3'/><path d='M430 70v55' stroke='#9DAEB0' stroke-width='3'/><path d='M467 70v55' stroke='#9DAEB0' stroke-width='3'/><path d='M504 70v55' stroke='#9DAEB0' stroke-width='3'/><path d='M118 135h438v12H118z' fill='#FFC928'/><path d='M75 156h39v14H75z' fill='#FFC928'/><path d='M70 84h39v54H67z' fill='#202C30'/><path d='m74 87-5 45h10l20-45z' fill='#678084'/><path d='m128 80-5 43h22l29-43zM399 80l-29 43h24l28-43z' fill='#50666B'/><path d='M481 80h39v98h-39z' fill='#263236' stroke='#A6B4B5' stroke-width='2'/><path d='M500 82v94' stroke='#A6B4B5' stroke-width='2'/><path d='M74 146h12v8H74zM552 153h8v14h-8z' fill='#FFF4CD'/><path d='M116 183h438' stroke='#861527' stroke-width='5'/><ellipse cx='153' cy='183' rx='17' ry='22' fill='#24282A'/><ellipse cx='153' cy='183' rx='9' ry='13' fill='#AAB1B1'/><ellipse cx='153' cy='183' rx='4' ry='6' fill='#555F62'/><ellipse cx='376' cy='183' rx='17' ry='22' fill='#24282A'/><ellipse cx='376' cy='183' rx='9' ry='13' fill='#AAB1B1'/><ellipse cx='376' cy='183' rx='4' ry='6' fill='#555F62'/><ellipse cx='530' cy='183' rx='17' ry='22' fill='#24282A'/><ellipse cx='530' cy='183' rx='9' ry='13' fill='#AAB1B1'/><ellipse cx='530' cy='183' rx='4' ry='6' fill='#555F62'/><path d='M208 160h55' stroke='#FFF' stroke-width='3'/></svg>", "Alimentación", "<svg viewBox='0 0 640 235' role='img' aria-label='Ilustración de bus; no representa flota observada'><path d='M26 205h581' stroke='#D6D7D3' stroke-width='2'/><path d='M62 73 97 48h430l55 29-18 108H73z' fill='#258146'/><path d='M97 48h430l55 29H116z' fill='#8BBC97'/><path d='M62 73h54v110H73z' fill='#A51224'/><path d='M116 77h449l-9 51H116z' fill='#202C30'/><path d='M168 70v55' stroke='#9DAEB0' stroke-width='3'/><path d='M205 70v55' stroke='#9DAEB0' stroke-width='3'/><path d='M242 70v55' stroke='#9DAEB0' stroke-width='3'/><path d='M279 70v55' stroke='#9DAEB0' stroke-width='3'/><path d='M356 70v55' stroke='#9DAEB0' stroke-width='3'/><path d='M393 70v55' stroke='#9DAEB0' stroke-width='3'/><path d='M430 70v55' stroke='#9DAEB0' stroke-width='3'/><path d='M467 70v55' stroke='#9DAEB0' stroke-width='3'/><path d='M504 70v55' stroke='#9DAEB0' stroke-width='3'/><path d='M118 135h438v12H118z' fill='#FFC928'/><path d='M75 156h39v14H75z' fill='#FFC928'/><path d='M70 84h39v54H67z' fill='#202C30'/><path d='m74 87-5 45h10l20-45z' fill='#678084'/><path d='m128 80-5 43h22l29-43zM399 80l-29 43h24l28-43z' fill='#50666B'/><path d='M481 80h39v98h-39z' fill='#263236' stroke='#A6B4B5' stroke-width='2'/><path d='M500 82v94' stroke='#A6B4B5' stroke-width='2'/><path d='M74 146h12v8H74zM552 153h8v14h-8z' fill='#FFF4CD'/><path d='M116 183h438' stroke='#861527' stroke-width='5'/><ellipse cx='153' cy='183' rx='17' ry='22' fill='#24282A'/><ellipse cx='153' cy='183' rx='9' ry='13' fill='#AAB1B1'/><ellipse cx='153' cy='183' rx='4' ry='6' fill='#555F62'/><ellipse cx='376' cy='183' rx='17' ry='22' fill='#24282A'/><ellipse cx='376' cy='183' rx='9' ry='13' fill='#AAB1B1'/><ellipse cx='376' cy='183' rx='4' ry='6' fill='#555F62'/><ellipse cx='530' cy='183' rx='17' ry='22' fill='#24282A'/><ellipse cx='530' cy='183' rx='9' ry='13' fill='#AAB1B1'/><ellipse cx='530' cy='183' rx='4' ry='6' fill='#555F62'/><path d='M208 160h55' stroke='#FFF' stroke-width='3'/></svg>", "Dual", "<svg viewBox='0 0 640 235' role='img' aria-label='Ilustración de bus; no representa flota observada'><path d='M26 205h581' stroke='#D6D7D3' stroke-width='2'/><path d='M62 73 97 48h430l55 29-18 108H73z' fill='#DD212C'/><path d='M97 48h430l55 29H116z' fill='#F19A9E'/><path d='M62 73h54v110H73z' fill='#A51224'/><path d='M116 77h449l-9 51H116z' fill='#202C30'/><path d='M168 70v55' stroke='#9DAEB0' stroke-width='3'/><path d='M205 70v55' stroke='#9DAEB0' stroke-width='3'/><path d='M242 70v55' stroke='#9DAEB0' stroke-width='3'/><path d='M279 70v55' stroke='#9DAEB0' stroke-width='3'/><path d='M356 70v55' stroke='#9DAEB0' stroke-width='3'/><path d='M393 70v55' stroke='#9DAEB0' stroke-width='3'/><path d='M430 70v55' stroke='#9DAEB0' stroke-width='3'/><path d='M467 70v55' stroke='#9DAEB0' stroke-width='3'/><path d='M504 70v55' stroke='#9DAEB0' stroke-width='3'/><path d='M118 135h438v12H118z' fill='#FFC928'/><path d='M75 156h39v14H75z' fill='#FFC928'/><path d='M70 84h39v54H67z' fill='#202C30'/><path d='m74 87-5 45h10l20-45z' fill='#678084'/><path d='m128 80-5 43h22l29-43zM399 80l-29 43h24l28-43z' fill='#50666B'/><path d='M481 80h39v98h-39z' fill='#263236' stroke='#A6B4B5' stroke-width='2'/><path d='M500 82v94' stroke='#A6B4B5' stroke-width='2'/><path d='M74 146h12v8H74zM552 153h8v14h-8z' fill='#FFF4CD'/><path d='M116 183h438' stroke='#861527' stroke-width='5'/><ellipse cx='153' cy='183' rx='17' ry='22' fill='#24282A'/><ellipse cx='153' cy='183' rx='9' ry='13' fill='#AAB1B1'/><ellipse cx='153' cy='183' rx='4' ry='6' fill='#555F62'/><ellipse cx='376' cy='183' rx='17' ry='22' fill='#24282A'/><ellipse cx='376' cy='183' rx='9' ry='13' fill='#AAB1B1'/><ellipse cx='376' cy='183' rx='4' ry='6' fill='#555F62'/><ellipse cx='530' cy='183' rx='17' ry='22' fill='#24282A'/><ellipse cx='530' cy='183' rx='9' ry='13' fill='#AAB1B1'/><ellipse cx='530' cy='183' rx='4' ry='6' fill='#555F62'/><path d='M208 160h55' stroke='#FFF' stroke-width='3'/></svg>", "TransMiCable", "<svg viewBox='0 0 640 235' role='img' aria-label='Ilustración de TransMiCable; no representa cabinas observadas'><path d='M30 55 614 17M30 61 614 23' stroke='#7A8588' stroke-width='2'/><path d='M314 39v38h28' fill='none' stroke='#49575B' stroke-width='7'/><path d='M259 80h139l26 44-17 77H248l-17-77z' fill='#DD212C'/><path d='M266 89h123l24 38-8 40H250l-8-40z' fill='#26383E'/><path d='M288 91v74m62-74v74' stroke='#AEC3C7' stroke-width='3'/><path d='m271 93-18 33h20l23-33z' fill='#698A92'/><path d='M251 174h153v10H251z' fill='#FFC928'/><path d='M92 186 152 103l71 94m218 0 63-89 76 78' fill='none' stroke='#D1D7D4' stroke-width='2'/><path d='M261 202v10m130-10v10' stroke='#4F5D61' stroke-width='4'/></svg>", "<svg viewBox='0 0 640 235' role='img' aria-label='Ilustración de integración de transportes; sin escala geográfica'><path d='M10 188h620M400 80l210-25' stroke='#C1C9C6' stroke-width='2'/><path d='M35 170h285l83-60h170' fill='none' stroke='#FFC928' stroke-width='7'/><path d='M102 213v-50l100-58h125' fill='none' stroke='#DD212C' stroke-width='7'/><path d='M349 213v-45l80-29h175' fill='none' stroke='#004499' stroke-width='5'/><circle cx='103' cy='170' r='6' fill='#FFF' stroke='#34444A' stroke-width='2'/><circle cx='206' cy='170' r='6' fill='#FFF' stroke='#34444A' stroke-width='2'/><circle cx='319' cy='170' r='6' fill='#FFF' stroke='#34444A' stroke-width='2'/><circle cx='403' cy='110' r='6' fill='#FFF' stroke='#34444A' stroke-width='2'/><circle cx='483' cy='110' r='6' fill='#FFF' stroke='#34444A' stroke-width='2'/><circle cx='202' cy='105' r='6' fill='#FFF' stroke='#34444A' stroke-width='2'/><circle cx='429' cy='139' r='6' fill='#FFF' stroke='#34444A' stroke-width='2'/><circle cx='569' cy='139' r='6' fill='#FFF' stroke='#34444A' stroke-width='2'/><rect x='46' y='117' width='210' height='43' rx='6' fill='#DD212C'/><rect x='54' y='123' width='193' height='20' rx='2' fill='#26383E'/><path d='M46 149h210v5H46z' fill='#FFC928'/><circle cx='77' cy='162' r='9' fill='#293033'/><circle cx='226' cy='162' r='9' fill='#293033'/><path d='M495 70v13' stroke='#4C595D' stroke-width='4'/><path d='M476 84h46l9 15-5 29h-53l-5-29z' fill='#DD212C'/><path d='M478 90h42l5 10-2 14h-47l-2-14z' fill='#26383E'/><path d='M475 118h48' stroke='#FFC928' stroke-width='4'/></svg>" )
+			VAR Descripcion = SWITCH ( Componente, "Troncal", "Oferta declarada por la agencia Troncal. No mide buses en circulación.", "Zonal (SITP)", "Agrupa Urbana, Complementaria y Especial. Conserva el detalle por agencia.", "Alimentación", "Oferta declarada por las agencias de alimentación. Conserva la identidad de cada snapshot.", "Dual", "Mantiene Dual separado para evitar asignarlo automáticamente a Troncal o Zonal.", "TransMiCable", "Sus viajes pueden ser plantillas por frecuencia. No equivalen a salidas observadas.", "Explora la oferta planificada publicada en GTFS. Elige un componente para revisar su contexto." )
+			RETURN "<section class='transport-panel'><div class='transport-title'><span>Componente seleccionado</span><h2>" & Componente & "</h2></div><div class='transport-art'>" & Arte & "</div><p>" & Descripcion & "</p><small>Ilustración propia / Sin escala ni cantidad de vehículos</small></section>"
+		displayFolder: Presentación HTML/General
+		lineageTag: a5d29406-c64d-4b1f-96b8-894073650ed6
+
+	column source_feed_version
+		dataType: string
+		isHidden
+		lineageTag: 99e0888f-0192-4eab-bbdc-b5211db22954
+		summarizeBy: none
+		sourceColumn: source_feed_version
+
+	column source_sha256
+		dataType: string
+		isHidden
+		lineageTag: a12decfa-6a28-448d-8fe5-171ee003b99d
+		summarizeBy: none
+		sourceColumn: source_sha256
+
+	column trip_id
+		dataType: string
+		lineageTag: 71247c5c-af42-4277-82f2-14b6117d28cc
+		summarizeBy: none
+		sourceColumn: trip_id
+
+	column route_id
+		dataType: string
+		isHidden
+		lineageTag: b91cf9c4-2cf8-4dd8-9937-4ec9b6613c5e
+		summarizeBy: none
+		sourceColumn: route_id
+
+	column service_id
+		dataType: string
+		isHidden
+		lineageTag: 91ca0da7-5f4b-49e6-a2d7-ed13159783f3
+		summarizeBy: none
+		sourceColumn: service_id
+
+	column visit_count
+		dataType: int64
+		lineageTag: f03bdb60-3cd4-44e2-9e59-7a447fa61284
+		summarizeBy: none
+		sourceColumn: visit_count
+
+	column complete_time_pair_count
+		dataType: int64
+		lineageTag: 8388ba25-bb4d-4e2e-9ffb-eb08d62be9fe
+		summarizeBy: none
+		sourceColumn: complete_time_pair_count
+
+	column visits_without_complete_time_pair
+		dataType: int64
+		lineageTag: c8719894-d9cd-4512-a44a-5aafb2312380
+		summarizeBy: none
+		sourceColumn: visits_without_complete_time_pair
+
+	column frequency_window_count
+		dataType: int64
+		lineageTag: 0e751e3b-7e90-4784-b394-da973c85ce7e
+		summarizeBy: none
+		sourceColumn: frequency_window_count
+
+	column coverage_status
+		dataType: string
+		lineageTag: ca89cae8-4696-42d0-bfb8-cd3ae50d60c2
+		summarizeBy: none
+		sourceColumn: coverage_status
+
+	column scheduling_context
+		dataType: string
+		lineageTag: 92e5e284-f227-42fb-b56e-65178f166365
+		summarizeBy: none
+		sourceColumn: scheduling_context
+
+	column snapshot_key = FORMAT ( LEN ( [source_feed_version] ), "0" ) & ":" & [source_feed_version] & ":" & [source_sha256]
+		dataType: string
+		isHidden
+		lineageTag: 0dba4f69-7baa-4339-a66a-4bdbe336acfe
+		summarizeBy: none
+
+	column trip_key = FORMAT ( LEN ( [source_feed_version] ), "0" ) & ":" & [source_feed_version] & ":" & [source_sha256] & ":" & [trip_id]
+		dataType: string
+		isHidden
+		lineageTag: 1899be5e-8318-4645-a471-de4ddc66ad58
+		summarizeBy: none
+
+	partition gold_gtfs_trip_coverage = m
+		mode: import
+		source =
+				let
+				    Origen = DatabricksMultiCloud.Catalogs(DatabricksServerHostname, DatabricksHttpPath, null),
+				    Catalogo = Origen{[Name = "workspace", Kind = "Database"]}[Data],
+				    Esquema = Catalogo{[Name = "gtfs_bogota", Kind = "Schema"]}[Data],
+				    Cobertura = Esquema{[Name = "gold_gtfs_trip_coverage", Kind = "Table"]}[Data],
+				    Seleccion = Table.SelectColumns(Cobertura, {"source_feed_version", "source_sha256", "trip_id", "route_id", "service_id", "visit_count", "complete_time_pair_count", "visits_without_complete_time_pair", "frequency_window_count", "coverage_status", "scheduling_context"})
+				in
+				    Seleccion

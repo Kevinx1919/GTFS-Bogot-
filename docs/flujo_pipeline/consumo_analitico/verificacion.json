@@ -1,0 +1,69 @@
+{
+  "schema_version": 1,
+  "checked_at_utc": "2026-11-20T23:50:23.324890+00:00",
+  "tool": "Archify 3.2.0",
+  "delivery_method": "Generé fuera de OneDrive y copié los bytes comprobados. Los recibos completos permanecen fuera del repositorio.",
+  "scope": "Documentación y controles automáticos. Los estados de publicación y navegación son confirmaciones de desarrollo, no resultados de estos diagramas.",
+  "repository_revisions": [
+    "5c23d4e327fb9d90f407dbfc12678623106e4ad6"
+  ],
+  "working_tree_note": "Las definiciones PBIP y esta actualización documental conservan cambios locales sin commit; no los atribuyo a las referencias de código fijadas.",
+  "artifacts": [
+    {
+      "source": "consumo_analitico.dataflow.json",
+      "source_sha256": "596c18faf65b7b71e15f9d8c3f8dd4bb3d02c1ef0d9577f30bb6bf4df2b59b1b",
+      "html": "consumo_analitico.html",
+      "html_sha256": "b52557dee4443f95acddb5e63d7cf39c41f717c6363ebcd627df2fc5fc3e4612",
+      "bytes": 849116,
+      "quality_profile": "showcase",
+      "repository_revision": "5c23d4e327fb9d90f407dbfc12678623106e4ad6",
+      "automated_gates": {
+        "validate": "pass",
+        "deliver": "pass",
+        "check": "pass",
+        "browser-check": "pass"
+      },
+      "browser_viewports": [
+        {
+          "width": 1440,
+          "height": 900,
+          "theme": "light",
+          "minimum_projected_node_text_px": 7,
+          "readability_ok": true,
+          "vertical_scroll_accepted": false
+        },
+        {
+          "width": 1600,
+          "height": 1000,
+          "theme": "light",
+          "minimum_projected_node_text_px": 7,
+          "readability_ok": true,
+          "vertical_scroll_accepted": false
+        },
+        {
+          "width": 1920,
+          "height": 1080,
+          "theme": "light",
+          "minimum_projected_node_text_px": 7,
+          "readability_ok": true,
+          "vertical_scroll_accepted": false
+        },
+        {
+          "width": 2048,
+          "height": 1320,
+          "theme": "light",
+          "minimum_projected_node_text_px": 7,
+          "readability_ok": true,
+          "vertical_scroll_accepted": false
+        }
+      ],
+      "visual_review": {
+        "status": "not-requested",
+        "scope": "Controles automáticos de navegador; no atribuyo capturas ni revisión perceptual a esta entrega."
+      },
+      "final_copy_matches_validated_artifact": true,
+      "checked_at_utc": "2026-11-20T23:50:23.324890+00:00",
+      "advisories": {}
+    }
+  ]
+}

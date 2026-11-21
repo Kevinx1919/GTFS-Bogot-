@@ -1,0 +1,136 @@
+cultureInfo es-MX
+
+	linguisticMetadata =
+			{
+			  "Version": "2.0.0",
+			  "Language": "en-US",
+			  "Entities": {
+			    "gold_gtfs_route_stop.report_stop_label": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "gold_gtfs_route_stop",
+			          "ConceptualProperty": "report_stop_label"
+			        }
+			      },
+			      "State": "Generated",
+			      "Terms": [
+			        {
+			          "Ubicación · ID": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
+			        }
+			      ]
+			    },
+			    "gold_gtfs_route_stop.red__rutas_por_ubicación": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "gold_gtfs_route_stop",
+			          "ConceptualProperty": "Red · Rutas por ubicación"
+			        }
+			      },
+			      "State": "Generated",
+			      "Terms": [
+			        {
+			          "Rutas del catálogo": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
+			        }
+			      ]
+			    },
+			    "gold_gtfs_trip_timing.report_route_label": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "gold_gtfs_trip_timing",
+			          "ConceptualProperty": "report_route_label"
+			        }
+			      },
+			      "State": "Generated",
+			      "Terms": [
+			        {
+			          "Ruta · ID": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
+			        }
+			      ]
+			    },
+			    "gold_gtfs_trip_timing.trip_id": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "gold_gtfs_trip_timing",
+			          "ConceptualProperty": "trip_id"
+			        }
+			      },
+			      "State": "Generated",
+			      "Terms": [
+			        {
+			          "Viaje declarado": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
+			        }
+			      ]
+			    },
+			    "gold_gtfs_trip_timing.report_review_reason": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "gold_gtfs_trip_timing",
+			          "ConceptualProperty": "report_review_reason"
+			        }
+			      },
+			      "State": "Generated",
+			      "Terms": [
+			        {
+			          "Motivo": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
+			        }
+			      ]
+			    },
+			    "gold_gtfs_trip_timing.revisión__visitas_del_caso": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "gold_gtfs_trip_timing",
+			          "ConceptualProperty": "Revisión · Visitas del caso"
+			        }
+			      },
+			      "State": "Generated",
+			      "Terms": [
+			        {
+			          "Visitas": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
+			        }
+			      ]
+			    }
+			  }
+			}
+		contentType: json

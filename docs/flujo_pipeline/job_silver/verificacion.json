@@ -1,0 +1,116 @@
+{
+  "schema_version": 1,
+  "checked_at_utc": "2026-11-18T17:30:30.705036+00:00",
+  "tool": "Archify 3.2.0",
+  "repository_revision": "6c4490fd2846d8afeb70ee08f02d4680d535b76e",
+  "delivery_method": "Generé y comprobé fuera de OneDrive. Copié los HTML byte a byte y verifiqué hashes; los recibos completos quedan fuera de Git.",
+  "scope": "Documentación y controles automáticos en navegador. No ejecuté Jobs ni consulté modelos durante esta generación.",
+  "artifacts": [
+    {
+      "source": "iteracion_snapshot.workflow.json",
+      "source_sha256": "2eacf494177462d825cf7e99c443bab755cf820f59e6acb6aae957ada5ad138d",
+      "html": "iteracion_snapshot.html",
+      "html_sha256": "836ec77db054d9c8101a669ddd347e6657b941920ea74559c3c60734d30341ce",
+      "bytes": 855935,
+      "quality_profile": "showcase",
+      "automated_gates": {
+        "validate": "pass",
+        "deliver": "pass",
+        "check": "pass",
+        "browser-check": "pass"
+      },
+      "browser_viewports": [
+        {
+          "width": 1440,
+          "height": 900,
+          "theme": "light",
+          "minimum_projected_node_text_px": 7,
+          "readability_ok": true,
+          "vertical_scroll_accepted": true
+        },
+        {
+          "width": 1600,
+          "height": 1000,
+          "theme": "light",
+          "minimum_projected_node_text_px": 7,
+          "readability_ok": true,
+          "vertical_scroll_accepted": true
+        },
+        {
+          "width": 1920,
+          "height": 1080,
+          "theme": "light",
+          "minimum_projected_node_text_px": 7,
+          "readability_ok": true,
+          "vertical_scroll_accepted": true
+        },
+        {
+          "width": 2048,
+          "height": 1320,
+          "theme": "light",
+          "minimum_projected_node_text_px": 7,
+          "readability_ok": true,
+          "vertical_scroll_accepted": false
+        }
+      ],
+      "visual_review": {
+        "status": "not-requested",
+        "scope": "Controles automáticos de navegador; no atribuyo capturas o revisión perceptual a esta entrega."
+      },
+      "final_copy_matches_validated_artifact": true
+    },
+    {
+      "source": "recorrido_job.workflow.json",
+      "source_sha256": "a9c1023690dee44dc3a8797e0cf733af2839228f990de2186e384e732a7222f7",
+      "html": "recorrido_job.html",
+      "html_sha256": "a848014f3930420c84e2d09ba54b1883cf7e7f2f2f53c9e1cef98e548fda2f50",
+      "bytes": 864359,
+      "quality_profile": "showcase",
+      "automated_gates": {
+        "validate": "pass",
+        "deliver": "pass",
+        "check": "pass",
+        "browser-check": "pass"
+      },
+      "browser_viewports": [
+        {
+          "width": 1440,
+          "height": 900,
+          "theme": "light",
+          "minimum_projected_node_text_px": 6.3,
+          "readability_ok": true,
+          "vertical_scroll_accepted": true
+        },
+        {
+          "width": 1600,
+          "height": 1000,
+          "theme": "light",
+          "minimum_projected_node_text_px": 6.3,
+          "readability_ok": true,
+          "vertical_scroll_accepted": true
+        },
+        {
+          "width": 1920,
+          "height": 1080,
+          "theme": "light",
+          "minimum_projected_node_text_px": 6.3,
+          "readability_ok": true,
+          "vertical_scroll_accepted": true
+        },
+        {
+          "width": 2048,
+          "height": 1320,
+          "theme": "light",
+          "minimum_projected_node_text_px": 6.3,
+          "readability_ok": true,
+          "vertical_scroll_accepted": true
+        }
+      ],
+      "visual_review": {
+        "status": "not-requested",
+        "scope": "Controles automáticos de navegador; no atribuyo capturas o revisión perceptual a esta entrega."
+      },
+      "final_copy_matches_validated_artifact": true
+    }
+  ]
+}

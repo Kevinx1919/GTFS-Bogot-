@@ -1,0 +1,3 @@
+-- Proporción de visitas con llegada y salida presentes. Denominador de visitas, no viajes. BLANK si no hay visitas.
+Porcentaje de visitas con horas completas =
+DIVIDE ( [Visitas con horas completas], [Visitas publicadas] )

@@ -1,0 +1,10 @@
+report_component =
+VAR Nombre = UPPER ( TRIM ( silver_gtfs_agency[agency_name] ) )
+RETURN SWITCH ( TRUE (),
+    Nombre = "TRANSMILENIO-TRONCAL", "Troncal",
+    Nombre IN { "TRANSMILENIO-ALIMENTADORES", "TRANSMILENIO-ALIMENTADORA" }, "Alimentación",
+    Nombre IN { "ZONAL-URBANO", "ZONAL-COMPLEMENTARIO", "ZONAL-ESPECIAL", "TRANSMILENIO-URBANA", "TRANSMILENIO-COMPLEMENTARIA", "TRANSMILENIO-ESPECIAL" }, "Zonal (SITP)",
+    Nombre = "TRANSMILENIO-DUAL", "Dual",
+    Nombre IN { "TRANSMICABLE", "CABLE" }, "TransMiCable",
+    "Sin clasificar"
+)

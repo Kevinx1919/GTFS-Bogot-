@@ -1,0 +1,89 @@
+relationship 4c6e7313-94b6-4cb7-bb6c-5f4132d47595
+	joinOnDateBehavior: datePartOnly
+	fromColumn: silver_gtfs_calendar.start_date
+	toColumn: LocalDateTable_24bfaed8-257e-45ca-8cde-0b4c372e871f.Date
+
+relationship 83ec8c92-795b-49ac-9f08-60d1924b70ad
+	joinOnDateBehavior: datePartOnly
+	fromColumn: silver_gtfs_calendar.end_date
+	toColumn: LocalDateTable_1cd177a4-710a-463a-9d3e-d2fac8f5c4e3.Date
+
+relationship 3f93add7-52b5-4e0d-982b-a5e22504fc4a
+	joinOnDateBehavior: datePartOnly
+	fromColumn: silver_gtfs_calendar_dates.date
+	toColumn: LocalDateTable_592f1c12-e49e-42b5-9a50-a88ed2791165.Date
+
+relationship 99acc47b-e9a7-4d34-a84b-fd6ff81bf885
+	joinOnDateBehavior: datePartOnly
+	fromColumn: silver_gtfs_service_dates.service_date
+	toColumn: LocalDateTable_159888c7-559f-4ecf-a9d2-f65638c5bc35.Date
+
+relationship 86c33fe2-16cc-459b-b37e-8b28916aac47
+	joinOnDateBehavior: datePartOnly
+	fromColumn: silver_gtfs_service_dates.analysis_window_start
+	toColumn: LocalDateTable_2a6b3e2d-4b3d-4d52-b518-295809993b86.Date
+
+relationship 6819572a-a6e7-4da8-9a08-7d4ef78de99b
+	joinOnDateBehavior: datePartOnly
+	fromColumn: silver_gtfs_service_dates.analysis_window_end
+	toColumn: LocalDateTable_37c3119e-c578-40e2-9d89-fbab9a0554db.Date
+
+relationship rel_agency_snapshot
+	fromColumn: silver_gtfs_agency.snapshot_key
+	toColumn: dim_gtfs_snapshot.snapshot_key
+
+relationship rel_routes_agency
+	fromColumn: silver_gtfs_routes.agency_key
+	toColumn: silver_gtfs_agency.agency_key
+
+relationship rel_trips_routes
+	fromColumn: silver_gtfs_trips.route_key
+	toColumn: silver_gtfs_routes.route_key
+
+relationship rel_stops_snapshot
+	fromColumn: silver_gtfs_stops.snapshot_key
+	toColumn: dim_gtfs_snapshot.snapshot_key
+
+relationship rel_service_snapshot
+	fromColumn: dim_gtfs_service.snapshot_key
+	toColumn: dim_gtfs_snapshot.snapshot_key
+
+relationship rel_calendar_service
+	fromColumn: silver_gtfs_calendar.service_key
+	toColumn: dim_gtfs_service.service_key
+
+relationship rel_calendar_dates_service
+	fromColumn: silver_gtfs_calendar_dates.service_key
+	toColumn: dim_gtfs_service.service_key
+
+relationship rel_service_dates_service
+	fromColumn: silver_gtfs_service_dates.service_key
+	toColumn: dim_gtfs_service.service_key
+
+relationship rel_service_dates_fecha
+	fromColumn: silver_gtfs_service_dates.service_date
+	toColumn: dim_gtfs_fecha.fecha
+
+relationship rel_frequencies_trips
+	fromColumn: silver_gtfs_frequencies.trip_key
+	toColumn: silver_gtfs_trips.trip_key
+
+relationship rel_gold_coverage_trip
+	fromColumn: gold_gtfs_trip_coverage.trip_key
+	toColumn: silver_gtfs_trips.trip_key
+
+relationship rel_gold_daily_route
+	fromColumn: gold_gtfs_route_service_day.route_key
+	toColumn: silver_gtfs_routes.route_key
+
+relationship rel_gold_daily_date
+	fromColumn: gold_gtfs_route_service_day.service_date
+	toColumn: dim_gtfs_fecha.fecha
+
+relationship rel_gold_route_stop_route
+	fromColumn: gold_gtfs_route_stop.route_key
+	toColumn: silver_gtfs_routes.route_key
+
+relationship rel_gold_trip_timing_trip
+	fromColumn: gold_gtfs_trip_timing.trip_key
+	toColumn: silver_gtfs_trips.trip_key

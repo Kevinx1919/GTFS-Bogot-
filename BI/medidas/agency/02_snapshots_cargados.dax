@@ -1,0 +1,9 @@
+-- Una identidad combina versión y SHA-256.
+Snapshots cargados =
+    COUNTROWS (
+        SUMMARIZE (
+            'silver_gtfs_agency',
+            'silver_gtfs_agency'[source_feed_version],
+            'silver_gtfs_agency'[source_sha256]
+        )
+    )

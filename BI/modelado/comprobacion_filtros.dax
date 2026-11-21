@@ -1,0 +1,10 @@
+-- Ejecutar en la vista de consultas DAX del modelo GFTS_BI.
+-- Estas medidas cuentan catálogo; no operación real ni programación por fecha.
+EVALUATE
+ROW (
+    "Viajes históricos", [Viajes declarados],
+    "Viajes 2026", CALCULATE ( [Viajes declarados], dim_gtfs_snapshot[source_feed_version] = "2026-09-29" ),
+    "Troncal 2026", CALCULATE ( [Viajes declarados], dim_gtfs_snapshot[source_feed_version] = "2026-09-29", silver_gtfs_agency[agency_id] = "1" ),
+    "Ventanas 2026", CALCULATE ( [Ventanas de frecuencia], dim_gtfs_snapshot[source_feed_version] = "2026-09-29" )
+)
+-- Esperado: 288222; 181060; 40599; 14.

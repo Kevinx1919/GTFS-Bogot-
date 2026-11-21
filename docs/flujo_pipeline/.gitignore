@@ -1,0 +1,6 @@
+# Metadatos locales de Archify: contienen rutas y control de recuperación.
+**/*.delivery.json
+**/*.delivery-pending.json
+**/*.delivery-lock.json
+**/.archify-delivery-lock.json
+**/.archify-*/

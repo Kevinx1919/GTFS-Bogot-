@@ -1,0 +1,3 @@
+-- Visitas publicadas en los viajes evaluados del contexto. No cuenta usuarios ni vehículos.
+Visitas publicadas =
+SUM ( 'gold_gtfs_trip_coverage'[visit_count] )

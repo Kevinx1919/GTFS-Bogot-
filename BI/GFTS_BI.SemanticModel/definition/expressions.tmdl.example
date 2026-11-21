@@ -1,0 +1,3 @@
+expression DatabricksServerHostname = "YOUR_DATABRICKS_HOSTNAME" meta [IsParameterQuery=true, Type="Text", IsParameterQueryRequired=true]
+
+expression DatabricksHttpPath = "/sql/1.0/warehouses/YOUR_WAREHOUSE_ID" meta [IsParameterQuery=true, Type="Text", IsParameterQueryRequired=true]

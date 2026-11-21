@@ -1,0 +1,134 @@
+table silver_gtfs_stops
+	lineageTag: 4f919895-7bfa-4d41-87a3-719e3d97f622
+
+	column stop_id
+		dataType: string
+		lineageTag: 0db932fd-2584-488a-8c85-b9e868dc41af
+		summarizeBy: none
+		sourceColumn: stop_id
+
+		annotation SummarizationSetBy = Automatic
+
+	column stop_code
+		dataType: string
+		lineageTag: 24dbf404-7cb6-46b1-8798-063bfafd7c01
+		summarizeBy: none
+		sourceColumn: stop_code
+
+		annotation SummarizationSetBy = Automatic
+
+	column stop_name
+		dataType: string
+		lineageTag: 54b04507-ab41-460c-8073-c1541fdac57f
+		summarizeBy: none
+		sourceColumn: stop_name
+
+		annotation SummarizationSetBy = Automatic
+
+	column stop_lat
+		dataType: double
+		lineageTag: 77d230f8-ba13-4148-ad0c-d0d1c7ea1867
+		dataCategory: Latitude
+		summarizeBy: none
+		sourceColumn: stop_lat
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column stop_lon
+		dataType: double
+		lineageTag: a746d058-d4e1-4252-ad74-55f9818cc9bf
+		dataCategory: Longitude
+		summarizeBy: none
+		sourceColumn: stop_lon
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column location_type
+		dataType: int64
+		formatString: 0
+		lineageTag: 46480185-e17a-4dad-8053-c33a653b2725
+		summarizeBy: none
+		sourceColumn: location_type
+
+		annotation SummarizationSetBy = Automatic
+
+	column parent_station
+		dataType: string
+		lineageTag: a30e7402-ee98-4e61-b3c9-8b01fb61ff02
+		summarizeBy: none
+		sourceColumn: parent_station
+
+		annotation SummarizationSetBy = Automatic
+
+	column zone_id
+		dataType: string
+		lineageTag: 46babf1f-1fb1-46df-a12c-a339203bf7f4
+		summarizeBy: none
+		sourceColumn: zone_id
+
+		annotation SummarizationSetBy = Automatic
+
+	column wheelchair_boarding
+		dataType: int64
+		formatString: 0
+		lineageTag: c4b64e04-160f-4382-9595-76ad22af932d
+		summarizeBy: none
+		sourceColumn: wheelchair_boarding
+
+		annotation SummarizationSetBy = Automatic
+
+	column source_feed_version
+		dataType: string
+		isHidden
+		lineageTag: be820229-f8f6-4918-ac30-034110cc0715
+		summarizeBy: none
+		sourceColumn: source_feed_version
+
+		annotation SummarizationSetBy = Automatic
+
+	column source_sha256
+		dataType: string
+		isHidden
+		lineageTag: e7081689-016e-40b2-82ed-6191525698c4
+		summarizeBy: none
+		sourceColumn: source_sha256
+
+		annotation SummarizationSetBy = Automatic
+
+	/// Clave de consumo v1: longitud y versión fuente, más SHA-256. No modifica la identidad Silver.
+	column snapshot_key = FORMAT ( LEN ( [source_feed_version] ), "0" ) & ":" & [source_feed_version] & ":" & [source_sha256]
+		dataType: string
+		isHidden
+		lineageTag: 4732df8f-69bd-4c8a-bf47-1109a8ae398f
+		summarizeBy: none
+
+	/// Clave de consumo v1 por snapshot e ID fuente sin conversiones ni eliminación de ceros.
+	column stop_key = FORMAT ( LEN ( [source_feed_version] ), "0" ) & ":" & [source_feed_version] & ":" & [source_sha256] & ":" & [stop_id]
+		dataType: string
+		isHidden
+		lineageTag: 223e50fc-cc30-44af-bf28-865392297fbf
+		summarizeBy: none
+
+	/// Etiqueta de consulta por nombre e ID. No fusiona plataformas ni estaciones y no es clave de relación.
+	column report_stop_label = COALESCE([stop_name],[stop_id]) & " · " & [stop_id]
+		dataType: string
+		lineageTag: 428a49a1-c496-4b10-a3e6-e4aa468e931c
+		summarizeBy: none
+
+	partition silver_gtfs_stops = m
+		mode: import
+		source =
+				let
+				  Origen = DatabricksMultiCloud.Catalogs(DatabricksServerHostname, DatabricksHttpPath, null),
+				  #"Navegación 1" = Origen{[Name = "workspace", Kind = "Database"]}[Data],
+				  #"Navegación 2" = #"Navegación 1"{[Name = "gtfs_bogota", Kind = "Schema"]}[Data],
+				  #"Navegación 3" = #"Navegación 2"{[Name = "silver_gtfs_stops", Kind = "Table"]}[Data],
+				  #"Columnas quitadas" = Table.RemoveColumns(#"Navegación 3", {"silver_loaded_at_utc", "silver_run_id", "silver_rule_version", "source_columns", "bronze_loaded_at_utc", "source_file_path"})
+				in
+				  #"Columnas quitadas"
+
+	annotation PBI_ResultType = Table

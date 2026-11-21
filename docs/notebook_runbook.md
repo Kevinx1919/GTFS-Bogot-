@@ -1,8 +1,8 @@
-# Runbook de notebooks
+# Mi runbook de notebooks
 
 ## Convención
 
-Los notebooks se comentan por bloque, no línea por línea. Cada bloque documentado indica propósito, entradas, salida, efecto persistente y validación. Los comentarios dentro del código aclaran decisiones no obvias.
+Uso este runbook para recordar qué hace cada bloque, qué necesita y qué debería revisar al terminar. Documento propósito, entradas, salidas, efectos persistentes y validación; los comentarios del código explican las decisiones que no resultan evidentes. Para mí es como una lista antes de salir de viaje: puedo comprobar qué preparé, qué ejecuté y qué falta sin depender de la memoria.
 
 ## Notebook 02 — `02_raw_static_gtfs_ingestion`
 
@@ -10,7 +10,7 @@ Los notebooks se comentan por bloque, no línea por línea. Cada bloque document
 | --- | --- | --- | --- | --- |
 | Configuración | Define catálogo, schema, Volume y versiones fuente. | Valores de entorno y URLs oficiales. | Variables de sesión. | Se muestran las versiones configuradas. |
 | Descarga | Obtiene el ZIP de la versión solicitada y registra metadata de la corrida. | URL resuelta desde la tabla de control. | ZIP y metadata en memoria. | HTTP 200, tamaño y SHA-256. |
-| Validación | Comprueba estructura GTFS mínima. | Bytes del ZIP. | Resultado en memoria. | ZIP, archivos esenciales y calendario válidos. |
+| Validación | Comprueba estructura GTFS mínima. | Bytes del ZIP. | Resultado visible y error si es inválido, antes de persistir. | ZIP, archivos esenciales y al menos un calendario válidos. |
 | Raw | Conserva evidencia original e idempotente. | ZIP validado, hash y metadata. | ZIP y manifiesto JSON en `raw_gtfs`. | Reintento del mismo `run_id`, ruta por versión/hash y manifest legible. |
 | Verificación | Comprueba persistencia. | Rutas Raw creadas. | No escribe. | `path`, `name`, `size`, `modificationTime`. |
 
@@ -31,7 +31,7 @@ Resultado: la versión `2025-10-28` se almacenó con HTTP 200 y hash `07ba2ba9bb
 | Bloque | Propósito | Entrada | Efecto / salida | Validación |
 | --- | --- | --- | --- | --- |
 | Configuración | Selecciona el mismo snapshot validado en Staging. | Versión y SHA-256. | Variables de sesión. | Directorio de Staging visible. |
-| Contrato | Declara columnas mínimas y diferencia archivos requeridos de opcionales. | Definiciones del feed. | Contratos en memoria. | Columnas requeridas y ausencia explícita de opcionales. |
+| Contrato | Declara columnas mínimas y presencia requerida, opcional o por grupo. | Definiciones del feed. | Contratos en memoria. | Al menos un calendario; columnas semanales si existe calendar.txt; ausencia explícita de opcionales. |
 | Carga Bronze | Lee y escribe entidades disponibles, incluida metadata de feed si existe. | Archivos `.txt` de Staging. | Tablas `bronze_gtfs_*`. | Conteo, idempotencia, opcionales omitidos y evolución de esquema auditada. |
 | Verificación | Inspecciona las paradas persistidas. | `bronze_gtfs_stops`. | No escribe. | Muestra de filas y `describe detail`. |
 
@@ -50,11 +50,19 @@ Resultado: para la versión `2025-10-28`, se validaron 909.878 filas en
 
 | Bloque | Propósito | Entrada | Efecto / salida | Validación |
 | --- | --- | --- | --- | --- |
-| Configuración | Declara el portal oficial, grupo GTFS, tablas y modo de selección. | Identificador público, modo y fechas opcionales. | Variables de sesión y `catalog_run_id`. | Endpoint, corrida y modo visibles. |
-| Consulta | Recorre las páginas del catálogo ArcGIS público. | Respuesta JSON del grupo oficial. | Ítems del catálogo en memoria. | HTTP exitoso, sin error ArcGIS y al menos un ítem. |
-| Contrato | Conserva solo ítems con versión GTFS fechada y normaliza metadata. | Ítems descubiertos. | DataFrame con esquema explícito. | Patrón de fecha, ítem único y URL directa identificada. |
-| Control y auditoría | Mantiene el estado actual y el historial de observaciones. | Catálogo normalizado. | Tablas Delta de control y auditoría. | `MERGE` por ítem y auditoría append-only. |
-| Plan | Selecciona una, varias o la última versión descargable sin Bronze. | Control, `bronze_gtfs_routes` y parámetros. | Plan para `latest_uningested`, `explicit_version` o `backfill_range`. | Solo ZIP directo, sin carga Bronze y con fechas válidas. |
+| 1 / configuración | Localizar el repositorio y validar modo, rango y límites. | Widgets y static_gtfs_catalog.json. | Variables, UUID y hora UTC; sin escrituras. | Fechas reales, rango coherente, identificadores simples, lotes de 1–20. |
+| 2 / consulta | Obtener todas las páginas del catálogo oficial. | Endpoint configurado. | Ítems acotados en memoria; solo HTTP GET. | Reintentos temporales, nextStart creciente, límite de páginas e ítems; respuesta parcial detiene. |
+| 3 / contrato | Normalizar los ítems y conservar el esquema explícito histórico. | Ítems públicos y metadata de corrida. | DataFrame de control; sin escrituras. | Fechas, IDs, ZIP directo y duplicados contradictorios. |
+| 4 / persistencia | Actualizar control y conservar observaciones. | DataFrame normalizado. | MERGE del control y append de observaciones del catálogo. | No descarga ZIP ni modifica Raw, Bronze o Silver; evita errorifexists. |
+| 5 / plan | Evaluar cierres Bronze completos y evidencia de cargas sin cierre. | Control, STARTED/CLOSED, resoluciones y procedencia acotada. | Decisiones y lista sin hash; sin escrituras. | Último intento, regla vigente, inventario completo, bloqueo de evidencia parcial y lote acotado. |
+| 6 / entrega | Publicar task values cuando lo solicito. | Plan y widget emit_task_values. | ingestion_work_items, estado y conteos; opcional. | NO_WORK entrega []; BLOCKED impide entrega y falla si solicito emisión. |
+
+La [guía de descubrimiento](bronze_discovery.md) explica modos, costos y comprobación.
+La vista previa no entrega listas, pero los bloques 1–4 sí consultan y actualizan metadata del catálogo.
+Uso Run all después de cambiar la selección; así reconstruyo el plan con los nuevos parámetros.
+Reutilizo el contrato de cierre y las resoluciones vigentes del planificador Silver.
+No ejecuto transformaciones Silver para descubrir versiones.
+La comprobación real en Workspace sigue pendiente.
 
 ## Notebook 07 — `07_validate_bronze_gtfs_snapshot`
 
@@ -63,11 +71,639 @@ Resultado: para la versión `2025-10-28`, se validaron 909.878 filas en
 | Parámetros | Identifica un único snapshot ya cargado. | Versión GTFS y SHA-256. | Variables de sesión y `quality_run_id`. | Formato de versión y hash; ruta de Staging definida. |
 | Contrato | Declara entidades requeridas, opcionales e identificadores críticos. | Contrato GTFS del proyecto. | Reglas en memoria. | No inventa datos si falta un archivo opcional. |
 | Utilidades | Define esquemas explícitos y funciones de auditoría. | Metadatos de la corrida. | Filas de calidad acumuladas en memoria. | Esquemas de auditoría sin inferencia. |
-| Presencia y procedencia | Comprueba Staging, filas Bronze y versión fuente por entidad. | Snapshot de Staging y tablas Bronze. | Evidencia de completitud y linaje. | Los archivos requeridos y sus tablas deben tener filas. |
-| Identificadores y relaciones | Revisa IDs críticos y relaciones GTFS básicas. | `routes`, `stops`, `trips`, `stop_times`, calendarios. | Fallos por IDs vacíos; advertencias por huérfanos fuente. | IDs no nulos; huérfanos registrados, no eliminados. |
+| Presencia y procedencia | Comprueba Staging, filas Bronze y versión fuente por entidad. | Snapshot de Staging y tablas Bronze. | Evidencia de completitud y linaje. | Al menos un calendario; filas para los archivos publicados; cero versiones nulas o distintas; cero filas atribuidas a un archivo ausente. |
+| Identificadores y relaciones | Revisa IDs críticos y relaciones GTFS básicas. | `routes`, `stops`, `trips`, `stop_times`, calendarios disponibles. | Fallos por IDs vacíos; advertencias por huérfanos fuente. | IDs no nulos; servicios comprobados con uno o ambos calendarios; huérfanos registrados, no eliminados. |
 | Evolución de esquema | Guarda una observación por archivo y hash; compara contra la versión previa. | Encabezados de Staging e historial de observaciones. | `audit_gtfs_source_schema_observations`. | Campos nuevos o retirados aparecen como advertencia revisable. |
 | Resultado | Persiste los checks y decide el estado de la corrida. | Todas las filas de auditoría. | `audit_gtfs_bronze_snapshot_quality` y task values para el Job. | `FAIL` con severidad `BLOCKING` detiene el Workflow después de registrar evidencia. |
 
 Resultado esperado: `PASSED` si las reglas bloqueantes se cumplen, `WARNING` si hay
 cambios de esquema o relaciones huérfanas que requieren revisión, y `FAILED` si
 falta evidencia obligatoria o un identificador crítico no es válido.
+
+## Correcciones previas a Silver — Hito 09
+
+| Notebook / bloque | Propósito y entradas | Salida y efecto persistente | Cómo verificar |
+| --- | --- | --- | --- |
+| 00 / prueba de entorno | Usar el catálogo y schema GTFS actuales. | Tabla de prueba en `workspace.gtfs_bogota`; solo si se ejecuta manualmente. | Comprobar destino antes de ejecutar; no forma parte del Job Bronze. |
+| 02 / validación y entrada a Raw | Rechazar el ZIP si faltan archivos esenciales o ambos calendarios. | Error antes de crear directorios, ZIP, manifiesto o task values para datos rechazados. | ZIP mínimo válido; archivo esencial ausente; ambos calendarios ausentes; bytes que no son ZIP. |
+| 04 / contrato y prevalidación | Admitir `calendar.txt`, `calendar_dates.txt` o ambos; exigir al menos uno y las siete columnas semanales cuando corresponda. | Solo carga archivos publicados; el rechazo de presencia ocurre antes de cargar entidades. | Probar las tres combinaciones válidas y la ausencia de ambos. |
+| 07 / presencia y procedencia | Auditar calendarios, rechazar versión nula o distinta y filas sin archivo fuente para un hash. | Nuevos resultados de auditoría; no cambia datos Bronze. | Revisar `calendar_definition_present` y `bronze_provenance_version`. |
+| 07 / relación de servicios | Construir servicios con los calendarios disponibles. | Check de huérfanos incluso si existe un solo calendario; sin borrar registros. | Revisar `trips_service_id_exists` con uno y con ambos calendarios. |
+
+Las pruebas locales se ejecutan desde la raíz con `py -B -m unittest discover -s tests -v`. Usan el código real de los bloques afectados y datos pequeños; los dobles de Spark no sustituyen la comprobación real en Databricks. Las transformaciones de tipos y la deduplicación pertenecen a Silver.
+
+### Revalidación en Databricks de los snapshots existentes
+
+**Estado:** completé la revalidación prevista y guardé las salidas de ambas versiones. Para 2025, 07 terminó en `PASSED`, con cero fallos bloqueantes y cero advertencias. Para 2026, terminó en `WARNING`, con cero fallos bloqueantes y cinco advertencias de esquema en las entidades conocidas. Las ocho entidades de referencia de cada versión mostraron `snapshot_already_loaded = true` en 04. La salida detallada de 2026 confirmó calendarios y relaciones aprobados, y 9.408.893 filas de horarios. En esta revisión guardé el resumen de 2025, sin una nueva consulta detallada del conteo de horarios. Mi siguiente paso es perfilar agencias y rutas; revisaré las advertencias de esquema al definir sus contratos Silver.
+
+Conservo los pasos siguientes por si necesito repetir la comprobación. No hace falta repetir una ejecución correcta solo para volver a obtener la misma salida. Las correcciones locales no actualizan automáticamente los notebooks que utiliza el Job. Si necesito reproducirla, primero sincronizo o importo `feature/silver-referencias` y compruebo a qué notebooks apuntan las tareas. Reviso la configuración antes de usar el Job manual; para esta comprobación puedo ejecutar los notebooks indicados en orden y sin otra carga concurrente del mismo snapshot.
+
+| feed_version | snapshot_sha256 | Orden manual |
+| --- | --- | --- |
+| `2025-10-28` | `07ba2ba9bb3b5bc1e38357355956757ce84fc68e6d05b74577bf017e189ab952` | 04 completo y después 07 completo, con estos dos parámetros en ambos. |
+| `2026-09-29` | `08d14e0b3a5b9caa5451b722659871fd554e3273b94bdd770fdf81a26bf02097` | 04 completo y después 07 completo, con estos dos parámetros en ambos. |
+
+- **04:** vuelvo a leer los encabezados y compruebo el contrato. En las tablas que ya contienen el hash debe informar `snapshot_already_loaded = true` y omitir la inserción. Si alguna entidad publicada no tiene filas Bronze, detengo el avance a Silver e investigo la carga incompleta; no borro tablas para forzar una recarga.
+- **07:** vuelvo a evaluar la evidencia y guardo su `quality_run_id` para consultar únicamente esa corrida de auditoría. Es normal que la auditoría tenga más filas; no implica duplicación de datos Bronze.
+- **02:** conservar la corrección para futuras ingestas. No hace falta descargar otra vez estos snapshots ni ejecutar todo el Job para actualizar esta validación. La barrera de rechazo y el reintento Raw se comprobaron localmente con ZIP sintéticos; sigue pendiente su prueba de integración en un entorno de desarrollo.
+- **03 y 05:** no cambiaron y no necesitan ejecutarse para esta revisión. En particular, no es necesario releer y volver a cargar los millones de filas de horarios.
+- **00:** la corrección de destino no requiere ejecución; es una prueba manual que crea una tabla de prueba y no pertenece al flujo Bronze.
+
+Para consultar una ejecución concreta, reemplazo el marcador por el identificador que imprimió el notebook:
+
+```sql
+select check_name, entity_name, severity, status, observed_value, details
+from workspace.gtfs_bogota.audit_gtfs_bronze_snapshot_quality
+where quality_run_id = '<quality_run_id_de_la_ejecucion>'
+order by status, entity_name, check_name;
+```
+
+Criterios de revisión: `calendar_definition_present = PASS`; cero `FAIL` con severidad `BLOCKING`; `bronze_provenance_version` con cero discrepancias; y `trips_service_id_exists` evaluado, sin un `NOT_APPLICABLE` inesperado. Reviso cada `WARN`: un cambio de esquema conocido puede mantenerse advertido, pero no se autoriza automáticamente una relación rota para Silver. El número total de checks cambia respecto al Hito 08 porque se añadió el check del grupo de calendarios.
+
+Para comprobar que el volumen histórico de horarios se conserva, uso esta consulta:
+
+```sql
+select source_feed_version, source_sha256, count(*) as stop_time_rows
+from workspace.gtfs_bogota.bronze_gtfs_stop_times
+where (source_feed_version = '2025-10-28'
+       and source_sha256 = '07ba2ba9bb3b5bc1e38357355956757ce84fc68e6d05b74577bf017e189ab952')
+   or (source_feed_version = '2026-09-29'
+       and source_sha256 = '08d14e0b3a5b9caa5451b722659871fd554e3273b94bdd770fdf81a26bf02097')
+group by source_feed_version, source_sha256
+order by source_feed_version;
+```
+
+Referencias históricas documentadas: 5.698.892 filas para 2025 y 9.408.893 para 2026. Son puntos de comparación, no resultados de una nueva consulta realizada durante este cambio. Una discrepancia debe investigarse antes de continuar.
+
+Con las comprobaciones satisfactorias y las advertencias revisadas puedo empezar el perfilado de agencias y rutas para definir Silver. No hace falta repetir las ingestas ni habilitar una programación automática.
+
+## Preparación de Silver — Hito 10
+
+El [plan consolidado](silver_design.md) describe el contrato y la secuencia de trabajo. Existe databricks/notebooks/silver/ con un README. El notebook 08 de perfilado de agency ya está creado como se documenta a continuación; todavía no lo he ejecutado en Databricks ni he creado tablas Silver con él.
+
+| Componente propuesto | Propósito | Entrada | Salida / efecto previsto | Verificación antes de continuar |
+| --- | --- | --- | --- | --- |
+| 08 / selección del snapshot y perfilado de agency | Entender identidad, campos y calidad antes de transformar. | Bronze agency de una versión/hash y sus encabezados fuente. | Resúmenes de lectura; sin escritura Silver ni cambios Bronze. | Revisar clave, conteos, nulos, vacíos, espacios, duplicados y completitud por versión. |
+| 08 / perfilado posterior de routes | Acordar el contrato de rutas después de revisar agency. | Bronze routes y agencias del mismo snapshot. | Resúmenes de lectura y relaciones; sin escritura Silver. | Revisar nombres, tipos de ruta, colores, duplicados, agencia y ausencia de route_desc. |
+| 10 / publicación por snapshot | Ejecutar lectura, contrato y publicación de agency con un notebook reutilizable. | Bronze, encabezado y registro de entidades. | Silver, cuarentena y auditoría en mode=publish; código preparado y probado localmente. | Primera publicación en el workspace y creación del Job pendientes; detalles al final de este runbook. |
+
+Los números y nombres son propuestos. Esta tabla describe intención, no resultados ejecutados. Antes de añadir el primer bloque se detallarán sus parámetros y su comprobación concreta; no avanzaré a una transformación mientras tenga su perfilado sin revisar.
+
+## Notebook 08 — silver/08_profile_gtfs_reference_entities
+
+**Mi alternativa PySpark para automatizar.** Comienzo por 08_agency_sql_guiado para entender las preguntas. No necesito ejecutar ambas opciones como dos pasos obligatorios.
+
+**Estado al 6 de noviembre de 2026:** revisé las salidas de los bloques 2, 3 y 4 ejecutados manualmente en Databricks para agency de 2025 y 2026. Ambos snapshots tienen siete filas e IDs distintos con contenido, sin duplicados. El notebook no está incorporado al Job Bronze. La investigación acotada de rutas para comparar códigos no sustituye su perfilado completo. Las transformaciones siguen pendientes.
+
+| Bloque | Propósito | Entradas | Salidas | Efectos persistentes | Verificación |
+| --- | --- | --- | --- | --- | --- |
+| 1 / parámetros | Seleccionar un snapshot y explicar la lectura. | Widgets catalog, schema, staging_volume, feed_version y snapshot_sha256. | Tabla, ruta, parámetros, UTC y versión de Spark visibles. | Ninguno en archivos o tablas; los widgets son configuración de sesión. | Identificadores simples, fecha real en formato ISO y SHA-256 hexadecimal. Cambiar versión y hash juntos. |
+| 2 / procedencia y muestra | Confirmar identidad y esquema antes de perfilar. | bronze_gtfs_agency y encabezado de agency.txt del snapshot en Staging. | Conteo, encabezado, printSchema y hasta 20 filas fuente. | Ninguno. | Hash con filas, versión y ruta correctas; columnas técnicas presentes; columnas fuente conservadas como string; encabezado no ambiguo. |
+| 3 / perfil por columna | Medir ausencias y variedad y mostrar tipos propuestos. | DataFrame completo del snapshot y encabezado publicado. | DataFrame de métricas por campo, tipo Bronze y propuesta Silver. | Ninguno; todos los resultados quedan en sesión. | Revisar source_column_present antes de interpretar los nulos. Nulos/vacíos/solo espacios/no vacíos son categorías exclusivas para cada columna existente. |
+| 4 / duplicados | Separar copias de negocio, conflictos de ID y colisiones potenciales. | Columnas publicadas y agency_id cuando exista. | Grupos idénticos, IDs repetidos, resumen de IDs y posibles colisiones al eliminar espacios. | Ninguno: no aplica trim ni deduplicación. | Tabla vacía = ningún grupo encontrado; business_variants=1 es copia idéntica; >1 es conflicto. Revisar IDs ausentes por separado. |
+
+**Si elijo esta alternativa PySpark:** empezaré por 1 y 2 para 2025 y revisaré conteo, printSchema y muestra antes de interpretar las métricas. Los defaults son workspace, gtfs_bogota, staging_gtfs y el snapshot 2025 ya documentado. El hash de 2026 está al inicio del notebook y en la sección de revalidación de este runbook; al cambiar parámetros se deben reejecutar los bloques desde 1.
+
+**Tipos:** la propuesta de los campos conocidos de agency es string, incluido ID y teléfono. No se fuerza una conversión numérica ni se rellena ningún faltante. Campos desconocidos quedan pendientes. El perfil no valida todavía formatos URL, zona horaria, idioma ni todas las reglas de obligatoriedad, y no incorpora relaciones con routes.
+
+**Pruebas locales:** `py -B -m unittest discover -s tests -v` terminó con 22 pruebas aprobadas y 3 omitidas por requerir un entorno Spark local. Las tres pruebas Spark usan fixtures sintéticos para categorías de ausencia, duplicados conflictivos y campos desconocidos; su ejecución sigue pendiente en un entorno con PySpark/Java. La ejecución manual posterior del notebook en Databricks aportó evidencia real de ambos snapshots; no sustituye la ejecución de esos tres tests sintéticos ni prueba escrituras Delta.
+
+## Contrato de agency y siguiente ejecución
+
+El [contrato v1](contracts/agency.md) define los tipos, campos obligatorios, opcionales, errores y protección por snapshot. El notebook 09 documentado al final aplica validaciones y prepara candidatos en memoria. La cuarentena persistida, auditoría y escritura siguen pendientes; sus bloques y pruebas se documentarán antes de implementarlos.
+
+Si reinicio la sesión Python del perfilador, ejecutaré 1 → 2 → 3 → 4. Los widgets pueden seguir visibles aunque las variables e imports se hayan perdido; ejecutar solo el bloque 2 no recrea agency_table ni DataFrame. Esta situación se resolvió reejecutando los bloques previos, sin modificar código.
+
+## Acceso de consulta mediante Genie — Hito 12
+
+Comprobé la conexión de Databricks Genie en Free Edition con dos consultas de lectura: DESCRIBE de bronze_gtfs_agency y conteo por versión/hash de los snapshots conocidos, ambos con resultado estructurado SUCCEEDED. Recuperé 11 columnas reales y 7 registros por snapshot. Esta vez obtuve los resultados mediante el conector, en lugar de depender de las salidas que había revisado desde la interfaz.
+
+Esta conexión permite continuar el perfilado con SQL revisado y resultados estructurados; no implica que se haya ejecutado el notebook 08 o que el conector pueda ejecutar sus bloques PySpark. En ese punto había comprobado esquema y conteos; la muestra, los nulos y los duplicados llegaron después, en el Hito 13. En esa comprobación inicial aún no había leído el encabezado Staging con el notebook; las salidas de la ejecución manual posterior sí muestran los encabezados. El notebook permanece como implementación versionada para ejecutar y aprender en Databricks.
+
+Usé acciones de lectura, pero eso no demuestra que mi cuenta tenga únicamente esos permisos. Mantendré las transformaciones deterministas y versionadas. No crearé dashboards para lanzar consultas ni escribiré datos durante el perfilado. Si más adelante necesito ejecutar notebooks o Jobs de forma remota, evaluaré CLI/API con su autenticación; por ahora puedo consultar con Genie.
+
+## Perfilado SQL verificado de agency 2025 — Hito 13
+
+Con Genie revisé agency sin ejecutar el notebook 08. El [informe de 2025](agency_profile_2025.md) separa presencia de columna, ausencias, variedad y duplicados. Las [dos consultas ejecutadas](../databricks/sql/silver/agency_profile_2025.sql) quedaron guardadas en el proyecto local, pendientes de commit, como evidencia reproducible para ese snapshot y el entorno actual; no son transformaciones ni un pipeline genérico.
+
+Resultados: siete filas, siete IDs distintos y cero duplicados/conflictos; ningún nulo o vacío en los seis campos publicados. agency_fare_url no está en el encabezado histórico y tiene siete null en la tabla Delta. Recuperé los resultados SQL completos y los contrasté con un cálculo independiente de las siete filas: coincidieron.
+
+Leí la observación de encabezados de audit_gtfs_source_schema_observations; no abrí directamente el archivo Staging desde el conector. En esta revisión inicial todavía tenía pendiente ejecutar el perfilador PySpark y revisar 2026. Después contrasté las salidas de ambos snapshots y definí el [contrato v1](contracts/agency.md). Las transformaciones y las tres pruebas de fixtures con Spark siguen pendientes.
+
+## Punto de entrada — silver/08_agency_sql_guiado
+
+**Propósito:** quiero entender agency con preguntas pequeñas antes de leer las consultas agrupadas de Genie. Ya preparé el notebook; todavía no lo he ejecutado en Databricks. Sus apéndices conservan las consultas históricas ya ejecutadas, sin cambios en el SQL original.
+
+| Bloque | Pregunta / propósito | Entrada | Salida | Efectos persistentes y verificación |
+| --- | --- | --- | --- | --- |
+| 0 / widgets | ¿Qué snapshot voy a mirar? | Tabla agency, tabla de auditoría, versión y hash, con defaults del entorno actual y 2025. | Configuración visible de sesión. | No escribe archivos/tablas. Widgets SQL con marcadores requieren Runtime 15.2 o superior; comprobar al ejecutar. |
+| 1 / esquema | ¿Qué columnas y tipos tiene Bronze? | Nombre de tabla parametrizado con IDENTIFIER. | DESCRIBE. | Solo metadatos; el esquema histórico no demuestra presencia en el archivo de cada versión. |
+| 2 / muestra | ¿Qué representa cada fila? | Un snapshot explícito. | Hasta 20 filas con columnas de negocio. | Solo lectura; comparar ID y nombre antes de interpretar atributos compartidos. |
+| 3 / conteo | ¿Cuántas filas e IDs distintos hay? | El mismo snapshot. | Dos cantidades. | COUNT DISTINCT omite null; el conteo por sí solo no aprueba una clave. |
+| 4 / ausencias | ¿Hay IDs nulos, vacíos o compuestos por espacios? | agency_id del snapshot. | Conteos por categoría. | No rellena ni convierte valores; no reconstruye vacíos que el lector CSV haya convertido a null. |
+| 5 / repeticiones | ¿Qué IDs aparecen más de una vez? | agency_id del snapshot. | Grupos repetidos. | Tabla vacía = ningún grupo encontrado; no deduplica. |
+| 6 / encabezado | ¿La columna se publicó en el archivo? | Observación de esquema por versión/hash y agency.txt. | Lista de columnas fuente. | No escribe auditoría. Permite explicar agency_fare_url ausente en 2025. |
+| Apéndices A y B | ¿Cómo se reunieron estas preguntas en las consultas largas? | SQL histórico exacto del archivo agency_profile_2025.sql. | Métricas por columna y resumen de duplicados si se vuelven a ejecutar. | Lectura opcional; fijados a 2025, independientes de los widgets. Sus resultados previos no demuestran ejecución de la guía nueva. |
+
+**Mi forma de trabajo:** una pregunta, un bloque y una explicación del resultado antes de seguir. No añadiré controles avanzados ni otras entidades mientras no entienda la revisión actual. No es necesario volver a ejecutar el perfilado ya comprobado solo para mover su SQL a un notebook.
+
+El código original de las dos consultas sigue en databricks/sql/silver/agency_profile_2025.sql como evidencia; el notebook guiado es mi entrada principal. Dejé la explicación de la conexión Codex–Genie y sus ventajas en el Hito 12, con la precisión de que esta prueba usó herramientas MCP desde Codex desktop y no Databricks CLI.
+
+Referencias de la sintaxis de la guía: [widgets](https://docs.databricks.com/aws/en/notebooks/widgets) y [IDENTIFIER](https://docs.databricks.com/aws/en/sql/language-manual/sql-ref-names-identifier-clause).
+
+## Notebook 09 — silver/09_validate_gtfs_agency
+
+**Estado:** notebook 09 ejecutado y revisado en Databricks para ambos snapshots: siete candidatos, cero rechazos, cero copias y cero advertencias por versión. El [núcleo Python fue contrastado](agency_validation_2025_2026.md) sobre las 14 filas recuperadas con Genie: siete candidatos y cero rechazos por snapshot. Aplica el [contrato v1](contracts/agency.md) con módulos de `databricks/gtfs_silver/`. No crea tablas ni añade una tarea al Job.
+
+| Bloque | Propósito | Entradas | Salidas | Efectos y comprobación |
+| --- | --- | --- | --- | --- |
+| 0 / librerías | Fijar referencias de idioma y zona. | langcodes 3.5.1 y tzdata 2026.6, iguales a requirements-silver.txt. | Dependencias de sesión instaladas. | Modifica librerías de sesión; si se requiere reinicio, hacerlo antes de 1. No cambia datos. |
+| 1 / configuración | Seleccionar snapshot y código. | repo_root opcional absoluto, catálogo/schema/Volume, versión y hash; defaults explicados para 2025. | SnapshotSpec, tabla, ruta y referencias; sesión Spark UTC. | No escribe datos. Requiere el repositorio completo; si serverless no encuentra el código, configurar repo_root. |
+| 2 / encabezado | Verificar el contrato fuente. | agency.txt de Staging y tabla Bronze. | Columnas publicadas y DataFrame Bronze. | Falla ante requeridas ausentes, columnas nuevas, duplicadas o tabla inexistente. |
+| 3 / validación | Aplicar reglas y reconciliar. | Filas del hash elegido, encabezado y SnapshotSpec. | Resumen, candidatos, rechazos y advertencias en memoria. | Lee máximo 1.001 filas para comprobar límite de 1.000. Un exceso o selección vacía falla. Verifica procedencia, formatos y conflictos. |
+| 4 / interpretación | Revisar el resultado antes de publicar. | Tres DataFrames con esquema explícito. | Hasta 20 candidatos, rechazos con original y motivos, y advertencias. | Ninguna persistencia. Tablas de incidencias vacías son resultados válidos. |
+
+El límite se aplica solo a agency, una referencia pequeña. Spark filtra hash y columnas antes de leer; después uso Python para los controles de URL, idiomas y zonas, sin UDF. No trasladaré este patrón a trips o stop_times. Las referencias exactas se registran en el resultado; no se usa la base de zonas horarias del sistema operativo.
+
+`ready_for_publication` significa que estas reglas no encontraron rechazos; no demuestra que Silver haya sido escrita. Si un ID tiene atributos contradictorios, se rechazan todas sus filas. Copias idénticas válidas se consolidan en memoria conservando el menor timestamp Bronze. La reconciliación exige entrada = candidatos + rechazados + copias consolidadas.
+
+No persisto cuarentena, auditoría ni resultados de ejecución con este notebook. Todavía faltan la escritura limitada al snapshot, la identificación de corrida Silver y sus pruebas Delta. Reiniciar Python exige repetir 1 → 2 → 3 → 4.
+
+Las pruebas sin Spark requieren instalar `databricks/requirements-silver.txt` en un entorno local y ejecutar la suite. Después ejecuté la suite ampliada en Linux con Spark y Delta: 64 pruebas aprobadas, sin omisiones. Los seis casos nativos anteriores quedaron comprobados, junto a las nuevas pruebas de publicación. El notebook usa los mismos módulos que las pruebas.
+
+Referencias técnicas: [módulos en Workspace](https://docs.databricks.com/aws/en/files/workspace-modules), [langcodes](https://pypi.org/project/langcodes/) y [tzdata](https://pypi.org/project/tzdata/).
+
+## Notebook 10 — silver/10_publish_gtfs_entity y Job manual
+
+**Estado:** código preparado para publicación; todavía no he ejecutado escrituras Silver en el workspace. Las salidas del notebook 09 ya confirmaron siete candidatos y cero rechazos para cada snapshot de 2025 y 2026, con las referencias fijadas.
+
+| Bloque | Propósito | Entrada | Salida | Efectos y comprobación |
+| --- | --- | --- | --- | --- |
+| 1 / parámetros | Seleccionar entidad, snapshot y modo. | Repo completo, widgets catalog/schema/Volume, entity, versión/hash, mode y verify_history. | Configuración validada; agency es la única entidad habilitada. | No escribe. mode=publish autoriza persistencia; mode=validate mantiene la lectura. El entorno debe tener requirements-silver.txt. |
+| 2 / ejecución | Leer, validar y publicar con las reglas compartidas. | Bronze y encabezado Staging del snapshot; registro silver_entities.json. | Resultado JSON con estado, métricas e ID de intento. | En publish escribe auditoría RUNNING, cuarentena y, si es válido, Silver; comprueba lectura posterior y otras versiones y cierra auditoría. Si hay rechazos no modifica Silver y falla la tarea. |
+| 3 / conteo | Revisar las versiones conservadas. | Tabla Silver publicada. | Conteo por versión y hash. | Solo lectura. Espero siete por snapshot y catorce históricas después de publicar ambos, según la evidencia actual. |
+
+Las tablas propuestas son silver_gtfs_agency, quarantine_gtfs_agency y audit_gtfs_silver_runs, dentro del catálogo y schema parametrizados. Una nueva tabla se crea con writeTo(...).using("delta").create(), que falla si ya existe; una existente se modifica con replaceWhere y un predicado explícito de versión y hash. No se admite salida Silver vacía, filas fuera del ámbito ni evolución automática de esquema. El catálogo y schema deben existir.
+
+La cuarentena tiene grano intento + entidad + snapshot + huella de rechazo; input_copies conserva la multiplicidad de copias. Su reemplazo se limita al intento. La auditoría tiene una fila por intento, entidad y snapshot, actualizada de RUNNING a SUCCEEDED, REJECTED o FAILED. Cada reintento del Job genera un nuevo intento auditable, sin duplicar agencias. Las incidencias anteriores a construir el resultado de validación quedan en el registro de fallo del Job.
+
+No hay una transacción de las tres tablas. Si Silver se escribió y una etapa posterior falla, silver_committed=true permite reconocerlo. No hago rollback automático. La reejecución reconstruye solo el snapshot; revisaré un intento interrumpido antes de lanzarla. No ejecutaré escritores manuales en paralelo con el Job.
+
+El Job usa el notebook 10 una vez por entrada, sin ejecutar 08 y 09 como pasos adicionales. La primera configuración limita a una ejecución y una iteración simultáneas. Es manual, sin schedule. Su definición se genera con gtfs_silver.job_config y queda versionada en databricks/jobs/. Las instrucciones de creación y la evolución hacia más entidades están en [ejecución Silver](silver_execution.md).
+
+verify_history=true compara las otras versiones contra una lectura Delta fijada antes de la escritura. Es una comprobación explícita adecuada para agency; para entidades grandes mediré su costo y mantendré las pruebas de preservación sin exigir un escaneo histórico completo en cada corrida.
+
+
+## Ampliación a routes y simplificación del notebook 10 — 6 de noviembre de 2026
+
+Ya publiqué agency para ambos snapshots y ejecuté su Job manual con éxito. Comprobé siete agencias por snapshot con Genie. El perfil inicial de routes y su contrato están en [perfil routes](routes_profile_2025_2026.md) y [routes_v1](contracts/routes.md).
+
+La versión actual del notebook 10 tiene únicamente estos bloques. Esta tabla sustituye las instrucciones anteriores de instalar/reiniciar dentro de la ejecución y el antiguo bloque 3:
+
+| Bloque | Propósito | Entradas | Salidas | Efectos y verificación |
+| --- | --- | --- | --- | --- |
+| 1 / parámetros e imports | Elegir entidad y snapshot; localizar el repositorio. | Widgets y módulos versionados; dependencias ya configuradas en el entorno. | Parámetros y run_entity importado. | Sin escrituras. Después de reiniciar Python comienzo aquí. |
+| 2 / ejecución | Leer versiones Delta fijadas, validar y publicar. | Bronze, encabezado real y, para routes, agency_v1 del mismo snapshot. | JSON con métricas, estado e ID de intento. | mode=validate no escribe; publish usa Silver, cuarentena y auditoría. Reconcilia y verifica la lectura posterior. |
+
+Retiré el conteo histórico automático del bloque 3 porque repetía lectura en cada iteración. Si necesito una inspección puntual uso el SQL de la [guía de ejecución](silver_execution.md). No añadí notebooks de perfil y validación separados para routes: sus reglas automáticas viven en routes_spark.py y la evidencia inicial en SQL/documentación.
+
+El pipeline mantiene la excepción acotada de agency (1.000 filas) y procesa routes con expresiones Spark y un cruce con agency del mismo snapshot. Los IDs siguen string; route_type y route_sort_order son int. La ausencia de route_desc en 2026 se conserva con source_columns. El Job ampliado incluye routes dependiente del éxito de agency. Después de sincronizar el fix del lector ejecuté el flujo en Databricks y comprobé las tablas Silver.
+
+
+## Notebook 11 — silver/11_profile_gtfs_stops — 10 de noviembre de 2026
+
+**Propósito:** conservar el primer perfil de stops como una guía de lectura. Las seis consultas SQL se ejecutaron mediante Genie y sus resultados estructurados fueron recuperados; el nuevo contenedor del notebook no tiene una ejecución completa documentada en Databricks. No vuelvo a perfilar para trasladar consultas a un archivo.
+
+**Configuración y alcance:** usa los nombres reales workspace.gtfs_bogota y los snapshots 2025-10-28 / 2026-09-29 con sus hashes fijados. Estos valores son contexto de una evidencia concreta; el notebook 10 mantiene la configuración reutilizable del pipeline. Las celdas usan %sql y no dependen de estado Python. No hay instalaciones, widgets, imports, archivos de salida, vistas temporales ni escrituras persistentes. No forma parte del Job.
+
+| Bloque | Propósito | Entradas | Salida pequeña | Efectos y comprobación |
+| --- | --- | --- | --- | --- |
+| 1 / esquema | Entender columnas y tipos actuales. | information_schema.columns de Bronze stops. | 13 filas de metadata. | Solo lectura; el esquema histórico no prueba presencia en cada TXT. |
+| 2 / snapshots | Contar filas e IDs y descubrir hashes por fecha. | Bronze stops, dos fechas. | Dos parejas versión/hash con 6.530 y 8.314 filas e IDs. | Solo lectura; no implica crecimiento de oferta ni identidad entre años. |
+| 3 / encabezados | Comprobar qué columnas fueron publicadas. | Auditoría de stops.txt y pares exactos. | Dos conjuntos de columnas. | Solo lectura de auditoría; no relee TXT o Raw. |
+| 4 / distribución | Distinguir tipos de ubicación y códigos observados. | location_type, wheelchair_boarding y zone_id de los dos snapshots. | Ocho grupos; límite SQL de 50. | [NULL] es etiqueta de salida. No rellena valores; zone_id es tarifario. |
+| 5 / campos | Medir null, vacío, espacios, contenido y variedad. | Nueve campos de negocio. | 18 filas agregadas con regex Unicode. | Las cuatro categorías básicas reconcilian el total; evita nueve CTEs de agregación repetidos. |
+| 6 / controles | Revisar identidad, conversiones, rangos y padres. | Bronze stops; cruce consigo misma por versión/hash/parent_station. | Dos filas de controles; errores observados cero. | Casteos y valor efectivo de tipo solo en consulta. Requiere interpretar antes la unicidad de IDs para no multiplicar hijos en el join. |
+
+Los [resultados y límites](stops_profile_2025_2026.md) explican los opcionales ausentes, 27 / 1 nombres con espacios y las 750 referencias válidas de 2026. Estos controles son el perfil fuente y no equivalen a publicar Silver. Posteriormente cerré e implementé stops_v1 y ejecuté el Job compartido; el estado de publicación se registra en la guía Silver.
+
+
+## Ampliación del notebook 10 a stops_v1 — 10 de noviembre de 2026
+
+Mantengo los mismos dos bloques de código y los mismos widgets. La implementación se amplía mediante el registro y los módulos versionados; el notebook 11 no se añade a la cadena de ejecución.
+
+| Bloque | Propósito actualizado | Entradas | Salidas | Efectos y validación |
+| --- | --- | --- | --- | --- |
+| 1 / parámetros e imports | Seleccionar agency, routes o stops y cargar el pipeline. | Repositorio completo sincronizado, librerías existentes y widgets. | run_entity y parámetros; entity=stops elige stops_v1. | Sin escrituras. Reinicio Python si ya importé código anterior y vuelvo a este bloque. |
+| 2 / ejecución | Validar y, según mode, publicar un snapshot. | Para stops: Bronze Delta fijada y encabezado Staging; padres dentro de la misma fuente. | Resumen común, name_trimmed_rows y stations_without_children para stops. | Validate no escribe. Publish usa Silver/cuarentena/auditoría y conserva otros snapshots. Las nuevas métricas detalladas pertenecen al resultado devuelto; la auditoría conserva sus columnas actuales. |
+
+Los casts de stops convierten coordenadas a double y categorías a int. Conservo las ausencias de opcionales y uso el default semántico de location_type solo durante validación. Quito espacios Unicode de los bordes de nombres; no normalizo IDs. Los padres se agrupan antes del join, de modo que copias o conflictos no multipliquen filas. Un conflicto bloquea publicación, aunque el nombre normalizado coincida.
+
+La plantilla añade una tercera etapa serial para stops, que no depende de routes como dato. La serialización limita escritores sobre la auditoría compartida. La [guía de despliegue](silver_execution.md#despliegue-de-stops_v1) separa validate, publish y reintento; ya ejecuté el Job de stops en Workspace y comprobé la tabla y sus datos. El [cierre](silver_execution.md#cierre-de-la-ejecución-de-stops) registra el alcance de esta comprobación sin sustituir los conteos del perfil por conteos nuevos no recuperados.
+
+
+## Notebook 12 — silver/12_profile_gtfs_calendars — 10 de noviembre de 2026
+
+**Propósito:** entender conjuntamente patrones semanales y excepciones antes de implementar los contratos fuente. Consulté los dos snapshots mediante Genie y recuperé los resultados de las siete consultas definitivas, sin truncamiento. El notebook no tiene aún una ejecución completa documentada como cuaderno.
+
+| Bloque | Propósito | Entradas | Salidas verificadas | Efectos y límites |
+| --- | --- | --- | --- | --- |
+| 1 / esquema | Comprobar tipos históricos. | information_schema de las dos tablas Bronze. | 21 filas de metadata. | Solo lectura; no prueba presencia de encabezado. |
+| 2 / encabezados | Comprobar campos publicados. | Auditoría de calendar.txt y calendar_dates.txt por versión/hash. | Cuatro conjuntos de columnas. | Solo lectura; el orden auditado no implica orden físico. |
+| 3 / patrones | Leer significado de las 14 filas pequeñas. | Calendar de ambos snapshots, límite 100. | Siete servicios por versión; intervalos 2000–2099 y 2026. | Solo lectura; IDs y patrones no identifican agencias. |
+| 4 / completitud | Separar nulos, vacíos, espacios y controles Unicode. | 13 campos de negocio por dos snapshots. | 26 perfiles sin esos problemas. | No normaliza ni rellena campos. |
+| 5 / claves y procedencia | Medir duplicados, conflictos y metadata incoherente. | Fuentes seleccionadas por hash; clave simple o compuesta en JSON. | Cuatro resúmenes, controles de error cero. | No elimina filas; JSON evita colisiones por separadores. |
+| 6 / contexto | Relacionar excepciones con patrón y año de publicación. | Calendar agrupada por clave y calendar_dates; mismo snapshot. | 14 grupos; 140 excepciones de 2023 en el snapshot 2025. | Agrupar antes del join evita multiplicaciones; año diferente es contexto. |
+| 7 / formatos | Revisar fechas y códigos incluyendo null. | Los campos fuente; conversión try_cast segura. | Cuatro resúmenes, valores inválidos cero. | No publica fechas ni crea service_dates. |
+
+El [informe](calendars_profile_2025_2026.md) y la [propuesta de contrato](contracts/calendars.md) registran el hallazgo temporal. Conservaré los valores publicados; antes de derivar service_dates cerraré el horizonte analítico. No añadí este notebook al Job y no modifiqué el registro de procesadores.
+
+
+## Ampliación del notebook 10 a calendarios — 10 de noviembre de 2026
+
+Conservo los mismos dos bloques de código; no creo otro notebook para validar o publicar. Calendars_spark.py contiene dos contratos que comparten mecánica y mantienen tipos y claves propios.
+
+| Bloque | Propósito actualizado | Entradas | Salidas | Efectos y validación |
+| --- | --- | --- | --- | --- |
+| 1 / parámetros e imports | Elegir calendar o calendar_dates y cargar el pipeline. | Repositorio sincronizado, widgets y entorno existente. | Parámetros de entidad/snapshot y run_entity. | Sin escrituras; tras reiniciar o cambiar parámetros vuelvo a este bloque. |
+| 2 / ejecución | Validar y, según mode, publicar. | Bronze Delta fijada y encabezado real. Si está publicado calendar.txt, excepciones usan Silver calendar_v1 del mismo snapshot. | Fechas date, códigos int, IDs string; métricas comunes y avisos temporales. | Validate no escribe. Publish reutiliza escritor, cuarentena y auditoría; no hay transacción conjunta entre tablas. |
+
+La clave compuesta service_id + date se conserva como dos columnas en ventanas, comprobaciones de unicidad y cuarentena. Una excepción fuera del intervalo semanal o de año distinto no cambia automáticamente sus fechas. El aviso de intervalo largo usa 120 meses y no recorta el origen.
+
+La [guía de ejecución](silver_execution.md#despliegue-de-calendarios) mantiene el orden de primera validación/publicación y los parámetros generales del Job. El notebook 12 conserva el perfil inicial; su SQL no se modifica ni se añade al Job. Ya ejecuté las dos tareas de calendarios y comprobé las tablas y sus datos en Workspace. El [cierre](silver_execution.md#cierre-de-la-ejecución-de-calendarios) registra esta comprobación sin convertir los conteos del perfil previo en nuevos conteos de publicación.
+
+
+## Notebook 13 — silver/13_preview_gtfs_service_dates — 11 de noviembre de 2026
+
+**Propósito:** conservar una vista previa de lectura desde Silver antes de publicar una derivación. Las tres consultas se ejecutaron mediante Genie y sus 35 filas estructuradas se recuperaron sin truncamiento. El cuaderno no tiene todavía una ejecución completa documentada como notebook.
+
+| Bloque | Pregunta | Entradas | Salida verificada | Efectos y límites |
+| --- | --- | --- | --- | --- |
+| 1 / esquema | ¿Qué tipos tienen las fuentes Silver? | information_schema de calendar y calendar_dates. | 29 campos físicos. | Solo lectura; no es el esquema de service_dates. |
+| 2 / fuentes | ¿Cuántos registros y qué reglas están publicadas? | Ambas Silver, dos pares versión/hash. | Cuatro resúmenes, claves y marcadores correctos. | No modifica los contratos ni las fechas históricas. |
+| 3 / escenarios | ¿Qué días quedan activos al aplicar excepciones? | Patrones y excepciones, acotados al año del escenario. | 1.670 pares en 2025 y 1.403 en 2026. | Solo diagnóstico: se eligió publicar primero 2026, no ambos escenarios. |
+
+El [informe](service_dates_preview.md) explica por qué esos conteos no son viajes ni oferta comparable entre años. Este notebook no se añade al Job ni crea tablas.
+
+## Notebook 10 — Entrada de service_dates_v1 — 11 de noviembre de 2026
+
+Mantengo dos bloques. El primero incorpora window_start y window_end, vacíos para las entidades fuente; solo service_dates los exige. El segundo llama al mismo run_entity.
+
+La derivación identifica archivos publicados desde auditoría, carga versiones Delta fijadas de las fuentes Silver, aplica el horizonte y produce días activos. Validate no escribe. Publish usa el escritor común con clave servicio + fecha, registra su ejecución y protege el horizonte publicado. Pasaron las 24 pruebas seleccionadas con Spark y Delta; su primera publicación en Databricks ya está comprobada: 1.403 pares únicos, siete servicios y fechas de todo 2026. El [cierre](silver_execution.md#cierre-de-la-ejecución-de-service_dates) documenta la consulta y sus límites.
+
+
+## Notebook 14 — silver/14_profile_gtfs_shape_points — 11 de noviembre de 2026
+
+**Propósito:** entender puntos de trazado de ambos snapshots antes de tipar y publicar. Conservo nueve consultas definitivas ejecutadas mediante Genie y 55 filas de resultados estructurados sin truncamiento. El cuaderno no tiene una ejecución completa documentada como notebook. Todas las celdas son de lectura; no se añade al Job.
+
+| Bloque | Pregunta y entradas | Salida comprobada | Validación, efectos y límites |
+| --- | --- | --- | --- |
+| 1 / esquema | Columnas y tipos de shapes/trips/auditoría. | 23 campos. | Metadata; no modifica esquemas. |
+| 2 / encabezados | Archivos publicados por versión/hash. | 4 observaciones; distancia ausente en shapes. | No confunde ausencia fuente con null. |
+| 3 / completitud | Cuatro campos Bronze por snapshot. | 8 filas; cero nulos, vacíos y espacios. | Agrega primero y expande solo el resumen por campo. |
+| 4 / tipos y procedencia | Filas por hash, versión, ruta, timestamp y conversiones. | 2 resúmenes, 909.878 / 926.501 puntos y cero errores en controles. | try_cast no transforma tablas; no valida polígono administrativo. |
+| 5 / duplicados | Negocio y claves antes/después del cast. | 2 resúmenes; cero copias/conflictos/colisiones. | No deduplica registros ni usa coordenadas como clave. |
+| 6 / trazados | Cantidades de puntos, secuencias y coordenadas distintas. | 2 resúmenes, 676 / 1.045 trazados; mínimo cuatro coordenadas distintas. | Versión final ampliada sustituye la preliminar. |
+| 7 / segmentos | Ventanas por snapshot y trazado. | 2 resúmenes; 439 / 30.208 segmentos de extremos iguales. | Solo valores válidos; diagnóstico recto, sin tiempo ni distancia vial real. |
+| 8 / referencias | trips Bronze contra IDs de shapes distintos. | 2 resúmenes; cero referencias no resueltas y 4 / 0 trazados sin uso. | No multiplica viajes ni valida trips íntegramente. |
+| 9 / contexto | Cinco segmentos más largos por snapshot y modo vía trips/routes Silver. | 10 filas; máximo en C_1, tipo 6. | Sin umbral automático de rechazo; muestra acotada para interpretar extremos. |
+
+Los [hallazgos](shape_points_profile_2025_2026.md) y la [propuesta de contrato](contracts/shape_points.md) separan datos medidos de políticas pendientes. Los hashes y nombres son valores actuales del proyecto. Estas consultas no fijan versiones Delta ni forman una transacción conjunta. La futura implementación fijará versiones de entrada, preservará procedencia y reutilizará notebook 10; todavía no existe procesador ni tarea habilitada de shape_points.
+
+
+## Notebook 10 — Entrada de shape_points_v1 — 11 de noviembre de 2026
+
+Mantengo los dos bloques ejecutables. El bloque 1 conserva los parámetros existentes. El bloque 2 llama al mismo run_entity. entity=shape_points resuelve shapes.txt y bronze_gtfs_shapes. No añado un widget source_entity ni un notebook de publicación nuevo.
+
+| Bloque | Entradas | Salidas y efectos | Controles |
+| --- | --- | --- | --- |
+| 1 / configuración | Repositorio completo y parámetros del snapshot. | Importa el procesador habilitado. No escribe tablas. | Mantiene dependencias del entorno actual. |
+| 2 / ejecución | Bronze Delta fijada y encabezado de shapes.txt. | Validate devuelve métricas sin escribir. Publish usa Silver, cuarentena y auditoría. | Clave compuesta, conversiones, procedencia y contexto geométrico. Un error obligatorio bloquea el snapshot completo. |
+
+La plantilla añade publish_shape_points como séptima tarea serial. shape_points_work_items contiene ambos snapshots. La tarea interna process_shape_points_snapshot usa notebook 10. Sus parámetros mantienen entidad, versión y hash; no requieren horizonte de fechas.
+
+El notebook 14 conserva el perfil de lectura. No se añade al Job. Las 36 pruebas seleccionadas pasaron sin omisiones. La [guía](silver_execution.md#verificación-local-de-shape_points) conserva los resultados. El despliegue funcional de shape_points en Workspace ya está comprobado. El [cierre](silver_execution.md#cierre-de-la-ejecución-de-shape_points) registra el alcance disponible.
+
+
+## Notebook 15 — silver/15_profile_gtfs_trips — 11 de noviembre de 2026
+
+**Propósito:** entender viajes y referencias antes de implementar trips_v1. Conservo diez consultas definitivas ejecutadas mediante Genie. Recuperé 112 filas estructuradas completas. El cuaderno no tiene una ejecución completa documentada como notebook. Todas las celdas son de lectura.
+
+| Bloque | Entradas y pregunta | Salida comprobada | Efectos y límites |
+| --- | --- | --- | --- |
+| 1 / esquema | Trips/frequencies Bronze y cuatro dependencias Silver. | 77 campos. | Metadata; no modifica tipos. |
+| 2 / encabezados | Seis archivos por versión/hash. | 12 observaciones. | Versión final ampliada. Distingue campos ausentes y comportamiento continuo no publicado. |
+| 3 / shape_points | Tabla Silver recién desplegada. | 2 resúmenes: 909.878 / 926.501 puntos y claves únicas. | Confirma publicación actual. No demuestra reintento ni nuevos conteos de advertencias. |
+| 4 / completitud | Cinco campos de negocio, según encabezado. | 10 filas; IDs completos. Headsign ausente en 2025 y todo null en 2026. | Las métricas de un campo ausente quedan no aplicables. |
+| 5 / identidad | Filas por hash, IDs y procedencia. | 2 resúmenes: 107.162 / 181.060 claves únicas. | invalid_shape_id_rows es diagnóstico; no define obligatoriedad universal. |
+| 6 / duplicados | Filas de negocio sin columnas técnicas. | 2 resúmenes; cero copias o conflictos. | No deduplica viajes por ruta, servicio y trazado. |
+| 7 / referencias | Catálogos únicos de rutas, servicios y trazados. | 2 resúmenes; cero referencias no resueltas. | Los joins mantienen filas. No usa service_dates ni expande puntos. |
+| 8 / grano | Agrupaciones por ruta y por ruta/servicio/trazado. | 2 resúmenes; 1.641 / 2.427 grupos. | Compartir atributos no implica duplicidad de trip_id. |
+| 9 / frecuencias | IDs de frequencies contra trips. | 2 resúmenes; 2 / 14 IDs relacionados y cero huérfanos. | No valida horarios ni calcula salidas. |
+| 10 / Staging | Único TXT trips de 2026 con read_files. | 1 resumen; 181.060 filas y headsign null en todas. | CSV string, encabezado y FAILFAST. No escribe archivos ni demuestra igualdad completa de columnas. |
+
+Los hashes y nombres son valores actuales del proyecto. Las consultas no fijan versiones Delta ni una transacción conjunta. El bloque 10 infiere nombres del encabezado; desactiva inferencia de tipos. Esa exploración no cambia el esquema explícito del pipeline.
+
+El [informe](trips_profile_2025_2026.md) conserva hallazgos y reconciliaciones. La [propuesta de contrato](contracts/trips.md) mantiene los cinco campos publicados como string. Después de este perfil añadí procesador, pruebas y tarea de trips. El apartado siguiente conserva ese incremento. Este perfil precedió al planificador 8b; su selección dinámica y piloto se documentan en silver_planner.md.
+
+
+## Notebook 10 — Entrada de trips_v1 — 11 de noviembre de 2026
+
+Mantengo los dos bloques ejecutables. No añado widgets ni otro notebook de publicación. El bloque 1 importa los módulos actualizados. El bloque 2 llama al mismo run_entity con entity=trips.
+
+| Bloque | Entradas | Salidas y efectos | Controles |
+| --- | --- | --- | --- |
+| 1 / configuración | Repositorio y parámetros existentes del snapshot. | Importa trips_v1. No escribe tablas. | Mantiene dependencias del entorno actual. |
+| 2 / ejecución | Bronze, encabezado trips y metadata de fuentes publicadas. | Validate devuelve métricas sin escribir. Publish usa escritor, auditoría y cuarentena. | Referencias únicas del mismo snapshot y control de columnas de servicio continuo. |
+
+La auditoría debe contener routes.txt, stop_times.txt y al menos un calendario. Los archivos de calendario y shapes publicados requieren sus dependencias Silver. Los valores originales y los IDs permanecen como string. Trip_headsign ausente queda null, sin completar desde routes.
+
+La plantilla añade publish_trips como octava tarea después de publish_shape_points. Su For each usa trips_work_items y concurrency=1. La tarea interna process_trips_snapshot ejecuta notebook 10. No necesita horizonte de fechas.
+
+El notebook 15 conserva el perfil y no se añade al Job. Las 37 pruebas seleccionadas pasaron sin omisiones. El despliegue funcional quedó confirmado el 12 de noviembre de 2026. El [cierre](silver_execution.md#cierre-de-la-ejecución-de-trips) registra su alcance. El planificador 8b permanece sin implementar.
+
+## Notebook 16 — Perfil de frequencies — 12 de noviembre de 2026
+
+**Propósito:** entender ventanas e intervalos antes de implementar frequencies_v1.
+Ejecuté nueve consultas correctas mediante Genie. Recuperé 77 filas estructuradas completas.
+El cuaderno conserva esas consultas. Todavía no documenté una ejecución completa como notebook.
+Todos sus bloques son de lectura. Ninguno publica tablas ni modifica archivos.
+
+| Bloque | Entradas | Salida comprobada | Validación y decisión |
+| --- | --- | --- | --- |
+| 1 / esquema | Information_schema de Bronze, trips Silver y auditoría. | 27 campos. | Confirmo tipos físicos y nombres antes de consultar. |
+| 2 / encabezados | Observaciones de frequencies.txt por hash. | 2 filas. | Compruebo parejas versión/hash. Exact_times no está publicado. |
+| 3 / dependencia | Trips Silver de ambos hashes. | 2 resúmenes. | 107.162 / 181.060 filas únicas, con trips_v1. |
+| 4 / fuente | Frequencies Bronze de ambos hashes. | 16 filas; límite 100. | Reviso las parejas versión/hash y la procedencia. No guardo resultados en Git. |
+| 5 / campos | Cuatro campos publicados, con versión/hash explícitos. | 8 resúmenes. | Reviso nulos, vacíos, espacios Unicode, controles y valores distintos. |
+| 6 / conversiones | Horas, intervalo y procedencia de Bronze. | 2 resúmenes. | Formatos, long/int, rangos, ventanas y rutas de archivo. No corrijo horas ni unidades. |
+| 7 / claves | Ventanas fuente y horas convertidas. | 2 resúmenes. | Copias, conflictos y superposiciones dentro de trip_id. Uso máximo previo para detectar ventanas contenidas. |
+| 8 / relación | Frequencies Bronze y trips Silver del mismo snapshot. | 2 resúmenes. | Cero huérfanos; el join conserva 2 / 14 filas. |
+| 9 / contexto | Ventanas, trips, rutas y calendario del mismo snapshot. | 16 filas; límite 100. | C_1 y route_type=6. Los patrones semanales no sustituyen excepciones. |
+
+Los nombres y hashes son valores actuales del proyecto. Las consultas no fijan versiones Delta ni una transacción conjunta.
+Los bloques 2–4 filtran hashes y muestran versiones. Comprobé que sus resultados pertenecen a las parejas esperadas.
+Los bloques 5–9 filtran las parejas explícitas. Sus resultados no constituyen una publicación Silver.
+
+El [perfil](frequencies_profile_2025_2026.md) conserva rangos, contexto y límites.
+La [contrato implementado](contracts/frequencies.md) define los tipos y controles implementados.
+El cuaderno no se añade al Job. Notebook 10 conserva la responsabilidad de ejecutar el pipeline.
+Después del perfil añadí procesador, pruebas y tarea de frequencies. El despliegue funcional ya está confirmado. El planificador 8b ya tiene selección dinámica y piloto NO_WORK comprobado.
+
+
+## Notebook 10 — Entrada de frequencies_v1 — 12 de noviembre de 2026
+
+Mantengo los dos bloques ejecutables. No añado widgets, instalaciones ni otro notebook de publicación.
+
+| Bloque | Entradas | Salidas y efectos | Validación y decisión |
+| --- | --- | --- | --- |
+| 1 / configuración | Parámetros actuales y módulos del repositorio. | Importa el procesador habilitado. No escribe tablas. | Entorno existente, sin dependencias nuevas. |
+| 2 / ejecución | Frequencies Bronze, encabezado Staging y trips Silver. | Validate devuelve resumen. Publish escribe Silver, auditoría y cuarentena. | Versiones Delta fijas, claves compuestas, ventanas y referencia del mismo snapshot. |
+
+La plantilla añade publish_frequencies después de publish_trips. El For each usa frequencies_work_items y concurrency=1.
+Process_frequencies_snapshot ejecuta notebook 10 con entidad, versión y hash.
+No necesita horizonte de fechas. El notebook 16 continúa como perfil de lectura independiente.
+La [guía](silver_execution.md#despliegue-de-frequencies_v1) separa código local y despliegue funcional confirmado.
+
+
+## Notebook 17 — Perfil de stop_times — 12 de noviembre de 2026
+
+**Estado:** siete consultas verificadas por separado mediante Genie; notebook completo sin ejecución documentada.
+Recuperé 91 filas estructuradas completas: 60 de metadata y 31 agregados/ejemplos seleccionados.
+El cuaderno solo lee. No conserva resultados de ejecución en Git.
+
+| Bloque | Propósito y entradas | Salida comprobada | Efectos persistentes | Validación y decisión |
+| --- | --- | --- | --- | --- |
+| 1 / esquema | Information_schema de Bronze stop_times y Silver trips/stops/frequencies. | 58 campos físicos. | Ninguno. | Nombres y tipos; no demuestra calidad de valores. |
+| 2 / encabezados | Auditoría de stop_times.txt para ambas parejas versión/hash. | 2 observaciones; seis y ocho campos. | Ninguno. | Distinguir ausencia de encabezado y campo publicado. |
+| 3 / horas y timepoint | Bronze filtrado por ambos S. | 6 agregados de formatos y dominio. | Ninguno. | Horas superiores a 24 válidas; códigos 0/1. |
+| 4 / visitas y orden | Bronze completo; referencias a stops y contexto frequencies. | 2 filas agregadas. | Ninguno. | Claves convertidas, visitas aisladas, ubicación usada y tiempos. Bloque 6 completa NaN/Infinity y comparación temporal. |
+| 5 / cobertura | IDs de Bronze y dependencias Silver del mismo S. | 11 agregados. | Ninguno. | Referencias resueltas; 739 viajes sin visitas en 2026. location_types describe todo el catálogo, no solo ubicaciones usadas. |
+| 6 / control final | Horas como segundos, distancia y campos fuente. | 2 agregados; cero anomalías en controles ejecutados. | Ninguno. | isnan/Infinity, Unicode y menor hora actual contra máximo previo. |
+| 7 / ejemplos | Viajes con una visita en 2026. | 10 ejemplos limitados. | Ninguno. | No atribuir la parada ni una causa a todos los casos desde una muestra. |
+
+No fijé versiones Delta en las consultas exploratorias. El pipeline sí fija sus entradas.
+El [perfil](stop_times_profile_2025_2026.md) y el [contrato](contracts/stop_times.md) explican las decisiones.
+No necesito ejecutar notebook 17 antes de cada run del Job.
+
+### Notebook 10 — Entrada de stop_times_v1
+
+Mantengo los dos bloques ejecutables anteriores. Cambio la documentación de entidades habilitadas.
+
+| Bloque | Entradas | Salidas y efectos | Validación y decisión |
+| --- | --- | --- | --- |
+| 1 / parámetros | Entity=stop_times, versión, hash, catálogo, schema, volumen y mode. | Parámetros en sesión; sin escritura de tablas. | Repositorio completo y dependencias del entorno antes de ejecutar. |
+| 2 / pipeline | Bronze stop_times, encabezado Staging, trips/stops Silver y frequencies cuando está publicada. | Validate devuelve resumen sin escritura. Publish escribe Silver, cuarentena y auditoría. | Versiones Delta fijas, clave compuesta, horas y cobertura. Persistencia optativa desactivada para Serverless 4; liberación en finally cuando se activa. |
+
+La plantilla incorpora publish_stop_times después de publish_frequencies, con concurrencia 1.
+Stop_times_work_items pertenece a los parámetros generales del Job, no a los parámetros internos del notebook.
+El procesador está implementado y stop_times ya tiene despliegue funcional confirmado en Workspace.
+
+## Notebook 08 — Revisión de Bronze para automatización — 12 de noviembre de 2026
+
+**Estado:** cuatro consultas verificadas individualmente mediante Genie; notebook completo todavía sin ejecución documentada.
+Este notebook raíz es independiente de los perfiles 08 de la carpeta Silver.
+Solo lee auditorías y catálogo. No forma parte del Job Bronze y no guarda outputs.
+
+| Bloque | Entradas | Salidas verificadas | Efectos y decisión |
+| --- | --- | --- | --- |
+| 1 / duplicación de auditoría | Checks agrupados por corrida, nombre, entidad y severidad. | Nueve filas; dos corridas con 57 copias adicionales cada una. | Ninguna escritura. No implica duplicados de negocio Bronze. |
+| 2 / resumen de calidad | Auditoría completa, últimos diez grupos disponibles. | Nueve filas; últimas validaciones de 2025 y 2026 sin fallos bloqueantes. | WARN representa advertencias; severity WARNING también puede pasar. |
+| 3 / catálogo | Control completo, agregado antes de cualquier límite. | Una fila; 161 elementos y versiones. | Catálogo descubierto, no snapshots cargados ni verificación actual del portal. |
+| 4 / encabezados | Observaciones por versión y hash. | Dos filas; once archivos por snapshot. | Inventario observado, no comprobante de carga completa. |
+
+Conservo el SQL exacto de las cuatro consultas ejecutadas.
+El [diagnóstico](bronze_review_2026_11_12.md) documenta la revisión del Job y los notebooks 01–07.
+
+## Preparación Bronze v2 — 12 de noviembre de 2026
+
+**Estado:** implementación local; validación en Workspace pendiente.
+La [guía de preparación](bronze_automation.md) sustituye las instrucciones históricas incompatibles para este incremento.
+No reutilizo los conteos antiguos como prueba del nuevo cierre.
+
+| Notebook / bloque | Propósito e inputs | Outputs y efectos persistentes | Validación y decisiones |
+| --- | --- | --- | --- |
+| 02 / 1 | Localizar repo_root y resolver catálogo, schema, raw_volume y versión. | Variables de sesión; sin datos nuevos. | Repositorio completo; identificadores simples; require_task_values configurable. |
+| 02 / 2 | Descargar la URL controlada con reintentos temporales. | Payload y metadata en memoria. | Tres intentos acotados; 404 sin reintento. |
+| 02 / 4 | Verificar contenido antes de conservar o reutilizar Raw. | ZIP y manifiesto nuevos; existentes inmutables. | Hash real; no sobrescribir corrupción; task values obligatorios si se configura. |
+| 03 / precondición y 1 | Usar un volumen ya aprovisionado y configuración del entorno. | Variables; no crear infraestructura por ingesta. | Raw/Staging existentes; show_diagnostics=false por defecto. |
+| 03 / 2 | Verificar el ZIP y los TXT reutilizados. | Solo nuevas copias Staging y manifiesto de extracción. | Hash Raw y contenido del miembro ZIP; detener copia derivada inconsistente. |
+| 03 / 3 | Leer routes con esquema string explícito. | DataFrame fuente, sin conteo diagnóstico repetido. | Encabezado y contrato mínimo. |
+| 03 / 4 | Cargar routes con el cargador compartido. | Append Delta solo cuando no hay evidencia. | Conteo fuente, procedencia, lectura posterior y protección txnAppId/txnVersion. |
+| 03 / 4A y consultas finales | Mostrar detalles de aprendizaje bajo show_diagnostics. | Sin escrituras. | No forma parte de la compuerta obligatoria. |
+| 04 / 1 y 3 | Configurar el entorno y reutilizar carga común. | Variables y funciones; cargas en bloque 4. | Sin persist obligatorio; conserva mínimos de cada entidad y columnas fuente string. |
+| 04 / 3A y 5 | Diagnósticos opcionales de esquema y stops. | Solo lectura si show_diagnostics=true. | Notebook 07 conserva controles obligatorios. |
+| 05 / 1 y 3 | Configurar el entorno y reutilizar carga común. | Variables y funciones; cargas en bloques 4/5. | Carga parcial bloqueada antes de añadir filas. |
+| 05 / 4 y 5 | Cargar shapes y stop_times. | Tablas existentes append-only y resumen por entidad. | Reutilización si conteos y versión coinciden; confirmación posterior si escribe. |
+| 05 / 6 y 7 | Diagnósticos opcionales. | Sin escritura. | No duplicar sus conteos por defecto. |
+| 07 / 1 | Identificar snapshot, reglas y corrida. | Evento STARTED en audit_gtfs_bronze_snapshot_runs. | Inicio visible aunque falle después; repositorio completo y UTC. |
+| 07 / 2 y 3 | Definir contratos, esquemas y acumuladores. | Memoria de esta evaluación. | Doce entidades y controles esperados; no representa cierre. |
+| 07 / 4 | Fijar entradas Delta y reconciliar fuente/Bronze. | Checks de presencia, conteo y procedencia. | Invalida controles posteriores; archivos opcionales ausentes válidos. |
+| 07 / 5 | Validar IDs y relaciones. | Checks de validez y referencias. | Invalida evolución de esquema anterior al recalcular. |
+| 07 / 6 | Comparar encabezados y registrar observaciones. | Auditoría de esquema existente. | Marca el bloque completo solo al terminar. |
+| 07 / 7 | Persistir checks canónicos y cerrar la evaluación completa. | Checks insert-only, evento CLOSED y task values. | Repetición sin copias; contradicción bloqueada; FAIL detiene Job; WARNING conserva contratos Silver. |
+
+El grano de la nueva tabla es quality_run_id + event_type.
+No hay una transacción global entre checks y cierre.
+Un STARTED sin CLOSED es incompleto y bloquea su selección automática.
+La [guía](bronze_automation.md) contiene parámetros, SQL de comprobación y pasos de despliegue.
+
+### Comprobación de notebook 07 v2 en Workspace — 13 de noviembre de 2026
+
+Ejecuté todos los bloques de notebook 07 para ambos snapshots.
+2025 terminó PASSED: cero fallos bloqueantes, cero advertencias y validación completa.
+2026 terminó WARNING: cero fallos bloqueantes, cinco advertencias y validación completa.
+Ambos resúmenes mostraron elegible para validar Silver=true bajo bronze_snapshot_v2.
+El detalle de 2026 confirmó reconciliación de las once entidades publicadas y referencias sin huérfanos.
+La [guía Bronze](bronze_automation.md) conserva conteos y límites de esta evidencia.
+No extrapolo esta comprobación a las guardas nuevas de notebooks 02–05.
+La repetición aislada del bloque final y la consulta independiente de eventos no tienen confirmación nueva en Workspace.
+
+## Notebook 11 — Planificador Silver — 13 de noviembre de 2026
+
+**Estado:** implementación local; comprobación en Workspace pendiente.
+La [guía del planificador](silver_planner.md) define reglas, estados y límites.
+
+| Bloque | Propósito e inputs | Outputs y efectos | Validación y decisión |
+| --- | --- | --- | --- |
+| 1 / parámetros | Repo completo, catálogo, schema, rango opcional y límites. | Módulos y parámetros en memoria. Sin escrituras. | Raíz válida; contrato de configuración y horizonte explícito. |
+| 2 / plan | Cierres Bronze, último intento Silver y destinos del mismo snapshot. | Decisiones y listas; lecturas Delta fijadas, agregados técnicos acotados. | Último STARTED con CLOSED completo; no esconder fallos recientes ni destinos inconsistentes. |
+| 3 / entrega | Plan calculado y emit_task_values. | Vista previa sin escrituras o task values dentro del Job. | BLOCKED impide entrega; NO_WORK entrega listas vacías; límite por lista. |
+
+### Notebook 10 — Contexto optativo del planificador
+
+| Bloque | Cambio | Efectos y validación |
+| --- | --- | --- |
+| 1 / parámetros | Añade expected_rule_version, bronze_quality_run_id, bronze_result_sha256 y bronze_delta_version vacíos por defecto. | Mantiene entradas manuales existentes. |
+| 2 / ejecución | Verifica regla, cierre vigente y versión fuente fijada cuando recibe un plan. | Registra RUNNING antes de preparar datos; conserva FAILED o RUNNING si no publica. Las escrituras analíticas siguen en el publicador común. |
+
+La variante del Job añade una tarea inicial y conserva los diez ciclos seriales.
+El modo de generación por defecto continúa siendo manual.
+La vista previa no instala dependencias, no lanza Jobs ni modifica tablas.
+
+## Notebook 18 — Recuperación manual de intentos — 13 de noviembre de 2026
+
+**Estado:** implementación local; aplicación en Workspace pendiente.
+La [guía de recuperación](planner_recovery.md) documenta evidencia y parámetros concretos.
+
+| Bloque | Propósito e inputs | Outputs y efectos | Validación y decisión |
+| --- | --- | --- | --- |
+| 1 / solicitudes | Repo, catálogo, schema y JSON de intentos concretos. | Parámetros en memoria; modo preview por defecto. | Una a veinte solicitudes; identidad y motivo explícitos. |
+| 2 / evidencia | Auditoría y destinos actuales. | Propuestas sin escrituras. | Comprobar todos los casos antes de aplicar. |
+| 3 / aplicación | Mismas solicitudes, mode=apply y ejecuciones detenidas. | Solo audit_gtfs_attempt_resolutions; cada caso tiene su propia transacción. | Evidencia revalidada, idempotencia y resultados mostrados individualmente. No borrar ni republicar datos. |
+
+### Notebook 08 raíz — Consultas adicionales de diagnóstico
+
+| Bloque | Entradas | Resultado verificado mediante Genie | Efectos |
+| --- | --- | --- | --- |
+| 5 | Eventos Bronze para las parejas conocidas. | Ocho eventos; pareja incompatible sin CLOSED y dos cierres correctos. | Solo lectura. |
+| 6 | Silver agency de 2025. | Un grupo de siete filas del último SUCCEEDED conservado. | Solo lectura. |
+| 7 | Últimos intentos agency 2025. | Cinco intentos; el más reciente quedó RUNNING. | Solo lectura. |
+| 8 | Procedencia Bronze agency del hash de 2025. | Siete filas vinculadas a versión y ruta de 2025. | Solo lectura. |
+| 9 | Encabezados del mismo hash. | Once archivos observados únicamente bajo 2025. | Solo lectura. |
+| 10 | Checks del intento Bronze incompatible. | Cero registros. | Solo lectura. |
+
+Notebook 11 incorpora las resoluciones explícitas vigentes y muestra RESOLVED.
+Si el intento cambia o termina, vuelve a evaluarse sin esa exclusión.
+
+### Comprobación real de recuperación y plan — 13 de noviembre de 2026
+
+Notebook 18 registró las dos resoluciones con persisted=true en su bloque 3.
+Después ejecuté notebook 11 en vista previa y obtuve diecinueve COMPLETE, un OUT_OF_SCOPE y dos RESOLVED.
+No quedaron BLOCKED ni trabajos PENDING/DEFERRED en esa tabla.
+El resultado corresponde a NO_WORK bajo el motor actual.
+Los [detalles](planner_recovery.md) distinguen esta evidencia de una consulta SQL independiente y del Job completo.
+La comprobación de task values y de ciclos vacíos dentro del Workflow sigue pendiente.
+
+### Piloto NO_WORK dentro del Job — 13 de noviembre de 2026
+
+Conecté notebook 11 con emit_task_values=true y los diez ciclos existentes.
+El Job terminó SUCCEEDED en aproximadamente 2 minutos y 3 segundos.
+Genie confirmó el estado terminal del Job y de sus once tareas mediante metadata Lakeflow.
+La tabla del plan mostró diecinueve COMPLETE, un OUT_OF_SCOPE y dos RESOLVED, sin pendientes ni bloqueos.
+No obtuve un contador independiente de iteraciones desde las consultas de metadata realizadas.
+No confundo una ejecución del contenedor con una iteración de su tarea interna.
+El [registro](silver_planner.md) documenta los límites y deja pendiente la corrida con trabajo nuevo.
+
+## Uso de notebook 06 dentro del coordinador
+
+La [guía del Job principal](pipeline_coordinator.md) conserva el mapeo de sus parámetros a los seis bloques existentes de notebook 06.
+La tarea plan_bronze fija emit_task_values=true y recibe selección y rango desde parámetros con prefijo bronze_.
+La condición has_bronze_work consume planned_count; el For each consume ingestion_work_items solo en la rama true.
+No añadí bloques al notebook para coordinar Jobs mediante código Python.
+Lakeflow conserva esa responsabilidad en las tareas declarativas del padre.
+El padre ya fue creado y terminó SUCCEEDED con el snapshot existente 2026.
+El piloto no demuestra la ingesta de una versión nueva ni todas las ramas de fallo.
+
+## Notebook Gold 19 — Vista previa de cobertura
+
+| Bloque | Propósito | Entrada | Salida / efecto | Validación |
+| --- | --- | --- | --- | --- |
+| SQL de lectura | Clasificar cobertura y contexto sin perder viajes. | Trips, stop_times y frequencies Silver del snapshot 2026. | Cuatro agregados; sin escritura. | Consulta verificada mediante Genie; totales reconciliados con los conteos documentados. |
+
+El [perfil](trip_coverage_profile_2026.md) registra resultados y límites.
+No hice una ejecución completa del notebook en Workspace; conservé el SQL ya ejecutado mediante Genie.
+No es un prerrequisito obligatorio antes de cada publicación.
+
+## Notebook Gold 20 — Validar o publicar cobertura
+
+| Bloque | Propósito | Entrada | Salida / efecto | Validación |
+| --- | --- | --- | --- | --- |
+| 1 / configuración | Resolver repositorio y seleccionar modo y snapshot. | repo_root, catálogo, schema, versión, hash y mode. | Variables de sesión; sin escrituras. | Ruta absoluta y repositorio completo; identidad se valida antes de leer o escribir. |
+| 2 / ejecución | Preparar y reconciliar cobertura; publicar solo cuando lo solicito. | Últimas auditorías y versiones Delta fijadas de tres fuentes Silver. | Resumen JSON; validate sin escritura; publish escribe Gold y sus eventos de auditoría. | Conteos fuente auditados, clave única, visitas/ventanas conciliadas y contexto coherente; escritura limitada a S. |
+
+La [ficha Gold](contracts/trip_coverage.md) explica el grano, los tipos y las decisiones de negocio.
+Mode=validate es el valor inicial; Run all relee los widgets.
+No instalo dependencias nuevas para este módulo; reutilizo Spark/Delta administrados y el repositorio sincronizado.
+El padre todavía no ejecuta Gold; la validación y publicación en Workspace siguen pendientes.
+
+## Notebook Silver 21 — Evaluación de metadata y tarifas
+
+| Bloque | Propósito | Entrada | Salida / efecto | Validación |
+| --- | --- | --- | --- | --- |
+| 1 | Contrastar presencia observada de archivos. | Observaciones de esquema de ambos snapshots. | Dos agregados; solo lectura. | Se interpreta con la evidencia Bronze previa, no como prueba aislada de ausencia. |
+| 2 | Revisar atributos de tarifa y agencias. | Fare_attributes Bronze y agency Silver del mismo snapshot. | Dos perfiles; solo lectura. | Claves, campos requeridos, precios y referencias comprobadas. |
+| 3 | Revisar reglas, tarifas y rutas. | Fare_rules, fare_attributes y routes del mismo snapshot. | Un perfil 2025; solo lectura. | Conteos, duplicados completos y referencias seleccionadas. |
+| 4 | Revisar metadata y fechas declaradas. | Feed_info Bronze 2026. | Un perfil; solo lectura. | Campos requeridos revisados y fechas convertidas sin inversión. |
+| 5 | Completar comprobación de zonas. | Reglas 2025 y zonas únicas de stops Silver. | Un agregado; solo lectura. | Origen, destino y zonas intermedias presentes, sin multiplicar reglas. |
+| 6 | Entender el alcance de los atributos. | Ocho filas tarifarias y agencias del mismo snapshot. | Detalle acotado; solo lectura. | La fila 2026 corresponde a TransMiCable; no se generaliza a toda la red. |
+
+La [evaluación](remaining_silver_assessment.md) precisa controles, utilidad y límites.
+Los seis SQL terminaron satisfactoriamente mediante Genie; el notebook completo no tiene ejecución documentada en Workspace.
+No constituye un contrato Silver implementado ni una etapa obligatoria del Job.
+
+
+## Notebook Gold 22 — Programación por ruta y fecha
+
+| Bloque | Propósito | Entrada | Salida y efectos | Validación y decisiones |
+| --- | --- | --- | --- | --- |
+| 1 / configuración | Resolver el repositorio y releer todos los widgets. | repo_root, catálogo, schema, versión, hash, horizonte y modo. | Variables locales e importación; sin escrituras. | Ruta absoluta, repositorio completo, horizonte ISO entre 1 y 366 días. Los valores iniciales corresponden a 2026 y son parámetros. |
+| 2 / ejecución | Preparar el hecho diario con fuentes fijadas y publicar solo en mode=publish. | Cobertura Gold auditada, fechas activas Silver, versiones Delta y auditorías. | Resumen JSON; validate no escribe; publish escribe el ámbito Gold y eventos STARTED/CLOSED. | Claves únicas, metadata vigente, linaje Silver actual, horizonte completo, categorías conciliadas y viajes-día reconciliados por servicio. |
+
+La [guía de ejecución](gold_route_service_day_execution.md) conserva campos, muestra real y pasos de consumo.
+La [ficha](contracts/route_service_day.md) define grano, ausencias, tipos y límites.
+No descargo archivos ni instalo paquetes en estos bloques.
+El flujo usa Spark/Delta administrados y el repositorio completo.
+No modifiqué el Job principal ni publiqué la tabla en Workspace desde la implementación local.
+
+
+## Notebook Gold 23 — Ruta–ubicación
+
+| Bloque | Propósito | Entrada | Salida y efectos | Validación |
+| --- | --- | --- | --- | --- |
+| 1 | Resolver repositorio y releer widgets. | repo_root, catálogo, schema, versión, hash y modo. | Variables locales e importación, sin escrituras. | Raíz absoluta y repositorio completo; identidad validada al ejecutar el procesador. |
+| 2 | Construir y conciliar parejas únicas y publicar según el modo. | Cuatro fuentes Silver y auditoría con versiones Delta fijadas. | Resumen; validate sin escrituras; publish reemplaza el ámbito Gold y registra STARTED/CLOSED. | Claves únicas, metadata vigente, referencias completas, ubicaciones elegibles, visitas conciliadas y ejecución destino comprobada. |
+
+La [guía de ejecución](gold_route_stop_execution.md) y el [contrato](contracts/route_stop.md) documentan este bloque.
+No instala dependencias ni ejecuta Jobs. Los valores iniciales corresponden a 2026 y son parámetros.
+
+
+## Notebook Gold 24 — Extremos horarios publicados
+
+| Bloque | Propósito | Entrada | Salida y efectos | Validación |
+| --- | --- | --- | --- | --- |
+| 1 | Resolver repositorio y releer identidad y modo. | repo_root, catálogo, schema, versión, hash y mode. | Variables e importación, sin escrituras. | Raíz absoluta y módulo presente; identidad validada al ejecutar. |
+| 2 | Preparar extremos y clasificar todos los viajes, con publicación explícita. | Trips, stop_times, frequencies y auditoría Silver fijados por versión Delta. | Resumen; validate sin escritura; publish escribe Gold y eventos de auditoría. | Fuentes vigentes, claves y referencias, filas/visitas/ventanas conciliadas y categorías excluyentes. |
+
+La [guía](gold_trip_timing_execution.md) y el [contrato](contracts/trip_timing.md) explican reglas, precisión y ausencias.
+No instala librerías ni modifica el Job principal. Los parámetros iniciales corresponden al caso 2026.

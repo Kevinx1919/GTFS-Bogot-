@@ -1,0 +1,245 @@
+{
+  "version": "1.1.0",
+  "diagrams": [
+    {
+      "ordinal": 0,
+      "scrollPosition": {
+        "x": 0,
+        "y": 0
+      },
+      "nodes": [
+        {
+          "location": {
+            "x": 0,
+            "y": 0
+          },
+          "nodeIndex": "silver_gtfs_agency",
+          "nodeLineageTag": "170a90d6-90cf-42b4-8a23-4f3f77d4db55",
+          "size": {
+            "height": 300,
+            "width": 234
+          },
+          "zIndex": 0
+        }
+      ],
+      "name": "Todas las tablas",
+      "zoomValue": 100,
+      "pinKeyFieldsToTop": false,
+      "showExtraHeaderInfo": false,
+      "hideKeyFieldsWhenCollapsed": false,
+      "tablesLocked": false
+    },
+    {
+      "ordinal": 1,
+      "scrollPosition": {
+        "x": 0,
+        "y": 0
+      },
+      "nodes": [
+        {
+          "location": {
+            "x": 0,
+            "y": 350
+          },
+          "nodeIndex": "dim_gtfs_snapshot",
+          "nodeLineageTag": "c7c4fc8a-0ec2-4d07-850b-ae0df2d6a9ba",
+          "size": {
+            "height": 280,
+            "width": 260
+          },
+          "zIndex": 0
+        },
+        {
+          "location": {
+            "x": 310,
+            "y": 0
+          },
+          "nodeIndex": "silver_gtfs_agency",
+          "nodeLineageTag": "170a90d6-90cf-42b4-8a23-4f3f77d4db55",
+          "size": {
+            "height": 280,
+            "width": 260
+          },
+          "zIndex": 1
+        },
+        {
+          "location": {
+            "x": 620,
+            "y": 0
+          },
+          "nodeIndex": "silver_gtfs_routes",
+          "nodeLineageTag": "c1d9f42a-2e26-4a25-b6cf-3a1ea6da0310",
+          "size": {
+            "height": 280,
+            "width": 260
+          },
+          "zIndex": 2
+        },
+        {
+          "location": {
+            "x": 930,
+            "y": 0
+          },
+          "nodeIndex": "silver_gtfs_trips",
+          "nodeLineageTag": "dfdc6985-7fe6-4dfd-a7b5-ace94e32d2d8",
+          "size": {
+            "height": 280,
+            "width": 260
+          },
+          "zIndex": 3
+        },
+        {
+          "location": {
+            "x": 1240,
+            "y": 0
+          },
+          "nodeIndex": "silver_gtfs_frequencies",
+          "nodeLineageTag": "781f9207-170f-4172-a996-4c05cc3440b7",
+          "size": {
+            "height": 280,
+            "width": 260
+          },
+          "zIndex": 4
+        },
+        {
+          "location": {
+            "x": 310,
+            "y": 350
+          },
+          "nodeIndex": "silver_gtfs_stops",
+          "nodeLineageTag": "4f919895-7bfa-4d41-87a3-719e3d97f622",
+          "size": {
+            "height": 280,
+            "width": 260
+          },
+          "zIndex": 5
+        },
+        {
+          "location": {
+            "x": 310,
+            "y": 740
+          },
+          "nodeIndex": "dim_gtfs_service",
+          "nodeLineageTag": "c452d2ce-e5b7-4a18-9dc7-73a54260c3f4",
+          "size": {
+            "height": 280,
+            "width": 260
+          },
+          "zIndex": 6
+        },
+        {
+          "location": {
+            "x": 620,
+            "y": 550
+          },
+          "nodeIndex": "silver_gtfs_calendar",
+          "nodeLineageTag": "45e57e4e-a980-4146-b25b-7cd7954dcc35",
+          "size": {
+            "height": 280,
+            "width": 260
+          },
+          "zIndex": 7
+        },
+        {
+          "location": {
+            "x": 930,
+            "y": 550
+          },
+          "nodeIndex": "silver_gtfs_calendar_dates",
+          "nodeLineageTag": "3cd6db76-2f0a-49fa-ac45-70538f9dab5b",
+          "size": {
+            "height": 280,
+            "width": 260
+          },
+          "zIndex": 8
+        },
+        {
+          "location": {
+            "x": 930,
+            "y": 930
+          },
+          "nodeIndex": "silver_gtfs_service_dates",
+          "nodeLineageTag": "55ba85b6-8b54-42ff-8238-9ecfa62c075e",
+          "size": {
+            "height": 280,
+            "width": 260
+          },
+          "zIndex": 9
+        },
+        {
+          "location": {
+            "x": 620,
+            "y": 1050
+          },
+          "nodeIndex": "dim_gtfs_fecha",
+          "nodeLineageTag": "10954d70-eef4-4cc5-affb-1035232d66af",
+          "size": {
+            "height": 280,
+            "width": 260
+          },
+          "zIndex": 10
+        },
+        {
+          "location": {
+            "x": 1240,
+            "y": 350
+          },
+          "nodeIndex": "gold_gtfs_trip_coverage",
+          "nodeLineageTag": "e162c06c-587f-448f-a689-ae3fde53012e",
+          "size": {
+            "height": 330,
+            "width": 280
+          },
+          "zIndex": 11
+        },
+        {
+          "location": {
+            "x": 1550,
+            "y": 0
+          },
+          "nodeIndex": "gold_gtfs_route_service_day",
+          "nodeLineageTag": "3a473d67-1fb1-40e7-933f-a46869571a83",
+          "size": {
+            "height": 280,
+            "width": 260
+          },
+          "zIndex": 12
+        },
+        {
+          "location": {
+            "x": 1550,
+            "y": 350
+          },
+          "nodeIndex": "gold_gtfs_route_stop",
+          "nodeLineageTag": "181960bf-06f7-45a2-b60c-943525819ecb",
+          "size": {
+            "height": 280,
+            "width": 260
+          },
+          "zIndex": 13
+        },
+        {
+          "location": {
+            "x": 1550,
+            "y": 700
+          },
+          "nodeIndex": "gold_gtfs_trip_timing",
+          "nodeLineageTag": "5a0569a8-fc9d-409d-8c77-7b415e481c59",
+          "size": {
+            "height": 280,
+            "width": 260
+          },
+          "zIndex": 14
+        }
+      ],
+      "name": "Consumo GTFS",
+      "zoomValue": 65,
+      "pinKeyFieldsToTop": true,
+      "showExtraHeaderInfo": true,
+      "hideKeyFieldsWhenCollapsed": false,
+      "tablesLocked": false
+    }
+  ],
+  "selectedDiagram": "Consumo GTFS",
+  "defaultDiagram": "Todas las tablas"
+}

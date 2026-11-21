@@ -1,0 +1,119 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.14.0/schema.json",
+  "name": "15eb723d406847f49ac5",
+  "position": {
+    "x": 966,
+    "y": 690,
+    "z": 12,
+    "height": 146,
+    "width": 432,
+    "tabOrder": 12
+  },
+  "visual": {
+    "visualType": "tableEx",
+    "query": {
+      "queryState": {
+        "Values": {
+          "projections": [
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "gold_gtfs_route_stop"
+                    }
+                  },
+                  "Property": "report_stop_label"
+                }
+              },
+              "queryRef": "gold_gtfs_route_stop.report_stop_label",
+              "nativeQueryRef": "report_stop_label",
+              "displayName": "Ubicación · ID"
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "gold_gtfs_route_stop"
+                    }
+                  },
+                  "Property": "Red · Rutas por ubicación"
+                }
+              },
+              "queryRef": "gold_gtfs_route_stop.Red · Rutas por ubicación",
+              "nativeQueryRef": "Red · Rutas por ubicación",
+              "displayName": "Rutas del catálogo"
+            }
+          ]
+        }
+      },
+      "sortDefinition": {
+        "sort": [
+          {
+            "field": {
+              "Measure": {
+                "Expression": {
+                  "SourceRef": {
+                    "Entity": "gold_gtfs_route_stop"
+                  }
+                },
+                "Property": "Red · Rutas por ubicación"
+              }
+            },
+            "direction": "Descending"
+          }
+        ]
+      }
+    },
+    "objects": {
+      "values": [
+        {
+          "properties": {
+            "fontSize": {
+              "expr": {
+                "Literal": {
+                  "Value": "11D"
+                }
+              }
+            },
+            "fontFamily": {
+              "expr": {
+                "Literal": {
+                  "Value": "'Segoe UI'"
+                }
+              }
+            }
+          }
+        }
+      ],
+      "columnHeaders": [
+        {
+          "properties": {
+            "fontSize": {
+              "expr": {
+                "Literal": {
+                  "Value": "10D"
+                }
+              }
+            }
+          }
+        }
+      ],
+      "total": [
+        {
+          "properties": {
+            "totals": {
+              "expr": {
+                "Literal": {
+                  "Value": "false"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "drillFilterOtherVisuals": true
+  }
+}

@@ -1,0 +1,8 @@
+{
+  "service_dates": {
+    "feed_version_from": "2026-01-01",
+    "feed_version_to": "2026-12-31",
+    "window_start": "2026-01-01",
+    "window_end": "2026-12-31"
+  }
+}

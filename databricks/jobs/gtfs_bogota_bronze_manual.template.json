@@ -1,0 +1,117 @@
+{
+  "name": "gtfs_bogota_bronze_manual",
+  "email_notifications": {
+    "no_alert_for_skipped_runs": false
+  },
+  "webhook_notifications": {},
+  "timeout_seconds": 0,
+  "max_concurrent_runs": 1,
+  "tasks": [
+    {
+      "task_key": "raw_gtfs",
+      "run_if": "ALL_SUCCESS",
+      "notebook_task": {
+        "notebook_path": "/Workspace/REPO_ROOT/databricks/notebooks/02_raw_static_gtfs_ingestion",
+        "base_parameters": {
+          "feed_version": "2025-10-28"
+        },
+        "source": "WORKSPACE"
+      },
+      "timeout_seconds": 0,
+      "email_notifications": {},
+      "webhook_notifications": {},
+      "disabled": false
+    },
+    {
+      "task_key": "staging_y_rutas",
+      "depends_on": [
+        {
+          "task_key": "raw_gtfs"
+        }
+      ],
+      "run_if": "ALL_SUCCESS",
+      "notebook_task": {
+        "notebook_path": "/Workspace/REPO_ROOT/databricks/notebooks/03_bronze_static_gtfs",
+        "base_parameters": {
+          "feed_version": "{{tasks.raw_gtfs.values.feed_version}}",
+          "snapshot_sha256": "{{tasks.raw_gtfs.values.snapshot_sha256}}"
+        },
+        "source": "WORKSPACE"
+      },
+      "timeout_seconds": 0,
+      "email_notifications": {},
+      "webhook_notifications": {},
+      "disabled": false
+    },
+    {
+      "task_key": "bronze_operativos",
+      "depends_on": [
+        {
+          "task_key": "staging_y_rutas"
+        }
+      ],
+      "run_if": "ALL_SUCCESS",
+      "notebook_task": {
+        "notebook_path": "/Workspace/REPO_ROOT/databricks/notebooks/05_bronze_static_gtfs_operational_entities",
+        "base_parameters": {
+          "feed_version": "{{tasks.raw_gtfs.values.feed_version}}",
+          "snapshot_sha256": "{{tasks.raw_gtfs.values.snapshot_sha256}}"
+        },
+        "source": "WORKSPACE"
+      },
+      "timeout_seconds": 0,
+      "email_notifications": {},
+      "webhook_notifications": {},
+      "disabled": false
+    },
+    {
+      "task_key": "bronze_referencias",
+      "depends_on": [
+        {
+          "task_key": "staging_y_rutas"
+        }
+      ],
+      "run_if": "ALL_SUCCESS",
+      "notebook_task": {
+        "notebook_path": "/Workspace/REPO_ROOT/databricks/notebooks/04_bronze_static_gtfs_reference_entities",
+        "base_parameters": {
+          "feed_version": "{{tasks.raw_gtfs.values.feed_version}}",
+          "snapshot_sha256": "{{tasks.raw_gtfs.values.snapshot_sha256}}"
+        },
+        "source": "WORKSPACE"
+      },
+      "timeout_seconds": 0,
+      "email_notifications": {},
+      "webhook_notifications": {},
+      "disabled": false
+    },
+    {
+      "task_key": "validar_bronze",
+      "depends_on": [
+        {
+          "task_key": "bronze_operativos"
+        },
+        {
+          "task_key": "bronze_referencias"
+        }
+      ],
+      "run_if": "ALL_SUCCESS",
+      "notebook_task": {
+        "notebook_path": "/Workspace/REPO_ROOT/databricks/notebooks/07_validate_bronze_gtfs_snapshot",
+        "base_parameters": {
+          "feed_version": "{{tasks.raw_gtfs.values.feed_version}}",
+          "snapshot_sha256": "{{tasks.raw_gtfs.values.snapshot_sha256}}"
+        },
+        "source": "WORKSPACE"
+      },
+      "timeout_seconds": 0,
+      "email_notifications": {},
+      "webhook_notifications": {},
+      "disabled": false
+    }
+  ],
+  "queue": {
+    "enabled": true
+  },
+  "performance_target": "PERFORMANCE_OPTIMIZED"
+}

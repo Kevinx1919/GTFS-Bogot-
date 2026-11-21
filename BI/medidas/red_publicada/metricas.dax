@@ -1,0 +1,95 @@
+// Catálogo del snapshot. Mantiene identidad por versión y hash; ubicación se aplica virtualmente al puente.
+Red · Ubicaciones =
+VAR ScopePairs=SUMMARIZE(dim_gtfs_snapshot,dim_gtfs_snapshot[source_feed_version],dim_gtfs_snapshot[source_sha256])
+VAR StopFilter=VALUES(silver_gtfs_stops[stop_key])
+VAR BC=CALCULATETABLE(gold_gtfs_route_stop,REMOVEFILTERS(gold_gtfs_route_stop[report_stop_label]))
+VAR B=CALCULATETABLE(gold_gtfs_route_stop,TREATAS(StopFilter,gold_gtfs_route_stop[stop_key]))
+VAR K=SUMMARIZE(B,gold_gtfs_route_stop[stop_key])
+VAR AllB=CALCULATETABLE(gold_gtfs_route_stop,REMOVEFILTERS(gold_gtfs_route_stop),TREATAS(ScopePairs,gold_gtfs_route_stop[source_feed_version],gold_gtfs_route_stop[source_sha256]))
+VAR Degrees=GROUPBY(AllB,gold_gtfs_route_stop[stop_key],"_degree",COUNTX(CURRENTGROUP(),1))
+VAR D=FILTER(Degrees,gold_gtfs_route_stop[stop_key] IN K)
+VAR StopsAll=CALCULATETABLE(silver_gtfs_stops,REMOVEFILTERS(silver_gtfs_stops),TREATAS(ScopePairs,silver_gtfs_stops[source_feed_version],silver_gtfs_stops[source_sha256]))
+VAR SelectedStops=FILTER(StopsAll,silver_gtfs_stops[stop_key] IN K)
+RETURN IF([Red · Fuente disponible],COALESCE(COUNTROWS(K),0))
+
+// Catálogo del snapshot. Mantiene identidad por versión y hash; ubicación se aplica virtualmente al puente.
+Red · Compartidas =
+VAR ScopePairs=SUMMARIZE(dim_gtfs_snapshot,dim_gtfs_snapshot[source_feed_version],dim_gtfs_snapshot[source_sha256])
+VAR StopFilter=VALUES(silver_gtfs_stops[stop_key])
+VAR BC=CALCULATETABLE(gold_gtfs_route_stop,REMOVEFILTERS(gold_gtfs_route_stop[report_stop_label]))
+VAR B=CALCULATETABLE(gold_gtfs_route_stop,TREATAS(StopFilter,gold_gtfs_route_stop[stop_key]))
+VAR K=SUMMARIZE(B,gold_gtfs_route_stop[stop_key])
+VAR AllB=CALCULATETABLE(gold_gtfs_route_stop,REMOVEFILTERS(gold_gtfs_route_stop),TREATAS(ScopePairs,gold_gtfs_route_stop[source_feed_version],gold_gtfs_route_stop[source_sha256]))
+VAR Degrees=GROUPBY(AllB,gold_gtfs_route_stop[stop_key],"_degree",COUNTX(CURRENTGROUP(),1))
+VAR D=FILTER(Degrees,gold_gtfs_route_stop[stop_key] IN K)
+VAR StopsAll=CALCULATETABLE(silver_gtfs_stops,REMOVEFILTERS(silver_gtfs_stops),TREATAS(ScopePairs,silver_gtfs_stops[source_feed_version],silver_gtfs_stops[source_sha256]))
+VAR SelectedStops=FILTER(StopsAll,silver_gtfs_stops[stop_key] IN K)
+RETURN IF([Red · Fuente disponible],COALESCE(COUNTROWS(FILTER(D,[_degree]>=2)),0))
+
+// Catálogo del snapshot. Mantiene identidad por versión y hash; ubicación se aplica virtualmente al puente.
+Red · Rutas =
+VAR ScopePairs=SUMMARIZE(dim_gtfs_snapshot,dim_gtfs_snapshot[source_feed_version],dim_gtfs_snapshot[source_sha256])
+VAR StopFilter=VALUES(silver_gtfs_stops[stop_key])
+VAR BC=CALCULATETABLE(gold_gtfs_route_stop,REMOVEFILTERS(gold_gtfs_route_stop[report_stop_label]))
+VAR B=CALCULATETABLE(gold_gtfs_route_stop,TREATAS(StopFilter,gold_gtfs_route_stop[stop_key]))
+VAR K=SUMMARIZE(B,gold_gtfs_route_stop[stop_key])
+VAR AllB=CALCULATETABLE(gold_gtfs_route_stop,REMOVEFILTERS(gold_gtfs_route_stop),TREATAS(ScopePairs,gold_gtfs_route_stop[source_feed_version],gold_gtfs_route_stop[source_sha256]))
+VAR Degrees=GROUPBY(AllB,gold_gtfs_route_stop[stop_key],"_degree",COUNTX(CURRENTGROUP(),1))
+VAR D=FILTER(Degrees,gold_gtfs_route_stop[stop_key] IN K)
+VAR StopsAll=CALCULATETABLE(silver_gtfs_stops,REMOVEFILTERS(silver_gtfs_stops),TREATAS(ScopePairs,silver_gtfs_stops[source_feed_version],silver_gtfs_stops[source_sha256]))
+VAR SelectedStops=FILTER(StopsAll,silver_gtfs_stops[stop_key] IN K)
+RETURN IF([Red · Fuente disponible],COALESCE(COUNTROWS(SUMMARIZE(B,gold_gtfs_route_stop[route_key])),0))
+
+// Catálogo del snapshot. Mantiene identidad por versión y hash; ubicación se aplica virtualmente al puente.
+Red · Parejas =
+VAR ScopePairs=SUMMARIZE(dim_gtfs_snapshot,dim_gtfs_snapshot[source_feed_version],dim_gtfs_snapshot[source_sha256])
+VAR StopFilter=VALUES(silver_gtfs_stops[stop_key])
+VAR BC=CALCULATETABLE(gold_gtfs_route_stop,REMOVEFILTERS(gold_gtfs_route_stop[report_stop_label]))
+VAR B=CALCULATETABLE(gold_gtfs_route_stop,TREATAS(StopFilter,gold_gtfs_route_stop[stop_key]))
+VAR K=SUMMARIZE(B,gold_gtfs_route_stop[stop_key])
+VAR AllB=CALCULATETABLE(gold_gtfs_route_stop,REMOVEFILTERS(gold_gtfs_route_stop),TREATAS(ScopePairs,gold_gtfs_route_stop[source_feed_version],gold_gtfs_route_stop[source_sha256]))
+VAR Degrees=GROUPBY(AllB,gold_gtfs_route_stop[stop_key],"_degree",COUNTX(CURRENTGROUP(),1))
+VAR D=FILTER(Degrees,gold_gtfs_route_stop[stop_key] IN K)
+VAR StopsAll=CALCULATETABLE(silver_gtfs_stops,REMOVEFILTERS(silver_gtfs_stops),TREATAS(ScopePairs,silver_gtfs_stops[source_feed_version],silver_gtfs_stops[source_sha256]))
+VAR SelectedStops=FILTER(StopsAll,silver_gtfs_stops[stop_key] IN K)
+RETURN IF([Red · Fuente disponible],COALESCE(COUNTROWS(B),0))
+
+// Catálogo del snapshot. Mantiene identidad por versión y hash; ubicación se aplica virtualmente al puente.
+Red · Con coordenadas =
+VAR ScopePairs=SUMMARIZE(dim_gtfs_snapshot,dim_gtfs_snapshot[source_feed_version],dim_gtfs_snapshot[source_sha256])
+VAR StopFilter=VALUES(silver_gtfs_stops[stop_key])
+VAR BC=CALCULATETABLE(gold_gtfs_route_stop,REMOVEFILTERS(gold_gtfs_route_stop[report_stop_label]))
+VAR B=CALCULATETABLE(gold_gtfs_route_stop,TREATAS(StopFilter,gold_gtfs_route_stop[stop_key]))
+VAR K=SUMMARIZE(B,gold_gtfs_route_stop[stop_key])
+VAR AllB=CALCULATETABLE(gold_gtfs_route_stop,REMOVEFILTERS(gold_gtfs_route_stop),TREATAS(ScopePairs,gold_gtfs_route_stop[source_feed_version],gold_gtfs_route_stop[source_sha256]))
+VAR Degrees=GROUPBY(AllB,gold_gtfs_route_stop[stop_key],"_degree",COUNTX(CURRENTGROUP(),1))
+VAR D=FILTER(Degrees,gold_gtfs_route_stop[stop_key] IN K)
+VAR StopsAll=CALCULATETABLE(silver_gtfs_stops,REMOVEFILTERS(silver_gtfs_stops),TREATAS(ScopePairs,silver_gtfs_stops[source_feed_version],silver_gtfs_stops[source_sha256]))
+VAR SelectedStops=FILTER(StopsAll,silver_gtfs_stops[stop_key] IN K)
+RETURN IF([Red · Fuente disponible],COALESCE(COUNTROWS(FILTER(SelectedStops,NOT ISBLANK(silver_gtfs_stops[stop_lat])&&NOT ISBLANK(silver_gtfs_stops[stop_lon]))),0))
+
+// Catálogo del snapshot. Mantiene identidad por versión y hash; ubicación se aplica virtualmente al puente.
+Red · Sin coordenadas =
+IF([Red · Fuente disponible],[Red · Ubicaciones]-[Red · Con coordenadas])
+
+// Catálogo del snapshot. Mantiene identidad por versión y hash; ubicación se aplica virtualmente al puente.
+Red · Otras rutas =
+VAR ScopePairs=SUMMARIZE(dim_gtfs_snapshot,dim_gtfs_snapshot[source_feed_version],dim_gtfs_snapshot[source_sha256])
+VAR StopFilter=VALUES(silver_gtfs_stops[stop_key])
+VAR BC=CALCULATETABLE(gold_gtfs_route_stop,REMOVEFILTERS(gold_gtfs_route_stop[report_stop_label]))
+VAR B=CALCULATETABLE(gold_gtfs_route_stop,TREATAS(StopFilter,gold_gtfs_route_stop[stop_key]))
+VAR K=SUMMARIZE(B,gold_gtfs_route_stop[stop_key])
+VAR AllB=CALCULATETABLE(gold_gtfs_route_stop,REMOVEFILTERS(gold_gtfs_route_stop),TREATAS(ScopePairs,gold_gtfs_route_stop[source_feed_version],gold_gtfs_route_stop[source_sha256]))
+VAR Degrees=GROUPBY(AllB,gold_gtfs_route_stop[stop_key],"_degree",COUNTX(CURRENTGROUP(),1))
+VAR D=FILTER(Degrees,gold_gtfs_route_stop[stop_key] IN K)
+VAR StopsAll=CALCULATETABLE(silver_gtfs_stops,REMOVEFILTERS(silver_gtfs_stops),TREATAS(ScopePairs,silver_gtfs_stops[source_feed_version],silver_gtfs_stops[source_sha256]))
+VAR SelectedStops=FILTER(StopsAll,silver_gtfs_stops[stop_key] IN K)
+VAR Elegidas=SUMMARIZE(BC,gold_gtfs_route_stop[route_key]) VAR Relacionadas=SUMMARIZE(FILTER(AllB,gold_gtfs_route_stop[stop_key] IN K),gold_gtfs_route_stop[route_key]) RETURN IF([Red · Fuente disponible],IF(HASONEVALUE(silver_gtfs_routes[route_key]),COALESCE(COUNTROWS(EXCEPT(Relacionadas,Elegidas)),0)))
+
+// Tabla nativa sobre el puente: reutiliza grado precalculado por stop_key del snapshot. Filtra ubicaciones consultadas y deja totales BLANK.
+Red · Rutas por ubicación =
+VAR Clave=SELECTEDVALUE(gold_gtfs_route_stop[stop_key]) VAR Filtro=ISFILTERED(silver_gtfs_stops[report_stop_label])||ISFILTERED(silver_gtfs_stops[stop_id])||ISFILTERED(silver_gtfs_stops[stop_key]) RETURN IF(NOT ISBLANK(Clave)&&(NOT Filtro||Clave IN VALUES(silver_gtfs_stops[stop_key])),MAX(gold_gtfs_route_stop[report_stop_route_count]))
+
+// Exige una identidad única y un catálogo Gold no vacío. El contrato Gold bloquea una publicación global vacía. No confunde una selección vacía con una fuente ausente.
+Red · Fuente disponible =
+VAR P=SUMMARIZE(dim_gtfs_snapshot,dim_gtfs_snapshot[source_feed_version],dim_gtfs_snapshot[source_sha256]) VAR N=CALCULATE(COUNTROWS(gold_gtfs_route_stop),REMOVEFILTERS(gold_gtfs_route_stop),TREATAS(P,gold_gtfs_route_stop[source_feed_version],gold_gtfs_route_stop[source_sha256])) RETURN HASONEVALUE(dim_gtfs_snapshot[snapshot_key])&&N>0

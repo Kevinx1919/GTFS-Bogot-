@@ -1,0 +1,605 @@
+{
+  "schema_version": 1,
+  "diagram_type": "dataflow",
+  "meta": {
+    "title": "Mi lakehouse GTFS: de archivos a tablas",
+    "locale": "es",
+    "output": "docs/flujo_pipeline/mapa_lakehouse/mapa_lakehouse.html",
+    "quality_profile": "showcase",
+    "repository": {
+      "url": "https://github.com/Kevinx1919/GTFS-Bogot-.git",
+      "revision": "5c23d4e327fb9d90f407dbfc12678623106e4ad6"
+    },
+    "views": [
+      {
+        "id": "archivos",
+        "label": "Archivos en Volumes",
+        "focus": [
+          "captura",
+          "raw",
+          "extraer",
+          "staging"
+        ],
+        "note": "Conservo el ZIP en Raw y extraigo TXT en Staging; ambos son archivos, no tablas."
+      },
+      {
+        "id": "tablas",
+        "label": "Bronze y Silver",
+        "focus": [
+          "ingesta",
+          "bronze",
+          "transformar",
+          "silver",
+          "horizonte",
+          "derivar",
+          "service_dates"
+        ],
+        "note": "Bronze y Silver comparten workspace.gtfs_bogota; cambian su responsabilidad y sus prefijos."
+      },
+      {
+        "id": "consumo",
+        "label": "Gold y Power BI",
+        "focus": [
+          "silver",
+          "agregar",
+          "gold",
+          "bi"
+        ],
+        "note": "Cuatro Gold publicadas e importadas para 2026. Menú nativo confirmado; actualización completa pendiente."
+      }
+    ]
+  },
+  "stages": [
+    {
+      "label": "Fuente y Raw"
+    },
+    {
+      "label": "Extracción"
+    },
+    {
+      "label": "Bronze"
+    },
+    {
+      "label": "Silver"
+    },
+    {
+      "label": "Consumo futuro"
+    }
+  ],
+  "nodes": [
+    {
+      "id": "oficial",
+      "type": "external",
+      "label": "Fuente GTFS",
+      "sublabel": "ZIP publicado",
+      "stage": 0,
+      "row": 0,
+      "tag": "Estático",
+      "sources": [
+        {
+          "path": "databricks/notebooks/02_raw_static_gtfs_ingestion.ipynb",
+          "line": 152,
+          "end_line": 164,
+          "label": "Descarga y hash"
+        }
+      ]
+    },
+    {
+      "id": "captura",
+      "type": "backend",
+      "label": "Capturar",
+      "sublabel": "Descarga + SHA-256",
+      "stage": 0,
+      "row": 1,
+      "tag": "Notebook 02",
+      "sources": [
+        {
+          "path": "databricks/notebooks/02_raw_static_gtfs_ingestion.ipynb",
+          "line": 152,
+          "end_line": 164,
+          "label": "Petición HTTP"
+        },
+        {
+          "path": "databricks/notebooks/02_raw_static_gtfs_ingestion.ipynb",
+          "line": 322,
+          "end_line": 356,
+          "label": "Escritura del ZIP"
+        },
+        {
+          "path": "databricks/notebooks/02_raw_static_gtfs_ingestion.ipynb",
+          "line": 395,
+          "end_line": 401,
+          "label": "Manifiesto inmutable"
+        }
+      ]
+    },
+    {
+      "id": "raw",
+      "type": "database",
+      "label": "Raw · ZIP",
+      "sublabel": "ZIP + manifiestos",
+      "stage": 0,
+      "row": 2,
+      "tag": "Volume raw_gtfs",
+      "sources": [
+        {
+          "path": "databricks/notebooks/02_raw_static_gtfs_ingestion.ipynb",
+          "line": 322,
+          "end_line": 356,
+          "label": "Destino Raw"
+        },
+        {
+          "path": "databricks/notebooks/02_raw_static_gtfs_ingestion.ipynb",
+          "line": 395,
+          "end_line": 401,
+          "label": "Manifiesto JSON"
+        }
+      ]
+    },
+    {
+      "id": "extraer",
+      "type": "backend",
+      "label": "Extraer TXT",
+      "sublabel": "No altero el ZIP",
+      "stage": 1,
+      "row": 2,
+      "tag": "Notebook 03",
+      "sources": [
+        {
+          "path": "databricks/notebooks/03_bronze_static_gtfs.ipynb",
+          "line": 146,
+          "end_line": 173,
+          "label": "Lee ZIP de Raw"
+        },
+        {
+          "path": "databricks/notebooks/03_bronze_static_gtfs.ipynb",
+          "line": 195,
+          "end_line": 205,
+          "label": "Escribe TXT en Staging"
+        }
+      ]
+    },
+    {
+      "id": "staging",
+      "type": "database",
+      "label": "Staging · TXT",
+      "sublabel": "Archivos extraídos",
+      "stage": 1,
+      "row": 3,
+      "tag": "Volume staging_gtfs",
+      "sources": [
+        {
+          "path": "databricks/notebooks/03_bronze_static_gtfs.ipynb",
+          "line": 146,
+          "end_line": 151,
+          "label": "Ruta por snapshot"
+        },
+        {
+          "path": "databricks/notebooks/03_bronze_static_gtfs.ipynb",
+          "line": 195,
+          "end_line": 205,
+          "label": "Destino de la extracción"
+        }
+      ]
+    },
+    {
+      "id": "ingesta",
+      "type": "backend",
+      "label": "Ingesta Bronze",
+      "sublabel": "Texto + procedencia",
+      "stage": 2,
+      "row": 3,
+      "tag": "Notebooks 03–05",
+      "sources": [
+        {
+          "path": "databricks/notebooks/03_bronze_static_gtfs.ipynb",
+          "line": 283,
+          "end_line": 291,
+          "label": "Lectura y procedencia"
+        },
+        {
+          "path": "databricks/notebooks/04_bronze_static_gtfs_reference_entities.ipynb",
+          "line": 214,
+          "end_line": 214,
+          "label": "Referencias a Delta"
+        },
+        {
+          "path": "databricks/notebooks/05_bronze_static_gtfs_operational_entities.ipynb",
+          "line": 158,
+          "end_line": 158,
+          "label": "Operativas a Delta"
+        }
+      ]
+    },
+    {
+      "id": "bronze",
+      "type": "database",
+      "label": "Bronze · Delta",
+      "sublabel": "bronze_gtfs_*",
+      "stage": 2,
+      "row": 4,
+      "tag": "Tablas fuente",
+      "sources": [
+        {
+          "path": "databricks/notebooks/03_bronze_static_gtfs.ipynb",
+          "line": 312,
+          "end_line": 320,
+          "label": "Tabla routes y append"
+        },
+        {
+          "path": "databricks/notebooks/04_bronze_static_gtfs_reference_entities.ipynb",
+          "line": 214,
+          "end_line": 214,
+          "label": "Tablas de referencia"
+        },
+        {
+          "path": "databricks/notebooks/05_bronze_static_gtfs_operational_entities.ipynb",
+          "line": 158,
+          "end_line": 158,
+          "label": "Shapes y stop_times"
+        }
+      ]
+    },
+    {
+      "id": "transformar",
+      "type": "backend",
+      "label": "Pipeline Silver",
+      "sublabel": "Valido, tipo y publico",
+      "stage": 3,
+      "row": 4,
+      "tag": "9 entidades fuente",
+      "sources": [
+        {
+          "path": "databricks/gtfs_silver/pipeline.py",
+          "line": 105,
+          "end_line": 170,
+          "label": "Lectura y publicación de fuentes"
+        },
+        {
+          "path": "databricks/gtfs_silver/publication.py",
+          "line": 193,
+          "end_line": 239,
+          "label": "Rechazos y publicación"
+        }
+      ]
+    },
+    {
+      "id": "silver",
+      "type": "database",
+      "label": "Silver fuente",
+      "sublabel": "9 tablas Delta",
+      "stage": 3,
+      "row": 3,
+      "tag": "Histórico por snapshot",
+      "sources": [
+        {
+          "path": "databricks/gtfs_silver/publication.py",
+          "line": 44,
+          "end_line": 54,
+          "label": "Tablas y ámbito"
+        },
+        {
+          "path": "databricks/gtfs_silver/publication.py",
+          "line": 211,
+          "end_line": 239,
+          "label": "Publicación verificada"
+        },
+        {
+          "path": "docs/silver_execution.md",
+          "line": 846,
+          "end_line": 860,
+          "label": "Cierre funcional de stop_times"
+        }
+      ]
+    },
+    {
+      "id": "agregar",
+      "type": "backend",
+      "label": "Preparar Gold",
+      "sublabel": "Granos de negocio",
+      "stage": 4,
+      "row": 3,
+      "tag": "Notebooks 20,22–24",
+      "sources": [
+        {
+          "path": "databricks/gtfs_gold/trip_coverage.py",
+          "line": 29,
+          "end_line": 102,
+          "label": "Cobertura por viaje"
+        },
+        {
+          "path": "databricks/gtfs_gold/route_service_day.py",
+          "line": 32,
+          "end_line": 49,
+          "label": "Ruta y fecha activa"
+        },
+        {
+          "path": "databricks/gtfs_gold/route_stop.py",
+          "line": 45,
+          "end_line": 55,
+          "label": "Parejas ruta–ubicación"
+        }
+      ]
+    },
+    {
+      "id": "gold",
+      "type": "database",
+      "label": "Gold · Delta",
+      "sublabel": "Cuatro hechos de 2026",
+      "stage": 4,
+      "row": 2,
+      "tag": "PUBLICADAS",
+      "sources": [
+        {
+          "path": "docs/contracts/trip_coverage.md",
+          "line": 1,
+          "end_line": 20,
+          "label": "Grano de cobertura"
+        },
+        {
+          "path": "docs/contracts/route_stop.md",
+          "line": 1,
+          "end_line": 20,
+          "label": "Grano ruta–ubicación"
+        },
+        {
+          "path": "docs/contracts/trip_timing.md",
+          "line": 1,
+          "end_line": 20,
+          "label": "Grano de extremos horarios"
+        }
+      ]
+    },
+    {
+      "id": "bi",
+      "type": "external",
+      "label": "Power BI",
+      "sublabel": "DAX y cuatro paneles",
+      "stage": 4,
+      "row": 1,
+      "tag": "CONSUMO LOCAL",
+      "sources": [
+        {
+          "path": "docs/power_bi_user_stories.md",
+          "line": 47,
+          "end_line": 57,
+          "label": "Preguntas de las páginas"
+        },
+        {
+          "path": "docs/powerbi_mcp_setup.md",
+          "line": 7,
+          "end_line": 25,
+          "label": "Gold, modelo y DAX"
+        }
+      ]
+    },
+    {
+      "id": "horizonte",
+      "type": "backend",
+      "label": "Horizonte 2026",
+      "sublabel": "Parámetro explícito",
+      "stage": 2,
+      "row": 1,
+      "sources": [
+        {
+          "path": "databricks/gtfs_silver/job_config.py",
+          "line": 88,
+          "end_line": 99,
+          "label": "Ventana de service_dates"
+        }
+      ]
+    },
+    {
+      "id": "derivar",
+      "type": "backend",
+      "label": "Derivar días",
+      "sublabel": "Patrón y excepciones",
+      "stage": 3,
+      "row": 1,
+      "sources": [
+        {
+          "path": "databricks/gtfs_silver/pipeline.py",
+          "line": 216,
+          "end_line": 245,
+          "label": "Lee y publica fuentes Silver"
+        },
+        {
+          "path": "databricks/gtfs_silver/service_dates_spark.py",
+          "line": 65,
+          "end_line": 113,
+          "label": "Días activos dentro de ventana"
+        }
+      ]
+    },
+    {
+      "id": "service_dates",
+      "type": "database",
+      "label": "service_dates",
+      "sublabel": "Silver derivada",
+      "tag": "Solo 2026",
+      "stage": 3,
+      "row": 0,
+      "sources": [
+        {
+          "path": "databricks/gtfs_silver/service_dates_spark.py",
+          "line": 107,
+          "end_line": 122,
+          "label": "Salida derivada"
+        },
+        {
+          "path": "databricks/gtfs_silver/pipeline.py",
+          "line": 241,
+          "end_line": 244,
+          "label": "Publica derivación"
+        }
+      ]
+    }
+  ],
+  "flows": [
+    {
+      "id": "f1",
+      "from": "oficial",
+      "to": "captura",
+      "label": "ZIP por HTTP",
+      "variant": "default"
+    },
+    {
+      "id": "f2",
+      "from": "captura",
+      "to": "raw",
+      "label": "ZIP + JSON",
+      "variant": "default"
+    },
+    {
+      "id": "f3",
+      "from": "raw",
+      "to": "extraer",
+      "label": "ZIP original",
+      "variant": "default"
+    },
+    {
+      "id": "f4",
+      "from": "extraer",
+      "to": "staging",
+      "label": "TXT extraídos",
+      "variant": "default"
+    },
+    {
+      "id": "f5",
+      "from": "staging",
+      "to": "ingesta",
+      "label": "TXT fuente",
+      "variant": "default"
+    },
+    {
+      "id": "f6",
+      "from": "ingesta",
+      "to": "bronze",
+      "label": "Filas fuente",
+      "variant": "emphasis"
+    },
+    {
+      "id": "f7",
+      "from": "bronze",
+      "to": "transformar",
+      "label": "Snapshot",
+      "variant": "emphasis"
+    },
+    {
+      "id": "f8",
+      "from": "transformar",
+      "to": "silver",
+      "label": "Si es apto",
+      "variant": "emphasis"
+    },
+    {
+      "id": "f9",
+      "from": "silver",
+      "to": "agregar",
+      "label": "Fuentes Silver",
+      "variant": "default"
+    },
+    {
+      "id": "f10",
+      "from": "agregar",
+      "to": "gold",
+      "label": "Tras validar",
+      "variant": "default"
+    },
+    {
+      "id": "f11",
+      "from": "gold",
+      "to": "bi",
+      "label": "Importar a BI",
+      "variant": "default"
+    },
+    {
+      "id": "header_source",
+      "from": "staging",
+      "to": "transformar",
+      "label": "Encabezado TXT",
+      "variant": "default"
+    },
+    {
+      "id": "weekly_inputs",
+      "from": "silver",
+      "to": "derivar",
+      "label": "Calendarios"
+    },
+    {
+      "id": "window_input",
+      "from": "horizonte",
+      "to": "derivar",
+      "label": "Ventana"
+    },
+    {
+      "id": "active_days",
+      "from": "derivar",
+      "to": "service_dates",
+      "label": "Días activos",
+      "variant": "emphasis"
+    },
+    {
+      "id": "days_for_gold",
+      "from": "service_dates",
+      "to": "agregar",
+      "label": "Fechas activas"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "Archivos y tablas",
+      "items": [
+        "Raw y Staging conservan archivos en Volumes. Bronze y Silver son tablas Delta.",
+        "Bronze y Silver comparten workspace.gtfs_bogota. Los prefijos y contratos distinguen las capas."
+      ]
+    },
+    {
+      "dot": "emerald",
+      "title": "Diez entidades publicadas",
+      "items": [
+        "Agency, routes, stops, calendar, calendar_dates, shape_points, trips, frequencies y stop_times son entidades fuente.",
+        "Service_dates deriva días activos desde los calendarios Silver. Su horizonte actual cubre solamente 2026.",
+        "El cierre funcional registra la confirmación durante el desarrollo. Este HTML no consulta tablas en vivo."
+      ]
+    },
+    {
+      "dot": "amber",
+      "title": "Estado operativo actual",
+      "items": [
+        "El planificador Silver entrega listas dinámicas. Su piloto NO_WORK está comprobado.",
+        "El coordinador terminó SUCCEEDED con el snapshot existente 2026. El feed nuevo y las ramas de fallo siguen pendientes.",
+        "La primera entrega cierra GTFS estático, Gold y Power BI. Demanda, realtime y n8n/Ollama son ampliaciones."
+      ]
+    },
+    {
+      "dot": "violet",
+      "title": "Qué protege el histórico",
+      "items": [
+        "La entrada fuente combina Bronze y el encabezado del TXT. La derivación recibe calendarios y una ventana explícita.",
+        "Conservo versión y hash. Los errores bloquean el snapshot; auditoría y cuarentena conservan evidencia.",
+        "Genie ayuda a explorar en lectura. El pipeline versionado ejecuta transformaciones y escrituras."
+      ]
+    },
+    {
+      "dot": "slate",
+      "title": "Gold y consumo",
+      "items": [
+        "Cuatro hechos: trip_coverage (181.060), route_service_day (305.165), route_stop (62.715) y trip_timing (181.060).",
+        "Service_dates aporta los días activos a route_service_day; no es entrada de trip_coverage.",
+        "Power BI combina medidas DAX y HTML/CSS/SVG con filtros y navegación nativos.",
+        "El coordinador termina en Silver. Gold y la actualización de Power BI conservan un procedimiento manual."
+      ]
+    },
+    {
+      "dot": "slate",
+      "title": "Código y comprobaciones de desarrollo",
+      "items": [
+        "Las referencias fijan el código en 5c23d4e327fb. No prueban por sí mismas una publicación o un clic.",
+        "El estado del 20 de noviembre procede de las ejecuciones y revisiones confirmadas durante el desarrollo. Las definiciones PBIP locales todavía tienen cambios sin commit.",
+        "Este HTML es documentación: no ejecuta Jobs ni consulta datos en vivo."
+      ]
+    }
+  ]
+}

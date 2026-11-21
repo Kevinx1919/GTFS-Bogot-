@@ -1,0 +1,130 @@
+table silver_gtfs_service_dates
+	lineageTag: 55ba85b6-8b54-42ff-8238-9ecfa62c075e
+
+	column service_id
+		dataType: string
+		lineageTag: ef9cb083-ab4b-41b8-be92-0616684e3377
+		summarizeBy: none
+		sourceColumn: service_id
+
+		annotation SummarizationSetBy = Automatic
+
+	column service_date
+		dataType: dateTime
+		formatString: Long Date
+		lineageTag: 35c0f404-759f-476c-9b6d-66297b95590d
+		summarizeBy: none
+		sourceColumn: service_date
+
+		variation Variation
+			isDefault
+			relationship: 99acc47b-e9a7-4d34-a84b-fd6ff81bf885
+			defaultHierarchy: LocalDateTable_159888c7-559f-4ecf-a9d2-f65638c5bc35.'Jerarquía de fechas'
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation UnderlyingDateTimeDataType = Date
+
+	column activation_source
+		dataType: string
+		lineageTag: d5e5453e-db1a-4f49-8a1b-682b9bf6cf02
+		summarizeBy: none
+		sourceColumn: activation_source
+
+		annotation SummarizationSetBy = Automatic
+
+	column weekly_pattern_active
+		dataType: boolean
+		formatString: """TRUE"";""TRUE"";""FALSE"""
+		lineageTag: 25af908b-b050-4338-aa1e-df0f4af9008e
+		summarizeBy: none
+		sourceColumn: weekly_pattern_active
+
+		annotation SummarizationSetBy = Automatic
+
+	column source_feed_version
+		dataType: string
+		isHidden
+		lineageTag: e07b2b3b-a2e7-4844-824f-e09f0246202a
+		summarizeBy: none
+		sourceColumn: source_feed_version
+
+		annotation SummarizationSetBy = Automatic
+
+	column source_sha256
+		dataType: string
+		isHidden
+		lineageTag: 7d639a6f-4051-4f8b-becb-ead6844889b5
+		summarizeBy: none
+		sourceColumn: source_sha256
+
+		annotation SummarizationSetBy = Automatic
+
+	column analysis_window_start
+		dataType: dateTime
+		formatString: Long Date
+		lineageTag: 821206fa-d084-47fe-8e0d-4abe5abb46bf
+		summarizeBy: none
+		sourceColumn: analysis_window_start
+
+		variation Variation
+			isDefault
+			relationship: 86c33fe2-16cc-459b-b37e-8b28916aac47
+			defaultHierarchy: LocalDateTable_2a6b3e2d-4b3d-4d52-b518-295809993b86.'Jerarquía de fechas'
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation UnderlyingDateTimeDataType = Date
+
+	column analysis_window_end
+		dataType: dateTime
+		formatString: Long Date
+		lineageTag: 923eb705-2599-4479-84c5-b47c474ab98c
+		summarizeBy: none
+		sourceColumn: analysis_window_end
+
+		variation Variation
+			isDefault
+			relationship: 6819572a-a6e7-4da8-9a08-7d4ef78de99b
+			defaultHierarchy: LocalDateTable_37c3119e-c578-40e2-9d89-fbab9a0554db.'Jerarquía de fechas'
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation UnderlyingDateTimeDataType = Date
+
+	column source_temporal_warning
+		dataType: boolean
+		formatString: """TRUE"";""TRUE"";""FALSE"""
+		lineageTag: 1bcad391-dc46-40dd-a137-618f933e67a3
+		summarizeBy: none
+		sourceColumn: source_temporal_warning
+
+		annotation SummarizationSetBy = Automatic
+
+	/// Clave de consumo v1: longitud y versión fuente, más SHA-256. No modifica la identidad Silver.
+	column snapshot_key = FORMAT ( LEN ( [source_feed_version] ), "0" ) & ":" & [source_feed_version] & ":" & [source_sha256]
+		dataType: string
+		isHidden
+		lineageTag: 47700ffe-3b05-4b20-84fb-6114bdc8432d
+		summarizeBy: none
+
+	/// Clave de consumo v1 por snapshot e ID fuente sin conversiones ni eliminación de ceros.
+	column service_key = FORMAT ( LEN ( [source_feed_version] ), "0" ) & ":" & [source_feed_version] & ":" & [source_sha256] & ":" & [service_id]
+		dataType: string
+		isHidden
+		lineageTag: 4f53da66-de83-440d-82ef-0ca880b00afe
+		summarizeBy: none
+
+	partition silver_gtfs_service_dates = m
+		mode: import
+		source =
+				let
+				  Origen = DatabricksMultiCloud.Catalogs(DatabricksServerHostname, DatabricksHttpPath, null),
+				  #"Navegación 1" = Origen{[Name = "workspace", Kind = "Database"]}[Data],
+				  #"Navegación 2" = #"Navegación 1"{[Name = "gtfs_bogota", Kind = "Schema"]}[Data],
+				  #"Navegación 3" = #"Navegación 2"{[Name = "silver_gtfs_service_dates", Kind = "Table"]}[Data],
+				  #"Columnas quitadas" = Table.RemoveColumns(#"Navegación 3", {"silver_loaded_at_utc", "silver_run_id", "silver_rule_version", "input_versions_json"})
+				in
+				  #"Columnas quitadas"
+
+	annotation PBI_ResultType = Table

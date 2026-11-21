@@ -1,0 +1,10 @@
+{
+  "UnclassifiedAgencies": null,
+  "DuplicateAgencyKeys": 0,
+  "DuplicateGoldKeys": 0,
+  "OrphanRoutes": null,
+  "OrphanTrips": null,
+  "OrphanCoverage": null,
+  "RouteReconciliation": 0,
+  "TripReconciliation": 0
+}

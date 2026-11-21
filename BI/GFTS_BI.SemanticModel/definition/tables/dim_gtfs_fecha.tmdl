@@ -1,0 +1,46 @@
+/// Calendario analítico explícito del horizonte 2026. La fecha de servicio es distinta de la versión del feed.
+table dim_gtfs_fecha
+	lineageTag: 10954d70-eef4-4cc5-affb-1035232d66af
+	dataCategory: Time
+
+	column fecha
+		isUnique
+		formatString: yyyy-MM-dd
+		lineageTag: 46175847-ffba-45c3-aae7-2026497f5754
+		summarizeBy: none
+		isNameInferred
+		sourceColumn: [fecha]
+
+	column año
+		lineageTag: 78fe42f2-d718-47a6-8bdf-16cf1d2d630d
+		summarizeBy: none
+		isNameInferred
+		sourceColumn: [año]
+
+	column mes_numero
+		lineageTag: ac5a29b8-05ef-4f11-8953-02e608fb35a0
+		summarizeBy: none
+		isNameInferred
+		sourceColumn: [mes_numero]
+
+	column mes
+		lineageTag: 08eb479d-adc3-4655-b7ce-23cb85318a6e
+		isNameInferred
+		sourceColumn: [mes]
+		sortByColumn: mes_numero
+
+	column dia_semana_numero
+		lineageTag: 319e0702-c008-41d0-8f57-ed71ae145c46
+		summarizeBy: none
+		isNameInferred
+		sourceColumn: [dia_semana_numero]
+
+	column dia_semana
+		lineageTag: a25b211d-be27-45c1-b574-606c86f55c86
+		isNameInferred
+		sourceColumn: [dia_semana]
+		sortByColumn: dia_semana_numero
+
+	partition dim_gtfs_fecha = calculated
+		mode: import
+		source = SELECTCOLUMNS(CALENDAR(DATE(2026,1,1),DATE(2026,12,31)), "fecha", [Date], "año", YEAR([Date]), "mes_numero", MONTH([Date]), "mes", FORMAT([Date],"mmmm","es-CO"), "dia_semana_numero", WEEKDAY([Date],2), "dia_semana", FORMAT([Date],"dddd","es-CO"))

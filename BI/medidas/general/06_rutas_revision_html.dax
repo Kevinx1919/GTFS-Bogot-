@@ -1,0 +1,9 @@
+General · Rutas revisión HTML =
+VAR RutasContexto = ADDCOLUMNS ( SUMMARIZE ( silver_gtfs_routes, silver_gtfs_routes[route_key], silver_gtfs_routes[route_id], silver_gtfs_routes[route_short_name] ), "_casos", CALCULATE ( [Viajes sin visitas] ), "_evaluados", CALCULATE ( [Viajes evaluados] ) )
+VAR RutasConCasos = FILTER ( RutasContexto, [_casos] > 0 )
+VAR PrimerasRutas = TOPN ( 3, RutasConCasos, [_casos], DESC, silver_gtfs_routes[route_key], ASC )
+VAR FilasHTML = CONCATENATEX ( PrimerasRutas,
+    VAR NombreRuta = COALESCE ( silver_gtfs_routes[route_short_name], silver_gtfs_routes[route_id] )
+    RETURN "<tr><td>" & SUBSTITUTE ( SUBSTITUTE ( SUBSTITUTE ( NombreRuta, "&", "&amp;" ), "<", "&lt;" ), ">", "&gt;" ) & "</td><td class='num'>" & FORMAT ( [_casos], "#,0", "es-CO" ) & "</td><td class='num'>" & FORMAT ( [_evaluados], "#,0", "es-CO" ) & "</td><td class='num'><span class='rate-cell'><span class='rate-track'><i style='width:" & FORMAT ( DIVIDE ( [_casos], [_evaluados] ) * 100, "0.00", "en-US" ) & "%'></i></span>" & FORMAT ( DIVIDE ( [_casos], [_evaluados] ), "0.0%", "es-CO" ) & "</span></td></tr>", "", [_casos], DESC )
+VAR Detalle = IF ( ISBLANK ( [Viajes evaluados] ), "<div class='empty-state'>Este contexto no tiene evaluación Gold.</div>", IF ( COUNTROWS ( RutasConCasos ) = 0, "<div class='empty-state'>No hay viajes sin visitas en el contexto seleccionado.</div>", "<table><thead><tr><th>Ruta</th><th class='num'>Sin visitas</th><th class='num'>Evaluados</th><th class='num'>Proporción</th></tr></thead><tbody>" & FilasHTML & "</tbody></table>" ) )
+RETURN "<section class='panel review-panel'><div class='panel-head'><h2>Dónde revisar el dato</h2><span>" & IF ( ISBLANK ( [Viajes evaluados] ), "Sin evaluación", FORMAT ( COALESCE ( COUNTROWS ( RutasConCasos ), 0 ), "0", "es-CO" ) & " rutas con casos" ) & "</span></div><p class='panel-subtitle'>Tres rutas con más viajes sin visitas. No indica cancelaciones.</p>" & Detalle & "</section>"

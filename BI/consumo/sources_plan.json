@@ -1,0 +1,112 @@
+{
+  "status": "four_gold_tables_imported_and_filter_tested",
+  "existing": [
+    "gold_gtfs_trip_coverage",
+    "silver_gtfs_routes",
+    "silver_gtfs_agency",
+    "silver_gtfs_stops"
+  ],
+  "next_table": {
+    "name": "gold_gtfs_route_service_day",
+    "required_columns": [
+      "source_feed_version",
+      "source_sha256",
+      "route_id",
+      "service_date",
+      "declared_trip_count",
+      "trips_without_frequency_count",
+      "frequency_template_count",
+      "frequency_window_count",
+      "trips_without_visits_count",
+      "trips_with_one_visit_count",
+      "trips_with_multiple_visits_count",
+      "active_service_count",
+      "source_temporal_warning",
+      "analysis_window_start",
+      "analysis_window_end"
+    ],
+    "exclude_from_import": [
+      "gold_run_id",
+      "gold_rule_version",
+      "gold_loaded_at_utc"
+    ],
+    "relationships": [
+      {
+        "from": "gold_gtfs_route_service_day.route_key",
+        "to": "silver_gtfs_routes.route_key",
+        "cardinality": "many_to_one",
+        "direction": "single"
+      },
+      {
+        "from": "gold_gtfs_route_service_day.service_date",
+        "to": "dim_gtfs_fecha.fecha",
+        "cardinality": "many_to_one",
+        "direction": "single"
+      }
+    ],
+    "published_gold_run_id": "3b65045e-5afb-431b-93d0-1b40315b485d",
+    "status": "imported_and_tested"
+  },
+  "map": {
+    "visual": "HTML/SVG: coordenadas GTFS y relaciones de catálogo",
+    "table": "silver_gtfs_stops",
+    "id": "stop_key",
+    "latitude": "stop_lat",
+    "longitude": "stop_lon",
+    "latitude_aggregation": "DoNotSummarize",
+    "longitude_aggregation": "DoNotSummarize",
+    "legend": "location_type",
+    "tooltips": [
+      "stop_name",
+      "stop_id",
+      "parent_station"
+    ],
+    "route_filter_dependency": "gold_gtfs_route_stop imported; virtual stop-key filtering in the map measures",
+    "date_scope": "published_network_catalog; no daily filter until a service-aware bridge is defined"
+  },
+  "map_bridge": {
+    "name": "gold_gtfs_route_stop",
+    "status": "imported_and_tested",
+    "required_columns": [
+      "source_feed_version",
+      "source_sha256",
+      "route_id",
+      "stop_id",
+      "published_visit_count",
+      "declared_trip_count"
+    ],
+    "relationships": [
+      "silver_gtfs_routes.route_key -> gold_gtfs_route_stop.route_key"
+    ],
+    "direction": "single_from_dimensions",
+    "map_visual_filter": "Implemented HTML map measures apply virtual stop-key filtering; no bidirectional physical relationship",
+    "map_stop_filter": "Virtual TREATAS from silver_gtfs_stops.stop_key via Ubicación relacionada; no active physical stop relationship"
+  },
+  "trip_timing": {
+    "name": "gold_gtfs_trip_timing",
+    "status": "imported_and_tested",
+    "relationship": "silver_gtfs_trips.trip_key -> gold_gtfs_trip_timing.trip_key; single direction",
+    "eligible_filter": "timing_status=eligible",
+    "precision_field": "endpoint_time_precision",
+    "date_scope": "trip catalog; explicit active-service logic required for date filtering",
+    "required_columns": [
+      "source_feed_version",
+      "source_sha256",
+      "trip_id",
+      "route_id",
+      "service_id",
+      "visit_count",
+      "first_stop_id",
+      "last_stop_id",
+      "first_stop_sequence",
+      "last_stop_sequence",
+      "first_departure_time_seconds",
+      "last_arrival_time_seconds",
+      "frequency_window_count",
+      "is_frequency_template",
+      "endpoint_time_precision",
+      "timing_status",
+      "published_span_seconds"
+    ]
+  }
+}

@@ -1,0 +1,129 @@
+table silver_gtfs_frequencies
+	lineageTag: 781f9207-170f-4172-a996-4c05cc3440b7
+
+	/// Ventanas publicadas del contexto. No cuenta vehículos ni salidas individuales.
+	measure 'Ventanas de frecuencia' = COALESCE ( COUNTROWS ( 'silver_gtfs_frequencies' ), 0 )
+		formatString: #,0
+		displayFolder: Frecuencias
+		lineageTag: 666c72f3-5b65-487c-ba2e-a582eaa66b92
+
+	/// Viajes/plantillas distintas con ventanas publicadas; conserva el snapshot y evita contar una plantilla por cada ventana.
+	measure 'Plantillas con frecuencia' = COALESCE ( DISTINCTCOUNT ( 'silver_gtfs_frequencies'[trip_key] ), 0 )
+		formatString: #,0
+		displayFolder: Frecuencias
+		lineageTag: aabb386d-98d3-4245-a885-2f1b89b3431e
+
+	column trip_id
+		dataType: string
+		lineageTag: 73938bd5-ea98-4dd7-8a69-c4914f9b00eb
+		summarizeBy: none
+		sourceColumn: trip_id
+
+		annotation SummarizationSetBy = Automatic
+
+	column start_time
+		dataType: string
+		lineageTag: faf6cd90-8152-465e-80ad-60315df04f1f
+		summarizeBy: none
+		sourceColumn: start_time
+
+		annotation SummarizationSetBy = Automatic
+
+	column end_time
+		dataType: string
+		lineageTag: e718f259-8deb-4ccc-87e7-88e91b420971
+		summarizeBy: none
+		sourceColumn: end_time
+
+		annotation SummarizationSetBy = Automatic
+
+	column headway_secs
+		dataType: int64
+		formatString: 0
+		lineageTag: d158dc7b-2aa8-460a-aef9-bb7b4e71f7f9
+		summarizeBy: none
+		sourceColumn: headway_secs
+
+		annotation SummarizationSetBy = Automatic
+
+	column exact_times
+		dataType: int64
+		formatString: 0
+		lineageTag: a21c06ba-98c0-4069-a06b-c5959e2d5bd5
+		summarizeBy: none
+		sourceColumn: exact_times
+
+		annotation SummarizationSetBy = Automatic
+
+	column start_time_seconds
+		dataType: int64
+		formatString: 0
+		lineageTag: 6fc5824e-a016-4801-8d8c-4699faf02c77
+		summarizeBy: none
+		sourceColumn: start_time_seconds
+
+		annotation SummarizationSetBy = Automatic
+
+	column end_time_seconds
+		dataType: int64
+		formatString: 0
+		lineageTag: 881fce28-85f9-432d-af28-8e248125f5dc
+		summarizeBy: none
+		sourceColumn: end_time_seconds
+
+		annotation SummarizationSetBy = Automatic
+
+	column exact_times_effective
+		dataType: int64
+		formatString: 0
+		lineageTag: f44dfa5d-67be-4113-a041-a47dec504939
+		summarizeBy: none
+		sourceColumn: exact_times_effective
+
+		annotation SummarizationSetBy = Automatic
+
+	column source_feed_version
+		dataType: string
+		isHidden
+		lineageTag: 7c476f1a-58ba-4d56-a3a5-20cb63c3da69
+		summarizeBy: none
+		sourceColumn: source_feed_version
+
+		annotation SummarizationSetBy = Automatic
+
+	column source_sha256
+		dataType: string
+		isHidden
+		lineageTag: ea83a26c-4e6e-4695-b96d-ad5b6c772d31
+		summarizeBy: none
+		sourceColumn: source_sha256
+
+		annotation SummarizationSetBy = Automatic
+
+	/// Clave de consumo v1: longitud y versión fuente, más SHA-256. No modifica la identidad Silver.
+	column snapshot_key = FORMAT ( LEN ( [source_feed_version] ), "0" ) & ":" & [source_feed_version] & ":" & [source_sha256]
+		dataType: string
+		isHidden
+		lineageTag: 957271a1-c8c6-49bc-98ce-f95a8945744c
+		summarizeBy: none
+
+	/// Clave de consumo v1 por snapshot e ID fuente sin conversiones ni eliminación de ceros.
+	column trip_key = FORMAT ( LEN ( [source_feed_version] ), "0" ) & ":" & [source_feed_version] & ":" & [source_sha256] & ":" & [trip_id]
+		dataType: string
+		isHidden
+		lineageTag: 072af917-ecc3-4710-a585-edc80f245cd5
+		summarizeBy: none
+
+	partition silver_gtfs_frequencies = m
+		mode: import
+		source =
+				let
+				  Origen = DatabricksMultiCloud.Catalogs(DatabricksServerHostname, DatabricksHttpPath, null),
+				  #"Navegación 1" = Origen{[Name = "workspace", Kind = "Database"]}[Data],
+				  #"Navegación 2" = #"Navegación 1"{[Name = "gtfs_bogota", Kind = "Schema"]}[Data],
+				  #"Navegación 3" = #"Navegación 2"{[Name = "silver_gtfs_frequencies", Kind = "Table"]}[Data],
+				  #"Columnas quitadas" = Table.RemoveColumns(#"Navegación 3", {"silver_loaded_at_utc", "silver_run_id", "silver_rule_version", "source_columns", "bronze_loaded_at_utc", "source_file_path"})
+				in
+				  #"Columnas quitadas"
+
+	annotation PBI_ResultType = Table
