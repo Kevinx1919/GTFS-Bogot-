@@ -104,4 +104,4 @@ No añadí tablas de tarifas o metadata al registro Silver ni al coordinador.
 - [feed_info en la referencia GTFS](https://gtfs.org/documentation/schedule/reference/#feed_infotxt).
 - [Atributos tarifarios GTFS](https://gtfs.org/documentation/schedule/reference/#fare_attributestxt).
 - [Reglas tarifarias GTFS](https://gtfs.org/documentation/schedule/reference/#fare_rulestxt).
-- [Explore in Databricks](https://dbc-caa55511-0fef.cloud.databricks.com/one/chat/threads/80583edacdb143d6b621dbcd00baeb7b?o=7474646722477316&utm_source=genie_chat_mcp).
+- Conservo las consultas en el historial local de Genie; omito el enlace privado del workspace.

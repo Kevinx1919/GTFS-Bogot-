@@ -902,6 +902,39 @@ Generé fuera de OneDrive, copié los bytes comprobados y verifiqué hashes.
 No hice una revisión perceptual de nuevas capturas; los resúmenes públicos registran el alcance automático.
 No ejecuté Jobs ni modifiqué modelos durante esta actualización visual.
 
+### Hito 59 — Cerrar el recorrido visual del informe GTFS
+
+**Fecha:** 20 de noviembre de 2026.
+Publiqué y consumí cuatro Gold de 2026: cobertura, programación diaria, ruta–ubicación y extremos horarios.
+Construí cuatro paneles con preguntas de negocio y límites explícitos: Panorama, Programación, Red publicada y Revisión.
+Combiné cálculos DAX, presentación HTML/CSS/SVG y controles nativos.
+
+En Panorama recuperé las tarjetas ilustradas de los cinco componentes.
+Separé ese filtrado local de los desplegables sincronizados entre páginas.
+Encontré texto HTML superpuesto sobre botones transparentes y trasladé las etiquetas a botones nativos.
+Retiré Laboratorio del menú y diferencié página actual y estado al pasar el cursor.
+La revisión del informe confirmó que la navegación funciona.
+Los 69 archivos PBIR y los 16 botones pasaron las comprobaciones estructurales previas.
+
+Actualicé el estado general y la documentación visual con Gold consumido y cuatro paneles implementados.
+Conservo las evidencias automáticas de Archify separadas de las pruebas de Power BI y Databricks.
+No marqué el proyecto como terminado: faltan revisión integral, actualización manual completa y entrega del portafolio.
+El coordinador sigue limitado a Bronze/Silver; el feed nuevo, Service y las fuentes observadas quedan pendientes.
+
+### Hito 60 — Entregar la v1 local de portafolio
+
+**Fecha:** 20 de noviembre de 2026.
+Cierro el alcance funcional de GTFS estático, Gold y Power BI.
+El README principal presenta lo entregado, las cuatro preguntas del reporte y los límites de los datos.
+Versiono el proyecto Power BI como PBIP/PBIR/TMDL junto con medidas y recursos; no distribuyo el PBIX anterior ni cachés.
+Separé hostname y ruta HTTP en parámetros locales y dejé una plantilla sin datos del entorno.
+La copia de desarrollo conserva los valores de conexión existentes.
+El MCP oficial cargó las definiciones TMDL con 23 tablas, 101 medidas y 21 relaciones.
+
+Conservo la revisión integral y la actualización completa como pendientes de endurecimiento.
+No afirmo publicación en Service, operación observada ni automatización Gold/Power BI.
+Puedo presentar esta versión como un proyecto funcional de portafolio y ampliar su alcance en una entrega posterior.
+
 ## Qué no publicar
 
 - Access tokens, secretos, archivos `.env`, cookies, hostnames privados o identificadores de cuenta.
@@ -919,7 +952,8 @@ No ejecuté Jobs ni modifiqué modelos durante esta actualización visual.
 - [ ] Versión del GTFS estático vinculada a entidades realtime.
 - [ ] Primera métrica Gold de velocidad operacional y cobertura de flota.
 - [ ] Baseline histórico y detección determinista de anomalías.
-- [ ] Dashboard Power BI con definiciones de KPI.
+- [x] Cuatro paneles Power BI con definiciones de negocio y navegación nativa confirmada.
+- [x] Cuatro tablas Gold publicadas e importadas para 2026.
 - [ ] Agente n8n/Ollama en lectura para informe diario verificable.
 - [ ] CI, runbook y retrospectiva final del proyecto.
 

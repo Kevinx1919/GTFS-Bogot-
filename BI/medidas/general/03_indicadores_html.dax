@@ -1,0 +1,5 @@
+General · Indicadores HTML =
+VAR Rutas = FORMAT ( [Rutas publicadas], "#,0", "es-CO" )
+VAR Viajes = FORMAT ( [Viajes declarados], "#,0", "es-CO" )
+VAR Plantillas = FORMAT ( [Plantillas con frecuencia], "#,0", "es-CO" )
+RETURN "<section class='kpi-stack'><div><span>Rutas publicadas</span><strong>" & Rutas & "</strong><small>Catálogo del snapshot</small></div><div><span>Viajes declarados</span><strong class='lead-number'>" & Viajes & "</strong><small>No equivalen a viajes operados</small></div><div><span>Plantillas por frecuencia</span><strong>" & Plantillas & "</strong><small>No son salidas individuales</small></div></section>"

@@ -1,0 +1,8 @@
+General · Agencia fila HTML =
+VAR NombreAgencia = SELECTEDVALUE ( silver_gtfs_agency[agency_name], "Agencia" )
+VAR FilasAgencia = [Viajes declarados]
+VAR MaximoVisible = MAXX ( ALLSELECTED ( silver_gtfs_agency[agency_key], silver_gtfs_agency[agency_name], silver_gtfs_agency[source_feed_version] ), CALCULATE ( [Viajes declarados] ) )
+VAR PorcentajeAncho = FORMAT ( DIVIDE ( FilasAgencia, MaximoVisible, 0 ) * 100, "0.00", "en-US" )
+VAR NombreSeguro = SUBSTITUTE ( SUBSTITUTE ( SUBSTITUTE ( NombreAgencia, "&", "&amp;" ), "<", "&lt;" ), ">", "&gt;" )
+VAR EtiquetaVersion = IF ( HASONEVALUE ( dim_gtfs_snapshot[snapshot_key] ), "", "<small>" & SELECTEDVALUE ( silver_gtfs_agency[source_feed_version], "" ) & "</small>" )
+RETURN "<div class='agency-row'><div class='agency-name'>" & NombreSeguro & EtiquetaVersion & "</div><div class='agency-track'><div class='agency-bar' style='width:" & PorcentajeAncho & "%'></div></div><span class='num'>" & FORMAT ( FilasAgencia, "#,0", "es-CO" ) & "</span></div>"

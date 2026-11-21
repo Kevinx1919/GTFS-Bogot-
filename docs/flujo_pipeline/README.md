@@ -1,72 +1,62 @@
 # Mi documentación visual del proyecto GTFS
 
-Uso esta carpeta para explicar el proyecto mediante diagramas interactivos y páginas de lectura. Mantengo los contratos de datos y el runbook como referencias de las reglas y los procedimientos; los mapas enlazarán esas fuentes en lugar de repetir todo su contenido.
+**Actualización:** 20 de noviembre de 2026.
+Uso Archify para explicar responsabilidades y recorridos; los contratos y el runbook conservan las reglas completas.
+Los HTML funcionan como documentación interactiva local, no como dashboards conectados a los datos.
 
 ## Qué puedo explorar
 
-| Documento | Pregunta que responde | Alcance |
+| Documento | Pregunta | Estado de esta revisión |
 | --- | --- | --- |
-| [Mapa del lakehouse](mapa_lakehouse/README.md) | ¿Dónde están los datos y cómo avanzan entre capas? | Raw, Staging, Bronze y Silver actuales; cobertura Gold local y consumo pendiente. |
-| [Recorrido del Job Silver](job_silver/README.md) | ¿Qué ocurre al pulsar Run now y qué pasa ante un error? | Plan dinámico y diez ciclos; validación, publicación, auditoría y recuperación. |
-| [Modelo GTFS](modelo_gtfs/README.md) | ¿Cómo se relacionan las entidades y cómo preservo cada snapshot? | Diez tablas físicas y dos catálogos lógicos; planificador probado y cobertura Gold local. |
+| [Mapa del lakehouse](mapa_lakehouse/mapa_lakehouse.html) | ¿Dónde están los archivos y cómo llego a Power BI? | Actualizado con cuatro Gold y consumo local. |
+| [Recorrido del Job Silver](job_silver/recorrido_job.html) | ¿Qué ejecuta el planificador y en qué orden? | Mantengo el flujo validado; no cambiaron sus responsabilidades. |
+| [Una iteración Silver](job_silver/iteracion_snapshot.html) | ¿Qué ocurre si la entidad pasa, se rechaza o falla? | Mantengo el flujo validado de auditoría, cuarentena y publicación. |
+| [Modelo Silver](modelo_gtfs/modelo_silver.html) | ¿Cómo preservo claves y referencias por snapshot? | Diez tablas físicas y dos catálogos lógicos; sin cambios de esquema. |
+| [Panorama GTFS](modelo_gtfs/panorama_gtfs.html) | ¿Qué está implementado y qué queda fuera? | Actualizado con Gold, Power BI y pendientes del cierre. |
+| [Consumo analítico](consumo_analitico/consumo_analitico.html) | ¿Qué calculan Gold, DAX y los visuales? | Actualizado con cuatro paneles, menú nativo y filtros. |
 
-El [flujo de consumo analítico](consumo_analitico/README.md) conecta preguntas, Gold, medidas DAX y reporte.
-Distingue el MCP local de la habilidad web y marca lo que todavía no está publicado.
+El [estado general](../project_status.md) es el punto de entrada para cifras y pendientes vigentes.
+El [plan de cierre](../power_bi_cierre_v1.md) distingue revisión de navegación y aceptación integral.
 
-Puedo empezar directamente por el [mapa del lakehouse](mapa_lakehouse/mapa_lakehouse.html), el [orden del Job](job_silver/recorrido_job.html), el [interior de una iteración](job_silver/iteracion_snapshot.html), el [modelo Silver actual](modelo_gtfs/modelo_silver.html) o el [panorama GTFS](modelo_gtfs/panorama_gtfs.html).
+## Qué cambió en el consumo
 
-Es como tener un mapa de una estación: primero ubico las zonas y después abro el detalle del recorrido que necesito. Esta comparación explica el propósito; no es una observación de los datos.
+Publiqué e importé trip_coverage, route_service_day, route_stop y trip_timing para 2026.
+El reporte contiene Panorama de oferta, Programación, Red publicada y Revisión de información.
+Panorama cumple también la función de entrada.
+El menú usa botones nativos con texto propio y resalta la página actual en rojo suave.
+Retiré Laboratorio y los accesos a páginas de prueba del menú principal.
+El HTML del lateral no dibuja etiquetas de navegación duplicadas.
+La revisión del informe confirmó que la navegación funciona.
 
-## Instalación y requisitos
+Las tarjetas de vehículos filtran únicamente Panorama.
+Los desplegables sincronizan componente y ruta entre las cuatro páginas.
+No confundo el componente de presentación con un operador contractual ni con una clave histórica estable.
+No presento programación publicada como operación observada.
 
-Instalé Archify **3.2.0** como skill local de Codex, fuera del repositorio, desde el commit [a4065941f12be7967436261d9934784e381d423c](https://github.com/tt-a1i/archify/tree/a4065941f12be7967436261d9934784e381d423c/archify). Usé el instalador de skills de Codex para conservar una revisión concreta. No instalé un servicio ni añadí dependencias a Databricks.
+## Qué conserva cada carpeta
 
-Comprobé Node.js 22.18.0, que cumple el requisito mínimo de Node 18, y la disponibilidad de Chrome y Edge. El comando doctor de Archify terminó correctamente: encontró plantillas, renderizadores, esquemas, validadores y referencias para los tipos soportados. Ese diagnóstico verifica la instalación; la comprobación de cada diagrama se registra por separado en su subcarpeta.
+Guardo la fuente JSON, el HTML generado, una explicación y un resumen público de verificación.
+La herramienta está instalada como skill local de Codex; no necesito credenciales de Databricks para generar estos diagramas.
+El lector abre los HTML con un navegador y puede explorar las vistas disponibles.
+No publiqué un sitio web ni incorporé estas animaciones al motor del pipeline.
 
-Para comprobar otra instalación puedo ejecutar:
+## Código, estado de desarrollo y comprobaciones
 
-```text
-node <ruta-local-de-la-skill>/bin/archify.mjs doctor
-```
+Los tres diagramas revisados fijan referencias de código al commit 5c23d4e327fb9d90f407dbfc12678623106e4ad6.
+Las confirmaciones de publicación y navegación son evidencia de desarrollo registrada en la documentación.
+No atribuyo las definiciones PBIP locales todavía sin commit a ese commit del código.
+El ERD y los dos workflows Silver mantienen su revisión 6c4490fd2846d8afeb70ee08f02d4680d535b76e porque su contenido no cambió.
 
-La ruta de instalación pertenece a cada equipo y no la codifico dentro del proyecto. Archify se usa desde el equipo de documentación; los lectores abrirán el HTML generado en su navegador. No necesito credenciales de Databricks para generar documentación basada en el código y los contratos.
+Genero los tres HTML nuevos fuera de OneDrive y copio los bytes comprobados al proyecto.
+Los resúmenes públicos identifican archivos, hashes y controles de esta revisión.
+Los recibos completos y las rutas del entorno quedan fuera de Git.
+Los tres HTML que no cambiaron conservan su evidencia anterior; no les atribuyo una prueba nueva.
+Las comprobaciones de Archify no ejecutan Jobs ni certifican filtros de Power BI.
 
-## Cómo guardaré cada documento
+## Qué sigue pendiente
 
-Cada subcarpeta contendrá la fuente editable, el HTML generado y una descripción breve. En un diagrama nativo la fuente será JSON; para una página explicativa podrá ser Markdown de Archify. Guardaré la evidencia pública necesaria de validación sin rutas personales, credenciales ni datos de ejecución privados; los registros locales detallados permanecerán fuera de Git.
+La revisión integral de filtros y rendimiento, el recorrido completo de actualización y la entrega del portafolio siguen abiertos.
+El coordinador termina en Silver; Gold y Power BI conservan pasos manuales.
+El feed nuevo, Power BI Service y las fuentes observadas siguen fuera de lo comprobado.
 
-Antes de generar fijo el commit del código que voy a explicar. Si hay cambios sin commit, los distingo de la evidencia del commit y no los presento como parte de esa revisión. Los diagramas deben separar implementado, comprobado en ejecución y pendiente.
-
-Ya creé los tres documentos: el mapa del lakehouse, el recorrido del Job Silver con dos vistas y el modelo GTFS con el ERD actual y su panorama de crecimiento. Conservo español y explicaciones breves. Cuando cambie una responsabilidad o relación del pipeline, revisaré el mapa afectado junto con el cambio de código.
-
-## Estado de esta preparación
-
-La herramienta está instalada. Actualicé los cinco HTML con sus fuentes JSON y controles automáticos de navegador. No atribuyo las capturas anteriores a esta revisión nueva. Conservo esta documentación en el repositorio; no publiqué un sitio web. Las comprobaciones de los diagramas no son ejecuciones del pipeline en Databricks.
-
-Para evitar un problema de reemplazo de archivos de control en OneDrive genero en una carpeta temporal fuera de la sincronización y publico copias byte a byte de los HTML comprobados. Conservo en el proyecto un resumen público de verificación; los controles de entrega y recuperación locales quedan excluidos de Git.
-
-Referencias: [Archify](https://github.com/tt-a1i/archify), [skill](https://github.com/tt-a1i/archify/blob/a4065941f12be7967436261d9934784e381d423c/archify/SKILL.md), [guía operativa Silver](../silver_execution.md) y [contratos](../contracts).
-
-
-## Estado actualizado — 18 de noviembre de 2026
-
-Actualicé seis vistas con fuentes editables y referencias al commit 6c4490fd2846d8afeb70ee08f02d4680d535b76e.
-Las diez entidades Silver tienen despliegue funcional confirmado.
-El ERD conserva sus 155 columnas físicas y dos catálogos lógicos con seis columnas.
-No añadí entidades Silver opcionales por cantidad; las tres pendientes fueron evaluadas según su utilidad.
-
-El recorrido incorpora plan_silver antes de los diez ciclos de publicación.
-Las entradas provienen de task values; las listas vacías no ejecutan el notebook interno.
-El piloto Silver NO_WORK está comprobado.
-El coordinador terminó SUCCEEDED con el snapshot existente 2026; el feed nuevo queda aplazado.
-
-Gold dispone de un contrato y procesador local de cobertura; su publicación en Workspace sigue pendiente.
-Inicio y cuatro páginas analíticas tienen preguntas candidatas documentadas.
-El boceto HTML utiliza fixtures y permanece fuera de Git como artefacto de revisión.
-El MCP local de Power BI fue probado en solo lectura después de aceptar su licencia.
-La habilidad del navegador tiene un flujo distinto; la cuenta web todavía no fue comprobada.
-
-Los diagramas no consultan Databricks ni Power BI en vivo.
-La nueva vista representa el diseño de consumo; sus flechas pendientes no prueban una carga ya realizada.
-Los resúmenes públicos registran los controles de cada HTML y su copia final.
-Los recibos completos permanecen fuera de OneDrive y de Git.
+[Archify](https://github.com/tt-a1i/archify) · [Contratos](../contracts) · [Ejecución Silver](../silver_execution.md) · [Guía del menú](../power_bi_navigation_images.md).

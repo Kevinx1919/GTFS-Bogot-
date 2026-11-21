@@ -1,0 +1,3 @@
+-- Visitas con arrival y departure presentes. Mide presencia de horas, no exactitud ni puntualidad.
+Visitas con horas completas =
+SUM ( 'gold_gtfs_trip_coverage'[complete_time_pair_count] )

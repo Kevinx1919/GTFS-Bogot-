@@ -1,0 +1,293 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.14.0/schema.json",
+  "name": "245312b773b747e18a43",
+  "position": {
+    "x": 152,
+    "y": 172,
+    "z": 100,
+    "height": 88,
+    "width": 1264,
+    "tabOrder": 93
+  },
+  "visual": {
+    "visualType": "htmlContent443BE3AD55E043BF878BED274D3A6865",
+    "query": {
+      "queryState": {
+        "content": {
+          "projections": [
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "gold_gtfs_trip_coverage"
+                    }
+                  },
+                  "Property": "General · Componente ficha HTML"
+                }
+              },
+              "queryRef": "gold_gtfs_trip_coverage.General · Componente ficha HTML",
+              "nativeQueryRef": "General · Componente ficha HTML"
+            }
+          ]
+        },
+        "sampling": {
+          "projections": [
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "silver_gtfs_agency"
+                    }
+                  },
+                  "Property": "report_component"
+                }
+              },
+              "queryRef": "silver_gtfs_agency.report_component",
+              "nativeQueryRef": "report_component"
+            }
+          ]
+        }
+      },
+      "sortDefinition": {
+        "sort": [
+          {
+            "field": {
+              "Column": {
+                "Expression": {
+                  "SourceRef": {
+                    "Entity": "silver_gtfs_agency"
+                  }
+                },
+                "Property": "report_component"
+              }
+            },
+            "direction": "Ascending"
+          }
+        ]
+      }
+    },
+    "objects": {
+      "stylesheet": [
+        {
+          "properties": {
+            "stylesheet": {
+              "expr": {
+                "Literal": {
+                  "Value": "'/* Selector ilustrado: una fila por componente, no por agencia. */\n:root{--red:#DD212C;--line:#DDE2D6}*{box-sizing:border-box}html,body{margin:0;padding:0;background:transparent;font:13px/1.4 ''Segoe UI'',Arial,sans-serif;color:#252A23}.component-list{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:12px;padding:2px 0 12px}.component-list .htmlViewerEntry{min-width:0}.component-choice{height:72px;display:flex;align-items:center;justify-content:flex-start;gap:8px;padding:8px 12px;border:1px solid #DDE2D6;border-radius:10px;background:#FCFDF9;cursor:pointer}.component-choice svg{width:82px;height:48px;flex:none}.component-choice>span{font-size:13px;font-weight:550}.component-choice:hover,.component-choice:focus-visible{outline:2px solid #DD212C;outline-offset:-2px}.htmlViewerEntry.unselected .component-choice{opacity:.5}.htmlViewerEntry:not(.unselected) .component-choice{border-bottom:3px solid #DD212C}\n'"
+                }
+              }
+            }
+          }
+        }
+      ],
+      "crossFilter": [
+        {
+          "properties": {
+            "enabled": {
+              "expr": {
+                "Literal": {
+                  "Value": "true"
+                }
+              }
+            }
+          }
+        }
+      ],
+      "templates": [
+        {
+          "properties": {
+            "bodyTemplate": {
+              "expr": {
+                "Literal": {
+                  "Value": "'<div class=''component-list''>{{content}}</div>'"
+                }
+              }
+            },
+            "rowTemplate": {
+              "expr": {
+                "Literal": {
+                  "Value": "'{{row}}'"
+                }
+              }
+            }
+          }
+        }
+      ],
+      "compatibility": [
+        {
+          "properties": {
+            "legacyRendering": {
+              "expr": {
+                "Literal": {
+                  "Value": "true"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "visualContainerObjects": {
+      "title": [
+        {
+          "properties": {
+            "show": {
+              "expr": {
+                "Literal": {
+                  "Value": "false"
+                }
+              }
+            }
+          }
+        }
+      ],
+      "subTitle": [
+        {
+          "properties": {
+            "show": {
+              "expr": {
+                "Literal": {
+                  "Value": "false"
+                }
+              }
+            }
+          }
+        }
+      ],
+      "background": [
+        {
+          "properties": {
+            "show": {
+              "expr": {
+                "Literal": {
+                  "Value": "false"
+                }
+              }
+            }
+          }
+        }
+      ],
+      "border": [
+        {
+          "properties": {
+            "show": {
+              "expr": {
+                "Literal": {
+                  "Value": "false"
+                }
+              }
+            }
+          }
+        }
+      ],
+      "dropShadow": [
+        {
+          "properties": {
+            "show": {
+              "expr": {
+                "Literal": {
+                  "Value": "false"
+                }
+              }
+            }
+          }
+        }
+      ],
+      "visualHeader": [
+        {
+          "properties": {
+            "show": {
+              "expr": {
+                "Literal": {
+                  "Value": "false"
+                }
+              }
+            }
+          }
+        }
+      ],
+      "padding": [
+        {
+          "properties": {
+            "left": {
+              "expr": {
+                "Literal": {
+                  "Value": "0D"
+                }
+              }
+            },
+            "right": {
+              "expr": {
+                "Literal": {
+                  "Value": "0D"
+                }
+              }
+            },
+            "top": {
+              "expr": {
+                "Literal": {
+                  "Value": "0D"
+                }
+              }
+            },
+            "bottom": {
+              "expr": {
+                "Literal": {
+                  "Value": "0D"
+                }
+              }
+            }
+          }
+        }
+      ],
+      "general": [
+        {
+          "properties": {
+            "altText": {
+              "expr": {
+                "Literal": {
+                  "Value": "'Elegir componente mediante ilustraciones. Las tarjetas filtran Panorama; el desplegable conserva la selección sincronizada.'"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "drillFilterOtherVisuals": true
+  },
+  "filterConfig": {
+    "filters": [
+      {
+        "name": "675dc2fb7a5bb573e06f",
+        "field": {
+          "Measure": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "gold_gtfs_trip_coverage"
+              }
+            },
+            "Property": "General · Componente ficha HTML"
+          }
+        },
+        "type": "Advanced"
+      },
+      {
+        "name": "d4915dd33e4ac4f8143c",
+        "field": {
+          "Column": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "silver_gtfs_agency"
+              }
+            },
+            "Property": "report_component"
+          }
+        },
+        "type": "Categorical"
+      }
+    ]
+  }
+}

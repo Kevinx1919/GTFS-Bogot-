@@ -1,0 +1,3 @@
+-- Viajes/plantillas distintas con ventanas publicadas; conserva el snapshot y evita contar una plantilla por cada ventana.
+Plantillas con frecuencia =
+    COALESCE ( DISTINCTCOUNT ( 'silver_gtfs_frequencies'[trip_key] ), 0 )

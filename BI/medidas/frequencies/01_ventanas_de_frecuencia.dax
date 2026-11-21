@@ -1,0 +1,3 @@
+-- Ventanas publicadas del contexto. No cuenta vehículos ni salidas individuales.
+Ventanas de frecuencia =
+    COALESCE ( COUNTROWS ( 'silver_gtfs_frequencies' ), 0 )

@@ -1,0 +1,3 @@
+-- Registros trips dentro del contexto snapshot/agencia/ruta. Incluye plantillas por frecuencia. No representa salidas operadas ni programación por fecha.
+Viajes declarados =
+    COALESCE ( COUNTROWS ( 'silver_gtfs_trips' ), 0 )

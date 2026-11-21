@@ -8,7 +8,7 @@
     "quality_profile": "showcase",
     "repository": {
       "url": "https://github.com/Kevinx1919/GTFS-Bogot-.git",
-      "revision": "6c4490fd2846d8afeb70ee08f02d4680d535b76e"
+      "revision": "5c23d4e327fb9d90f407dbfc12678623106e4ad6"
     },
     "views": [
       {
@@ -37,15 +37,15 @@
         "note": "Bronze y Silver comparten workspace.gtfs_bogota; cambian su responsabilidad y sus prefijos."
       },
       {
-        "id": "futuro",
-        "label": "Siguiente destino",
+        "id": "consumo",
+        "label": "Gold y Power BI",
         "focus": [
           "silver",
           "agregar",
           "gold",
           "bi"
         ],
-        "note": "La cobertura tiene prototipo local. Su publicación y el modelo Power BI siguen pendientes."
+        "note": "Cuatro Gold publicadas e importadas para 2026. Menú nativo confirmado; actualización completa pendiente."
       }
     ]
   },
@@ -287,7 +287,7 @@
         {
           "path": "docs/silver_execution.md",
           "line": 846,
-          "end_line": 865,
+          "end_line": 860,
           "label": "Cierre funcional de stop_times"
         }
       ]
@@ -295,17 +295,29 @@
     {
       "id": "agregar",
       "type": "backend",
-      "label": "Cobertura Gold",
-      "sublabel": "Prototipo local",
+      "label": "Preparar Gold",
+      "sublabel": "Granos de negocio",
       "stage": 4,
       "row": 3,
-      "tag": "Notebook 20",
+      "tag": "Notebooks 20,22–24",
       "sources": [
         {
           "path": "databricks/gtfs_gold/trip_coverage.py",
           "line": 29,
           "end_line": 102,
-          "label": "Prepara y reconcilia cobertura"
+          "label": "Cobertura por viaje"
+        },
+        {
+          "path": "databricks/gtfs_gold/route_service_day.py",
+          "line": 32,
+          "end_line": 49,
+          "label": "Ruta y fecha activa"
+        },
+        {
+          "path": "databricks/gtfs_gold/route_stop.py",
+          "line": 45,
+          "end_line": 55,
+          "label": "Parejas ruta–ubicación"
         }
       ]
     },
@@ -313,22 +325,28 @@
       "id": "gold",
       "type": "database",
       "label": "Gold · Delta",
-      "sublabel": "trip_coverage propuesto",
+      "sublabel": "Cuatro hechos de 2026",
       "stage": 4,
       "row": 2,
-      "tag": "SIN PUBLICAR",
+      "tag": "PUBLICADAS",
       "sources": [
         {
           "path": "docs/contracts/trip_coverage.md",
           "line": 1,
           "end_line": 20,
-          "label": "Estado y grano de la tabla"
+          "label": "Grano de cobertura"
         },
         {
-          "path": "databricks/gtfs_gold/trip_coverage.py",
-          "line": 104,
-          "end_line": 142,
-          "label": "Escritura condicionada a publish"
+          "path": "docs/contracts/route_stop.md",
+          "line": 1,
+          "end_line": 20,
+          "label": "Grano ruta–ubicación"
+        },
+        {
+          "path": "docs/contracts/trip_timing.md",
+          "line": 1,
+          "end_line": 20,
+          "label": "Grano de extremos horarios"
         }
       ]
     },
@@ -336,22 +354,22 @@
       "id": "bi",
       "type": "external",
       "label": "Power BI",
-      "sublabel": "Modelo y reporte",
+      "sublabel": "DAX y cuatro paneles",
       "stage": 4,
       "row": 1,
-      "tag": "PENDIENTE",
+      "tag": "CONSUMO LOCAL",
       "sources": [
         {
-          "path": "docs/gold_plan.md",
-          "line": 123,
-          "end_line": 133,
-          "label": "Diseño de consumo"
+          "path": "docs/power_bi_user_stories.md",
+          "line": 47,
+          "end_line": 57,
+          "label": "Preguntas de las páginas"
         },
         {
           "path": "docs/powerbi_mcp_setup.md",
-          "line": 124,
-          "end_line": 137,
-          "label": "Conexión de diagnóstico; sin reporte GTFS"
+          "line": 7,
+          "end_line": 25,
+          "label": "Gold, modelo y DAX"
         }
       ]
     },
@@ -492,7 +510,7 @@
       "id": "f11",
       "from": "gold",
       "to": "bi",
-      "label": "Consumo previsto",
+      "label": "Importar a BI",
       "variant": "default"
     },
     {
@@ -520,6 +538,12 @@
       "to": "service_dates",
       "label": "Días activos",
       "variant": "emphasis"
+    },
+    {
+      "id": "days_for_gold",
+      "from": "service_dates",
+      "to": "agregar",
+      "label": "Fechas activas"
     }
   ],
   "cards": [
@@ -562,10 +586,19 @@
       "dot": "slate",
       "title": "Gold y consumo",
       "items": [
-        "Trip_coverage conserva una fila por viaje declarado y snapshot. Visitas y ventanas se agregan antes de unir.",
-        "El perfil real 2026 encontró 739 viajes sin visitas y 61 con una visita; no son resultados nuevos del diagrama.",
-        "Service_dates alimentará indicadores por fecha distintos de trip_coverage. Las fichas finales siguen pendientes.",
-        "El HTML de diseño usa fixtures. El MCP local quedó probado en lectura; el reporte GTFS todavía no está publicado."
+        "Cuatro hechos: trip_coverage (181.060), route_service_day (305.165), route_stop (62.715) y trip_timing (181.060).",
+        "Service_dates aporta los días activos a route_service_day; no es entrada de trip_coverage.",
+        "Power BI combina medidas DAX y HTML/CSS/SVG con filtros y navegación nativos.",
+        "El coordinador termina en Silver. Gold y la actualización de Power BI conservan un procedimiento manual."
+      ]
+    },
+    {
+      "dot": "slate",
+      "title": "Código y comprobaciones de desarrollo",
+      "items": [
+        "Las referencias fijan el código en 5c23d4e327fb. No prueban por sí mismas una publicación o un clic.",
+        "El estado del 20 de noviembre procede de las ejecuciones y revisiones confirmadas durante el desarrollo. Las definiciones PBIP locales todavía tienen cambios sin commit.",
+        "Este HTML es documentación: no ejecuta Jobs ni consulta datos en vivo."
       ]
     }
   ]

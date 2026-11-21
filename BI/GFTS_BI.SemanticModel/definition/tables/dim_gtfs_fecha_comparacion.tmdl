@@ -1,0 +1,14 @@
+/// Selector de fecha B independiente. No filtra hechos mediante una relación física.
+table dim_gtfs_fecha_comparacion
+	lineageTag: 23fcad62-61af-4c27-9379-b25f1e3b6686
+
+	column fecha
+		formatString: dd/MM/yyyy
+		lineageTag: 707baedb-a232-4447-b7e0-5657bce296a7
+		summarizeBy: none
+		isNameInferred
+		sourceColumn: [fecha]
+
+	partition dim_gtfs_fecha_comparacion = calculated
+		mode: import
+		source = SELECTCOLUMNS ( dim_gtfs_fecha, "fecha", dim_gtfs_fecha[fecha] )

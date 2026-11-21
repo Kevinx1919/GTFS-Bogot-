@@ -66,4 +66,4 @@ Después del perfil ejecuté stop_times en Databricks y comprobé que la tabla c
 El cierre funcional no incluye nuevos conteos por iteración ni mediciones de duración.
 Los conteos del perfil no sustituyen ese resultado.
 
-[Explorar las consultas en Databricks](https://dbc-caa55511-0fef.cloud.databricks.com/one/chat/threads/d22faadae12641b5a9c2486f4df81d8f?o=7474646722477316&utm_source=genie_chat_mcp).
+Conservo las consultas en el historial local de Genie; omito el enlace privado del workspace.

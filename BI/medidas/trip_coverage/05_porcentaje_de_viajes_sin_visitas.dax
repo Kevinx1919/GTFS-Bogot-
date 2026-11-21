@@ -1,0 +1,6 @@
+-- Viajes sin visitas entre todos los viajes evaluados del mismo contexto. Retira solo el filtro de categoría del denominador; conserva snapshot/agencia/ruta/contexto de programación.
+Porcentaje de viajes sin visitas =
+VAR Denominador =
+    CALCULATE ( [Viajes evaluados], REMOVEFILTERS ( 'gold_gtfs_trip_coverage'[coverage_status] ) )
+RETURN
+    DIVIDE ( [Viajes sin visitas], Denominador )

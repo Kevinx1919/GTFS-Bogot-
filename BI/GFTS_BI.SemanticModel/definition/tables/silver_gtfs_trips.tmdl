@@ -1,0 +1,108 @@
+table silver_gtfs_trips
+	lineageTag: dfdc6985-7fe6-4dfd-a7b5-ace94e32d2d8
+
+	/// Registros trips dentro del contexto snapshot/agencia/ruta. Incluye plantillas por frecuencia. No representa salidas operadas ni programación por fecha.
+	measure 'Viajes declarados' = COALESCE ( COUNTROWS ( 'silver_gtfs_trips' ), 0 )
+		formatString: #,0
+		displayFolder: Catálogo
+		lineageTag: 5256a518-b951-49e9-8f9b-2106ae0360be
+
+	column trip_id
+		dataType: string
+		lineageTag: a475a249-daa7-475a-94b2-da7c0b6aa111
+		summarizeBy: none
+		sourceColumn: trip_id
+
+		annotation SummarizationSetBy = Automatic
+
+	column route_id
+		dataType: string
+		lineageTag: 1a810095-3a05-4d5e-a928-7d30fcbd21f3
+		summarizeBy: none
+		sourceColumn: route_id
+
+		annotation SummarizationSetBy = Automatic
+
+	column service_id
+		dataType: string
+		lineageTag: 3c2efb41-14b5-41ed-8dc3-8e29625c007e
+		summarizeBy: none
+		sourceColumn: service_id
+
+		annotation SummarizationSetBy = Automatic
+
+	column shape_id
+		dataType: string
+		lineageTag: 47ec528f-e57c-4740-b175-61f777b48863
+		summarizeBy: none
+		sourceColumn: shape_id
+
+		annotation SummarizationSetBy = Automatic
+
+	column trip_headsign
+		dataType: string
+		lineageTag: e692bbc7-1867-46c4-8482-9e3039ae5c1d
+		summarizeBy: none
+		sourceColumn: trip_headsign
+
+		annotation SummarizationSetBy = Automatic
+
+	column source_feed_version
+		dataType: string
+		isHidden
+		lineageTag: cb27d5e1-6650-4604-bf0a-c96fba7da6c3
+		summarizeBy: none
+		sourceColumn: source_feed_version
+
+		annotation SummarizationSetBy = Automatic
+
+	column source_sha256
+		dataType: string
+		isHidden
+		lineageTag: 2ef536c1-b507-4344-93e6-e8b89840ab49
+		summarizeBy: none
+		sourceColumn: source_sha256
+
+		annotation SummarizationSetBy = Automatic
+
+	/// Clave de consumo v1: longitud y versión fuente, más SHA-256. No modifica la identidad Silver.
+	column snapshot_key = FORMAT ( LEN ( [source_feed_version] ), "0" ) & ":" & [source_feed_version] & ":" & [source_sha256]
+		dataType: string
+		isHidden
+		lineageTag: ea1abe44-4a55-43fc-befd-a33578e65008
+		summarizeBy: none
+
+	/// Clave de consumo v1 por snapshot e ID fuente sin conversiones ni eliminación de ceros.
+	column trip_key = FORMAT ( LEN ( [source_feed_version] ), "0" ) & ":" & [source_feed_version] & ":" & [source_sha256] & ":" & [trip_id]
+		dataType: string
+		isHidden
+		lineageTag: ddd5843b-7a2b-4b98-9b5f-d93d81aa03d0
+		summarizeBy: none
+
+	/// Clave de consumo v1 por snapshot e ID fuente sin conversiones ni eliminación de ceros.
+	column route_key = FORMAT ( LEN ( [source_feed_version] ), "0" ) & ":" & [source_feed_version] & ":" & [source_sha256] & ":" & [route_id]
+		dataType: string
+		isHidden
+		lineageTag: 14917a76-2494-4f96-9789-b6be6bbfb0e2
+		summarizeBy: none
+
+	/// Clave de consumo v1 por snapshot e ID fuente sin conversiones ni eliminación de ceros.
+	column service_key = FORMAT ( LEN ( [source_feed_version] ), "0" ) & ":" & [source_feed_version] & ":" & [source_sha256] & ":" & [service_id]
+		dataType: string
+		isHidden
+		lineageTag: f1aa1a43-8d37-4d4f-b90c-29b209593702
+		summarizeBy: none
+
+	partition silver_gtfs_trips = m
+		mode: import
+		source =
+				let
+				  Origen = DatabricksMultiCloud.Catalogs(DatabricksServerHostname, DatabricksHttpPath, null),
+				  #"Navegación 1" = Origen{[Name = "workspace", Kind = "Database"]}[Data],
+				  #"Navegación 2" = #"Navegación 1"{[Name = "gtfs_bogota", Kind = "Schema"]}[Data],
+				  #"Navegación 3" = #"Navegación 2"{[Name = "silver_gtfs_trips", Kind = "Table"]}[Data],
+				  #"Columnas quitadas" = Table.RemoveColumns(#"Navegación 3", {"silver_loaded_at_utc", "silver_run_id", "silver_rule_version", "source_columns", "bronze_loaded_at_utc", "source_file_path"})
+				in
+				  #"Columnas quitadas"
+
+	annotation PBI_ResultType = Table

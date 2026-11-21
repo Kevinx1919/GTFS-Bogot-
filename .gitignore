@@ -1,0 +1,19 @@
+# Entorno local, secretos y temporales
+.env
+.env.*
+!.env.example
+.venv/
+.venv-*/
+venv/
+__pycache__/
+*.py[cod]
+/pip-*/
+/.taste-skill/
+/data/raw/
+/data/staging/
+
+# Datos, credenciales y configuracion local de Power BI
+*.pbix
+*.pbit
+**/.pbi/
+/BI/GFTS_BI.SemanticModel/definition/expressions.tmdl

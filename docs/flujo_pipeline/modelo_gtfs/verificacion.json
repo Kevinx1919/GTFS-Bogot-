@@ -1,10 +1,14 @@
 {
   "schema_version": 1,
-  "checked_at_utc": "2026-11-18T17:30:30.711368+00:00",
+  "checked_at_utc": "2026-11-20T23:50:23.324890+00:00",
   "tool": "Archify 3.2.0",
-  "repository_revision": "6c4490fd2846d8afeb70ee08f02d4680d535b76e",
-  "delivery_method": "Generé y comprobé fuera de OneDrive. Copié los HTML byte a byte y verifiqué hashes; los recibos completos quedan fuera de Git.",
-  "scope": "Documentación y controles automáticos en navegador. No ejecuté Jobs ni consulté modelos durante esta generación.",
+  "delivery_method": "Generé fuera de OneDrive y copié los bytes comprobados. Los recibos completos permanecen fuera del repositorio.",
+  "scope": "Documentación y controles automáticos. Los estados de publicación y navegación son confirmaciones de desarrollo, no resultados de estos diagramas.",
+  "repository_revisions": [
+    "5c23d4e327fb9d90f407dbfc12678623106e4ad6",
+    "6c4490fd2846d8afeb70ee08f02d4680d535b76e"
+  ],
+  "working_tree_note": "Las definiciones PBIP y esta actualización documental conservan cambios locales sin commit; no los atribuyo a las referencias de código fijadas.",
   "artifacts": [
     {
       "source": "modelo_silver.erd.json",
@@ -64,15 +68,19 @@
           "routesOverSuggestedBends": 1
         },
         "reason": "Automated gates passed, but crossings or detours still need perceptual review before claiming visual quality."
-      }
+      },
+      "repository_revision": "6c4490fd2846d8afeb70ee08f02d4680d535b76e",
+      "checked_at_utc": "2026-11-18T17:30:30.711368+00:00",
+      "regenerated_in_this_revision": false
     },
     {
       "source": "panorama_gtfs.tree.json",
-      "source_sha256": "6db5be34c076d3add4f7609386d458ad82eab456d5c687815c439f85377af0d0",
+      "source_sha256": "4bbaa29f468218e69b6458925afc5482c5808c1a794e4d1ebabffc07d5ff2e88",
       "html": "panorama_gtfs.html",
-      "html_sha256": "9116b3383e4d3b9db38963aac516a9381b40c4c4c48914acdecafebe41fdf01f",
-      "bytes": 880122,
+      "html_sha256": "c1161ab77c5c250e39d67757bd797a350ae77ccffc074e13c76c42267b290cf2",
+      "bytes": 880956,
       "quality_profile": "showcase",
+      "repository_revision": "5c23d4e327fb9d90f407dbfc12678623106e4ad6",
       "automated_gates": {
         "validate": "pass",
         "deliver": "pass",
@@ -115,9 +123,11 @@
       ],
       "visual_review": {
         "status": "not-requested",
-        "scope": "Controles automáticos de navegador; no atribuyo capturas o revisión perceptual a esta entrega."
+        "scope": "Controles automáticos de navegador; no atribuyo capturas ni revisión perceptual a esta entrega."
       },
-      "final_copy_matches_validated_artifact": true
+      "final_copy_matches_validated_artifact": true,
+      "checked_at_utc": "2026-11-20T23:50:23.324890+00:00",
+      "advisories": {}
     }
   ]
 }

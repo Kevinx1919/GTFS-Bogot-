@@ -2,18 +2,18 @@
   "schema_version": 1,
   "diagram_type": "dataflow",
   "meta": {
-    "title": "Del dato a Power BI: estado y diseño de consumo",
+    "title": "Del dato a Power BI: cuatro paneles de negocio",
     "locale": "es",
     "output": "docs/flujo_pipeline/consumo_analitico/consumo_analitico.html",
     "quality_profile": "showcase",
     "repository": {
       "url": "https://github.com/Kevinx1919/GTFS-Bogot-.git",
-      "revision": "6c4490fd2846d8afeb70ee08f02d4680d535b76e"
+      "revision": "5c23d4e327fb9d90f407dbfc12678623106e4ad6"
     },
     "views": [
       {
         "id": "datos",
-        "label": "Preparar y consumir",
+        "label": "Silver, Gold y DAX",
         "focus": [
           "silver",
           "preparar",
@@ -21,19 +21,18 @@
           "dax",
           "reporte"
         ],
-        "note": "Solo Silver está publicado. Gold local y el modelo GTFS todavía necesitan publicación y validación."
+        "note": "Gold conserva el grano de negocio; DAX responde al contexto. Las cuatro tablas de 2026 ya están importadas."
       },
       {
-        "id": "asistencia",
-        "label": "Prototipo, MCP y navegador",
+        "id": "interaccion",
+        "label": "Menú, filtros y HTML",
         "focus": [
-          "prototipo",
-          "mcp",
-          "plugin",
           "dax",
+          "prototipo",
+          "plugin",
           "reporte"
         ],
-        "note": "El prototipo usa fixtures; MCP local probado en lectura; acceso web sin comprobar."
+        "note": "Cuatro paneles con navegación nativa. Las tarjetas de componente filtran Panorama; el desplegable sincroniza páginas."
       }
     ]
   },
@@ -79,7 +78,7 @@
       "sublabel": "Decisión e indicador",
       "stage": 1,
       "row": 0,
-      "tag": "CANDIDATAS",
+      "tag": "DEFINIDAS",
       "sources": [
         {
           "path": "docs/power_bi_user_stories.md",
@@ -93,16 +92,28 @@
       "id": "preparar",
       "type": "backend",
       "label": "Preparar Gold",
-      "sublabel": "Cobertura por viaje",
+      "sublabel": "Cuatro granos",
       "stage": 1,
       "row": 2,
-      "tag": "PROTOTIPO LOCAL",
+      "tag": "IMPLEMENTADO",
       "sources": [
         {
-          "path": "databricks/gtfs_gold/trip_coverage.py",
-          "line": 29,
-          "end_line": 102,
-          "label": "Responsabilidad y estado documentados"
+          "path": "databricks/gtfs_gold/route_service_day.py",
+          "line": 32,
+          "end_line": 49,
+          "label": "Agrega por ruta y fecha"
+        },
+        {
+          "path": "databricks/gtfs_gold/route_stop.py",
+          "line": 45,
+          "end_line": 55,
+          "label": "Relaciona rutas y ubicaciones"
+        },
+        {
+          "path": "databricks/gtfs_gold/trip_timing.py",
+          "line": 44,
+          "end_line": 70,
+          "label": "Clasifica extremos horarios"
         }
       ]
     },
@@ -113,13 +124,19 @@
       "sublabel": "Grano y denominador",
       "stage": 2,
       "row": 0,
-      "tag": "POR COMPLETAR",
+      "tag": "DOCUMENTADAS",
       "sources": [
         {
-          "path": "docs/gold_plan.md",
-          "line": 123,
-          "end_line": 133,
-          "label": "Responsabilidad y estado documentados"
+          "path": "docs/contracts/trip_coverage.md",
+          "line": 1,
+          "end_line": 20,
+          "label": "Ficha de cobertura"
+        },
+        {
+          "path": "docs/contracts/route_service_day.md",
+          "line": 1,
+          "end_line": 20,
+          "label": "Ficha de programación diaria"
         }
       ]
     },
@@ -127,10 +144,10 @@
       "id": "gold",
       "type": "database",
       "label": "Tablas Gold",
-      "sublabel": "Escritura por snapshot",
+      "sublabel": "Cuatro hechos de 2026",
       "stage": 2,
       "row": 2,
-      "tag": "SIN PUBLICAR",
+      "tag": "PUBLICADAS",
       "sources": [
         {
           "path": "docs/contracts/trip_coverage.md",
@@ -147,13 +164,19 @@
       "sublabel": "Medidas con filtros",
       "stage": 3,
       "row": 2,
-      "tag": "GTFS PENDIENTE",
+      "tag": "CONECTADO",
       "sources": [
         {
           "path": "docs/powerbi_mcp_setup.md",
           "line": 7,
-          "end_line": 30,
-          "label": "Responsabilidad y estado documentados"
+          "end_line": 25,
+          "label": "Responsabilidad del modelo y DAX"
+        },
+        {
+          "path": "BI/consumo/sources_plan.json",
+          "line": 9,
+          "end_line": 44,
+          "label": "Campos y relaciones de consumo"
         }
       ]
     },
@@ -161,7 +184,7 @@
       "id": "mcp",
       "type": "backend",
       "label": "MCP local",
-      "sublabel": "Inspección del modelo",
+      "sublabel": "Lectura de metadata",
       "stage": 3,
       "row": 4,
       "tag": "LECTURA PROBADA",
@@ -177,17 +200,17 @@
     {
       "id": "prototipo",
       "type": "frontend",
-      "label": "Boceto HTML",
-      "sublabel": "Guía visual con fixtures",
+      "label": "Vistas previas",
+      "sublabel": "DAX precalculado",
       "stage": 4,
       "row": 0,
-      "tag": "LOCAL",
+      "tag": "HTML LOCAL",
       "sources": [
         {
-          "path": "docs/power_bi_navigation_images.md",
-          "line": 160,
-          "end_line": 176,
-          "label": "Responsabilidad y estado documentados"
+          "path": "docs/power_bi_user_stories.md",
+          "line": 47,
+          "end_line": 57,
+          "label": "Preguntas de las páginas"
         }
       ]
     },
@@ -195,10 +218,10 @@
       "id": "reporte",
       "type": "frontend",
       "label": "Reporte Power BI",
-      "sublabel": "Inicio + cuatro páginas",
+      "sublabel": "Cuatro páginas",
       "stage": 4,
       "row": 2,
-      "tag": "POR CONSTRUIR",
+      "tag": "IMPLEMENTADO",
       "sources": [
         {
           "path": "docs/power_bi_user_stories.md",
@@ -211,17 +234,17 @@
     {
       "id": "plugin",
       "type": "backend",
-      "label": "Habilidad web",
-      "sublabel": "Edición en navegador",
+      "label": "Menú nativo",
+      "sublabel": "Texto y acción juntos",
       "stage": 4,
       "row": 4,
-      "tag": "ACCESO PENDIENTE",
+      "tag": "CONFIRMADO",
       "sources": [
         {
-          "path": "docs/powerbi_mcp_setup.md",
-          "line": 139,
-          "end_line": 155,
-          "label": "Responsabilidad y estado documentados"
+          "path": "docs/power_bi_navigation_images.md",
+          "line": 10,
+          "end_line": 18,
+          "label": "Distingo navegación y filtro"
         }
       ]
     }
@@ -237,7 +260,7 @@
       "id": "reglas",
       "from": "preguntas",
       "to": "preparar",
-      "label": "Reglas propuestas"
+      "label": "Reglas de negocio"
     },
     {
       "id": "publicacion",
@@ -249,7 +272,7 @@
       "id": "consumo",
       "from": "gold",
       "to": "dax",
-      "label": "Consumo pendiente"
+      "label": "Tablas importadas"
     },
     {
       "id": "definiciones",
@@ -267,7 +290,7 @@
       "id": "mcp_futuro",
       "from": "mcp",
       "to": "dax",
-      "label": "Conectar después"
+      "label": "Lectura del modelo"
     },
     {
       "id": "boceto",
@@ -279,7 +302,7 @@
       "id": "web_futuro",
       "from": "plugin",
       "to": "reporte",
-      "label": "Edición futura"
+      "label": "Cambiar panel"
     }
   ],
   "cards": [
@@ -287,26 +310,44 @@
       "dot": "emerald",
       "title": "Qué calcula cada capa",
       "items": [
-        "Gold prepara relaciones, categorías y agregados reutilizables. El prototipo de cobertura aún no se publicó.",
-        "Power BI calculará conteos y porcentajes según los filtros del modelo. No materializo cada combinación de filtros."
+        "Gold publica cobertura, ruta–fecha, ruta–ubicación y extremos horarios para 2026.",
+        "DAX calcula cantidades, porcentajes y comparaciones según los filtros. El HTML muestra los resultados.",
+        "Las ventanas por frecuencia permanecen separadas de los viajes sin frecuencia."
       ]
     },
     {
       "dot": "amber",
-      "title": "Cómo leo los estados",
+      "title": "Qué responde cada panel",
       "items": [
-        "Las flechas de Gold a Power BI describen el flujo previsto, no una carga ya ejecutada.",
-        "La conexión MCP fue probada con un modelo local abierto; no crea ni certifica el modelo GTFS.",
-        "La habilidad web necesita su propia comprobación de cuenta, permisos y entorno."
+        "Panorama compara fechas y ubica diferencias; Programación explora días y horas publicadas.",
+        "Red publicada relaciona rutas y ubicaciones; Revisión localiza casos que necesitan aclaración.",
+        "GTFS estático no demuestra pasajeros, ocupación, puntualidad ni cancelaciones."
+      ]
+    },
+    {
+      "dot": "violet",
+      "title": "Cómo interactúo",
+      "items": [
+        "El menú usa botones nativos; la página actual tiene fondo rojo suave y las opciones reaccionan al cursor.",
+        "El fondo HTML no dibuja nombres de páginas ni Laboratorio. En Desktop pruebo con Ctrl + clic.",
+        "Las tarjetas ilustradas filtran solo Panorama. Los desplegables sincronizan componente y ruta entre los cuatro paneles."
       ]
     },
     {
       "dot": "slate",
-      "title": "Preguntas y límites",
+      "title": "Qué queda abierto",
       "items": [
-        "General, Programación, Red y Calidad responden preguntas candidatas documentadas. Inicio proporciona navegación.",
-        "El HTML usa rutas DEMO. Los conteos reales están separados y no prueban operación observada.",
-        "No mido cumplimiento contractual, demanda ni puntualidad con GTFS estático."
+        "Revisión integral de filtros y rendimiento, actualización manual completa y entrega del portafolio.",
+        "La publicación en Service, el feed nuevo y las fuentes observadas no están comprobados por este diagrama."
+      ]
+    },
+    {
+      "dot": "slate",
+      "title": "Código y comprobaciones de desarrollo",
+      "items": [
+        "Las referencias fijan el código en 5c23d4e327fb. No prueban por sí mismas una publicación o un clic.",
+        "El estado del 20 de noviembre procede de las ejecuciones y revisiones confirmadas durante el desarrollo. Las definiciones PBIP locales todavía tienen cambios sin commit.",
+        "Este HTML es documentación: no ejecuta Jobs ni consulta datos en vivo."
       ]
     }
   ]

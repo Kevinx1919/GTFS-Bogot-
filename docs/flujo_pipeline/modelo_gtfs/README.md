@@ -1,6 +1,6 @@
 # Mi modelo GTFS
 
-Actualicé las dos vistas el 18 de noviembre de 2026.
+Revisé el alcance el 20 de noviembre de 2026. Actualicé el panorama; el ERD conserva su evidencia anterior del 18 de noviembre.
 
 | Vista | Qué explica |
 | --- | --- |
@@ -55,7 +55,7 @@ Service_dates permanece limitada a 2026. Los calendarios fuente conservan sus li
 Frequencies conserva exact_times ausente y una interpretación efectiva derivada explícita.
 Stop_times tiene despliegue funcional confirmado. El planificador 8b ya selecciona listas dinámicas y tiene piloto NO_WORK comprobado.
 Las tres entidades opcionales fueron evaluadas; su necesidad depende de preguntas elegidas.
-Gold dispone de prototipo local de cobertura, todavía sin publicar. Power BI conserva diseño y preguntas candidatos.
+Gold dispone de cuatro tablas publicadas e importadas. Power BI contiene cuatro paneles y navegación nativa confirmada.
 
 Las ramas del panorama agrupan responsabilidades. No representan joins ni el orden del Job.
 Las animaciones no representan datos en vivo.
@@ -63,7 +63,7 @@ Las animaciones no representan datos en vivo.
 ## Fuentes y comprobación
 
 Conservo [el ERD](modelo_silver.erd.json) y [el panorama](panorama_gtfs.tree.json).
-Las referencias fijan el código de 6c4490fd2846d8afeb70ee08f02d4680d535b76e.
+El ERD conserva su revisión 6c4490fd2846d8afeb70ee08f02d4680d535b76e. El panorama de alcance fija el código 5c23d4e327fb9d90f407dbfc12678623106e4ad6.
 Los [contratos](../../contracts) y el [plan](../../silver_design.md) conservan las reglas completas.
 
 Las dos vistas pasaron los controles automáticos, incluidos los de navegador.
@@ -76,5 +76,12 @@ Stop_times muestra sus veinte campos y relaciona visitas con trips y stops media
 Frequencies aporta contexto después de agrupar por viaje; no dibujo una FK directa hacia cada ventana.
 Conservo las referencias lógicas de IDs como catálogos no persistidos.
 El modelo conserva un aviso de recorrido largo entre calendar y service_ids. Los controles automáticos pasaron.
-La clasificación de cobertura para Gold tiene código y contrato local; varias visitas no demuestran un recorrido completo.
+La clasificación de cobertura está publicada y consumida; varias visitas no demuestran un recorrido completo.
 La [vista de consumo](../consumo_analitico/README.md) explica Gold, medidas DAX, páginas y herramientas de asistencia.
+
+
+## Alcance del estado actualizado
+
+Las referencias de código prueban la implementación comprometida en Git, no una publicación ni un clic.
+Las confirmaciones de desarrollo y las definiciones PBIP locales todavía sin commit se explican en el [estado general](../../project_status.md).
+El menú nativo ya funciona; la revisión integral, la actualización completa y Service mantienen sus pendientes propios.

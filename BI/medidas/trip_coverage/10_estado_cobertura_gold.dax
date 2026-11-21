@@ -1,0 +1,14 @@
+-- Indica qué versiones sostienen la evaluación y avisa de cobertura parcial frente al catálogo de viajes del contexto.
+Estado cobertura Gold =
+VAR SnapshotsCatalogo = DISTINCTCOUNT ( 'silver_gtfs_trips'[snapshot_key] )
+VAR SnapshotsEvaluados =
+    CALCULATE ( DISTINCTCOUNT ( 'gold_gtfs_trip_coverage'[snapshot_key] ), REMOVEFILTERS ( 'gold_gtfs_trip_coverage'[coverage_status] ) )
+VAR VersionesEvaluadas =
+    CALCULATETABLE ( VALUES ( 'gold_gtfs_trip_coverage'[source_feed_version] ), REMOVEFILTERS ( 'gold_gtfs_trip_coverage'[coverage_status] ) )
+RETURN
+    IF (
+        ISBLANK ( SnapshotsEvaluados ),
+        "Sin cobertura Gold para el contexto seleccionado",
+        IF ( SnapshotsEvaluados < SnapshotsCatalogo, "Cobertura parcial · ", "Cobertura Gold · " )
+            & CONCATENATEX ( VersionesEvaluadas, 'gold_gtfs_trip_coverage'[source_feed_version], ", " )
+    )

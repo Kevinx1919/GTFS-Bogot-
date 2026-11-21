@@ -8,7 +8,7 @@
     "quality_profile": "showcase",
     "repository": {
       "url": "https://github.com/Kevinx1919/GTFS-Bogot-.git",
-      "revision": "6c4490fd2846d8afeb70ee08f02d4680d535b76e"
+      "revision": "5c23d4e327fb9d90f407dbfc12678623106e4ad6"
     },
     "views": [
       {
@@ -94,7 +94,7 @@
         {
           "path": "docs/silver_execution.md",
           "line": 846,
-          "end_line": 865,
+          "end_line": 860,
           "label": "Cierre funcional de stop_times"
         }
       ],
@@ -342,7 +342,7 @@
         {
           "path": "docs/silver_execution.md",
           "line": 846,
-          "end_line": 865,
+          "end_line": 860,
           "label": "Cierre funcional de stop_times"
         }
       ],
@@ -408,7 +408,7 @@
       "id": "operacion",
       "parent": "gtfs",
       "label": "Control y consumo",
-      "sublabel": "Implementación y diseño",
+      "sublabel": "Plan, Gold y consumo",
       "sources": [
         {
           "path": "docs/gold_plan.md",
@@ -441,14 +441,26 @@
     {
       "id": "cobertura",
       "parent": "operacion",
-      "label": "Cobertura para Gold",
-      "sublabel": "Prototipo local · sin publicar",
+      "label": "Cuatro hechos Gold",
+      "sublabel": "2026 · publicados e importados",
       "sources": [
         {
-          "path": "docs/contracts/trip_coverage.md",
-          "line": 1,
-          "end_line": 20,
-          "label": "Cobertura Gold local"
+          "path": "databricks/gtfs_gold/trip_coverage.py",
+          "line": 29,
+          "end_line": 42,
+          "label": "Cobertura"
+        },
+        {
+          "path": "databricks/gtfs_gold/route_service_day.py",
+          "line": 32,
+          "end_line": 49,
+          "label": "Programación diaria"
+        },
+        {
+          "path": "databricks/gtfs_gold/trip_timing.py",
+          "line": 44,
+          "end_line": 70,
+          "label": "Extremos horarios"
         }
       ]
     },
@@ -456,19 +468,13 @@
       "id": "consumo",
       "parent": "operacion",
       "label": "Power BI",
-      "sublabel": "Diseño + MCP probado",
+      "sublabel": "Cuatro paneles · menú confirmado",
       "sources": [
         {
-          "path": "docs/powerbi_mcp_setup.md",
-          "line": 124,
-          "end_line": 137,
-          "label": "Conexión de lectura comprobada"
-        },
-        {
           "path": "docs/power_bi_user_stories.md",
-          "line": 40,
+          "line": 47,
           "end_line": 57,
-          "label": "Inicio y cuatro páginas candidatas"
+          "label": "Preguntas de negocio"
         }
       ]
     }
@@ -493,12 +499,20 @@
     },
     {
       "dot": "amber",
-      "title": "Qué queda por cerrar",
+      "title": "Cierre de la primera versión",
       "items": [
-        "Las tres entidades opcionales fueron evaluadas. Se incorporarán a Silver solo si una pregunta las necesita.",
-        "La cobertura Gold tiene contrato y código local; su publicación en Workspace sigue pendiente.",
-        "Las preguntas de negocio y cinco vistas están documentadas. El boceto HTML usa cifras ilustrativas.",
-        "El MCP permite modelado. La habilidad del navegador trabaja el reporte web; su cuenta todavía no fue comprobada."
+        "Las tres entidades opcionales se incorporarán solo si una pregunta necesita tarifas o metadata adicional.",
+        "Gold de 2026 ya está publicado e importado. El reporte usa cuatro páginas con menú nativo y estado activo.",
+        "Quedan revisión integral, actualización manual completa y entrega. El coordinador aún no automatiza Gold ni Power BI."
+      ]
+    },
+    {
+      "dot": "slate",
+      "title": "Código y comprobaciones de desarrollo",
+      "items": [
+        "Las referencias fijan el código en 5c23d4e327fb. No prueban por sí mismas una publicación o un clic.",
+        "El estado del 20 de noviembre procede de las ejecuciones y revisiones confirmadas durante el desarrollo. Las definiciones PBIP locales todavía tienen cambios sin commit.",
+        "Este HTML es documentación: no ejecuta Jobs ni consulta datos en vivo."
       ]
     }
   ]

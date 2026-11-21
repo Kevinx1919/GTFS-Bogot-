@@ -1,6 +1,6 @@
 # Mi contrato Gold: trip_timing_v1
 
-**Estado:** implementado localmente; validación y publicación en Workspace pendientes.
+**Estado:** publicado en Workspace para 2026 e importado y comprobado en Power BI.
 **Destino:** gold_gtfs_trip_timing.
 
 | Definición | Decisión |
@@ -112,3 +112,10 @@ Validate no llamó al escritor ni a la auditoría; la publicación con dobles co
 Las transformaciones usan Spark real; el IO Delta se sustituye por dobles.
 No ejecuté una integración Delta nativa nueva ni publiqué esta entidad en Workspace.
 Comprobé sintaxis Python, dos bloques del notebook sin resultados guardados, diecisiete campos de consumo y enlaces.
+
+
+## Cierre de publicación y consumo
+
+La ejecución Gold d39bc6b9-9cf2-478c-9830-0f72cd905b2a terminó SUCCEEDED y reconciled=true, según su resumen de publicación.
+Importé la tabla mediante la conexión existente del modelo local y comprobé sus filtros y conteos con DAX.
+La [evidencia del modelo](../power_bi_gold_import.md) conserva los resultados y decisiones de relación.

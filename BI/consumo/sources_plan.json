@@ -1,5 +1,5 @@
 {
-  "status": "published_in_workspace_pending_power_bi_import",
+  "status": "four_gold_tables_imported_and_filter_tested",
   "existing": [
     "gold_gtfs_trip_coverage",
     "silver_gtfs_routes",
@@ -44,10 +44,11 @@
         "direction": "single"
       }
     ],
-    "published_gold_run_id": "3b65045e-5afb-431b-93d0-1b40315b485d"
+    "published_gold_run_id": "3b65045e-5afb-431b-93d0-1b40315b485d",
+    "status": "imported_and_tested"
   },
   "map": {
-    "visual": "Azure Maps",
+    "visual": "HTML/SVG: coordenadas GTFS y relaciones de catálogo",
     "table": "silver_gtfs_stops",
     "id": "stop_key",
     "latitude": "stop_lat",
@@ -60,12 +61,12 @@
       "stop_id",
       "parent_station"
     ],
-    "route_filter_dependency": "gold_gtfs_route_stop (implemented locally, not published)",
+    "route_filter_dependency": "gold_gtfs_route_stop imported; virtual stop-key filtering in the map measures",
     "date_scope": "published_network_catalog; no daily filter until a service-aware bridge is defined"
   },
   "map_bridge": {
     "name": "gold_gtfs_route_stop",
-    "status": "implemented_locally_pending_workspace_validation",
+    "status": "imported_and_tested",
     "required_columns": [
       "source_feed_version",
       "source_sha256",
@@ -75,15 +76,15 @@
       "declared_trip_count"
     ],
     "relationships": [
-      "silver_gtfs_routes.route_key -> gold_gtfs_route_stop.route_key",
-      "silver_gtfs_stops.stop_key -> gold_gtfs_route_stop.stop_key"
+      "silver_gtfs_routes.route_key -> gold_gtfs_route_stop.route_key"
     ],
     "direction": "single_from_dimensions",
-    "map_visual_filter": "Ubicación relacionada = IF(COUNTROWS(gold_gtfs_route_stop)>0,1,0); filter equals 1"
+    "map_visual_filter": "Implemented HTML map measures apply virtual stop-key filtering; no bidirectional physical relationship",
+    "map_stop_filter": "Virtual TREATAS from silver_gtfs_stops.stop_key via Ubicación relacionada; no active physical stop relationship"
   },
   "trip_timing": {
     "name": "gold_gtfs_trip_timing",
-    "status": "implemented_locally_pending_workspace_validation",
+    "status": "imported_and_tested",
     "relationship": "silver_gtfs_trips.trip_key -> gold_gtfs_trip_timing.trip_key; single direction",
     "eligible_filter": "timing_status=eligible",
     "precision_field": "endpoint_time_precision",

@@ -1,0 +1,3 @@
+-- Cuenta filas del contexto actual; conserva el snapshot.
+Registros de agencia =
+    COUNTROWS ( 'silver_gtfs_agency' )

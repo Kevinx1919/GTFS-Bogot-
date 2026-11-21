@@ -1,0 +1,26 @@
+/// Un servicio por snapshot; une calendarios y excepciones. No representa vehículos ni salidas.
+table dim_gtfs_service
+	lineageTag: c452d2ce-e5b7-4a18-9dc7-73a54260c3f4
+
+	column service_key
+		isHidden
+		lineageTag: 286ec1e6-2582-4a05-adee-271aa10fd795
+		summarizeBy: none
+		isNameInferred
+		sourceColumn: [service_key]
+
+	column snapshot_key
+		isHidden
+		lineageTag: 35f11488-c3b0-4024-ae4b-879586fa4c9a
+		summarizeBy: none
+		isNameInferred
+		sourceColumn: [snapshot_key]
+
+	column service_id
+		lineageTag: 4aa4a9b6-169d-4778-a882-fd1581f9d252
+		isNameInferred
+		sourceColumn: [service_id]
+
+	partition dim_gtfs_service = calculated
+		mode: import
+		source = DISTINCT(UNION(SELECTCOLUMNS('silver_gtfs_calendar', "service_key", 'silver_gtfs_calendar'[service_key], "snapshot_key", 'silver_gtfs_calendar'[snapshot_key], "service_id", 'silver_gtfs_calendar'[service_id]),SELECTCOLUMNS('silver_gtfs_calendar_dates', "service_key", 'silver_gtfs_calendar_dates'[service_key], "snapshot_key", 'silver_gtfs_calendar_dates'[snapshot_key], "service_id", 'silver_gtfs_calendar_dates'[service_id]),SELECTCOLUMNS('silver_gtfs_service_dates', "service_key", 'silver_gtfs_service_dates'[service_key], "snapshot_key", 'silver_gtfs_service_dates'[snapshot_key], "service_id", 'silver_gtfs_service_dates'[service_id]),SELECTCOLUMNS('silver_gtfs_trips', "service_key", 'silver_gtfs_trips'[service_key], "snapshot_key", 'silver_gtfs_trips'[snapshot_key], "service_id", 'silver_gtfs_trips'[service_id])))

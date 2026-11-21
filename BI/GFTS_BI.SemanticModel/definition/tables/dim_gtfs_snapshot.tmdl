@@ -1,0 +1,24 @@
+/// Un snapshot por versión y SHA-256. Filtro común de catálogo e historia.
+table dim_gtfs_snapshot
+	lineageTag: c7c4fc8a-0ec2-4d07-850b-ae0df2d6a9ba
+
+	column snapshot_key
+		isHidden
+		lineageTag: 217cdad7-d937-4824-bcae-1beed70b0ee8
+		summarizeBy: none
+		isNameInferred
+		sourceColumn: [snapshot_key]
+
+	column source_feed_version
+		lineageTag: 8aee71c2-dbf1-4633-9507-d43f01b13d07
+		isNameInferred
+		sourceColumn: [source_feed_version]
+
+	column source_sha256
+		lineageTag: 28adaafd-cf69-4c88-aa9c-0e668887f293
+		isNameInferred
+		sourceColumn: [source_sha256]
+
+	partition dim_gtfs_snapshot = calculated
+		mode: import
+		source = DISTINCT(UNION(SELECTCOLUMNS('silver_gtfs_agency', "snapshot_key", 'silver_gtfs_agency'[snapshot_key], "source_feed_version", 'silver_gtfs_agency'[source_feed_version], "source_sha256", 'silver_gtfs_agency'[source_sha256]),SELECTCOLUMNS('silver_gtfs_routes', "snapshot_key", 'silver_gtfs_routes'[snapshot_key], "source_feed_version", 'silver_gtfs_routes'[source_feed_version], "source_sha256", 'silver_gtfs_routes'[source_sha256]),SELECTCOLUMNS('silver_gtfs_stops', "snapshot_key", 'silver_gtfs_stops'[snapshot_key], "source_feed_version", 'silver_gtfs_stops'[source_feed_version], "source_sha256", 'silver_gtfs_stops'[source_sha256]),SELECTCOLUMNS('silver_gtfs_calendar', "snapshot_key", 'silver_gtfs_calendar'[snapshot_key], "source_feed_version", 'silver_gtfs_calendar'[source_feed_version], "source_sha256", 'silver_gtfs_calendar'[source_sha256]),SELECTCOLUMNS('silver_gtfs_calendar_dates', "snapshot_key", 'silver_gtfs_calendar_dates'[snapshot_key], "source_feed_version", 'silver_gtfs_calendar_dates'[source_feed_version], "source_sha256", 'silver_gtfs_calendar_dates'[source_sha256]),SELECTCOLUMNS('silver_gtfs_service_dates', "snapshot_key", 'silver_gtfs_service_dates'[snapshot_key], "source_feed_version", 'silver_gtfs_service_dates'[source_feed_version], "source_sha256", 'silver_gtfs_service_dates'[source_sha256]),SELECTCOLUMNS('silver_gtfs_trips', "snapshot_key", 'silver_gtfs_trips'[snapshot_key], "source_feed_version", 'silver_gtfs_trips'[source_feed_version], "source_sha256", 'silver_gtfs_trips'[source_sha256]),SELECTCOLUMNS('silver_gtfs_frequencies', "snapshot_key", 'silver_gtfs_frequencies'[snapshot_key], "source_feed_version", 'silver_gtfs_frequencies'[source_feed_version], "source_sha256", 'silver_gtfs_frequencies'[source_sha256])))

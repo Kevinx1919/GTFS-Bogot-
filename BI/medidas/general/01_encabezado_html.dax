@@ -1,0 +1,3 @@
+General · Encabezado HTML =
+VAR VersionTexto = SELECTEDVALUE ( dim_gtfs_snapshot[source_feed_version], "Varios snapshots" )
+RETURN "<header class='heading'><div><h1>Bogotá en movimiento</h1><p>Oferta publicada · General por componente</p></div><span class='snapshot-stamp'>GTFS estático / " & VersionTexto & "</span></header>"

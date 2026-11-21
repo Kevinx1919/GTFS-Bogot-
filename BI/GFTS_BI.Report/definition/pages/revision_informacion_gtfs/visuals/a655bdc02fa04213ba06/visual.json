@@ -1,0 +1,201 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.14.0/schema.json",
+  "name": "a655bdc02fa04213ba06",
+  "position": {
+    "x": 170,
+    "y": 640,
+    "z": 12,
+    "height": 194,
+    "width": 744,
+    "tabOrder": 12
+  },
+  "visual": {
+    "visualType": "tableEx",
+    "query": {
+      "queryState": {
+        "Values": {
+          "projections": [
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "gold_gtfs_trip_timing"
+                    }
+                  },
+                  "Property": "report_route_label"
+                }
+              },
+              "queryRef": "gold_gtfs_trip_timing.report_route_label",
+              "nativeQueryRef": "report_route_label",
+              "displayName": "Ruta · ID"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "gold_gtfs_trip_timing"
+                    }
+                  },
+                  "Property": "trip_id"
+                }
+              },
+              "queryRef": "gold_gtfs_trip_timing.trip_id",
+              "nativeQueryRef": "trip_id",
+              "displayName": "Viaje declarado"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "gold_gtfs_trip_timing"
+                    }
+                  },
+                  "Property": "report_review_reason"
+                }
+              },
+              "queryRef": "gold_gtfs_trip_timing.report_review_reason",
+              "nativeQueryRef": "report_review_reason",
+              "displayName": "Motivo"
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "gold_gtfs_trip_timing"
+                    }
+                  },
+                  "Property": "Revisión · Visitas del caso"
+                }
+              },
+              "queryRef": "gold_gtfs_trip_timing.Revisión · Visitas del caso",
+              "nativeQueryRef": "Revisión · Visitas del caso",
+              "displayName": "Visitas"
+            }
+          ]
+        }
+      },
+      "sortDefinition": {
+        "sort": [
+          {
+            "field": {
+              "Column": {
+                "Expression": {
+                  "SourceRef": {
+                    "Entity": "gold_gtfs_trip_timing"
+                  }
+                },
+                "Property": "trip_id"
+              }
+            },
+            "direction": "Ascending"
+          }
+        ]
+      }
+    },
+    "objects": {
+      "values": [
+        {
+          "properties": {
+            "fontSize": {
+              "expr": {
+                "Literal": {
+                  "Value": "11D"
+                }
+              }
+            },
+            "fontFamily": {
+              "expr": {
+                "Literal": {
+                  "Value": "'Segoe UI'"
+                }
+              }
+            }
+          }
+        }
+      ],
+      "columnHeaders": [
+        {
+          "properties": {
+            "fontSize": {
+              "expr": {
+                "Literal": {
+                  "Value": "10D"
+                }
+              }
+            }
+          }
+        }
+      ],
+      "total": [
+        {
+          "properties": {
+            "totals": {
+              "expr": {
+                "Literal": {
+                  "Value": "false"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "drillFilterOtherVisuals": true
+  },
+  "filterConfig": {
+    "filters": [
+      {
+        "name": "only_review_cases",
+        "field": {
+          "Measure": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "gold_gtfs_trip_timing"
+              }
+            },
+            "Property": "Revisión · Mostrar caso"
+          }
+        },
+        "type": "Advanced",
+        "filter": {
+          "Version": 2,
+          "From": [
+            {
+              "Name": "t",
+              "Entity": "gold_gtfs_trip_timing",
+              "Type": 0
+            }
+          ],
+          "Where": [
+            {
+              "Condition": {
+                "Comparison": {
+                  "ComparisonKind": 0,
+                  "Left": {
+                    "Measure": {
+                      "Expression": {
+                        "SourceRef": {
+                          "Source": "t"
+                        }
+                      },
+                      "Property": "Revisión · Mostrar caso"
+                    }
+                  },
+                  "Right": {
+                    "Literal": {
+                      "Value": "1L"
+                    }
+                  }
+                }
+              }
+            }
+          ]
+        }
+      }
+    ]
+  }
+}

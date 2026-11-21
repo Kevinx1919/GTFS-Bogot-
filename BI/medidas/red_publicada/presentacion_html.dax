@@ -1,0 +1,96 @@
+// Catálogo del snapshot. Mantiene identidad por versión y hash; ubicación se aplica virtualmente al puente.
+Red · Encabezado HTML =
+VAR Componente=SELECTEDVALUE(silver_gtfs_agency[report_component],"Todo el sistema") VAR Ruta=IF(HASONEVALUE(silver_gtfs_routes[route_key])," · " & SELECTEDVALUE(silver_gtfs_routes[report_route_label]),"") RETURN "<header class='page-heading'><div><p class='section-label'>Movilidad Bogotá / Ubicaciones y relaciones del catálogo</p><h1>Red publicada</h1></div><div class='scope'><strong>" & Componente & Ruta & "</strong><span>Catálogo 2026 · Sin filtro de fecha de servicio</span></div></header>"
+
+// Catálogo del snapshot. Mantiene identidad por versión y hash; ubicación se aplica virtualmente al puente.
+Red · Indicadores HTML =
+VAR Cards=CONCATENATEX({1,2,3,4},VAR I=[Value] VAR N=SWITCH(I,1,[Red · Ubicaciones],2,[Red · Compartidas],3,[Red · Rutas],[Red · Sin coordenadas]) RETURN "<article><span>" & SWITCH(I,1,"Ubicaciones relacionadas",2,"Compartidas por ≥2 rutas",3,"Rutas con ubicaciones","Sin coordenadas") & "</span><strong>" & FORMAT(N,"#,0","es-CO") & "</strong><small>" & SWITCH(I,1,"IDs distintos, sin sumar visitas",2,"Referencia: todas las rutas del snapshot",3,"Dentro del contexto seleccionado","Entre las ubicaciones relacionadas") & "</small></article>","",[Value],ASC) RETURN IF([Red · Fuente disponible],"<section class='red-kpis'>" & Cards & "</section>","<section class='red-kpis'><p class='red-empty'>Selecciona una identidad con catálogo Gold publicado. La ausencia de fuente no representa cero relaciones.</p></section>")
+
+// Mapa del contexto de rutas, sin fecha de servicio. Punto de consulta separado y grados globales. No une puntos como trazados ni agrega padres como visitas.
+Red · Mapa HTML =
+VAR ScopePairs=SUMMARIZE(dim_gtfs_snapshot,dim_gtfs_snapshot[source_feed_version],dim_gtfs_snapshot[source_sha256])
+VAR StopFilter=VALUES(silver_gtfs_stops[stop_key])
+VAR BC=CALCULATETABLE(gold_gtfs_route_stop,REMOVEFILTERS(gold_gtfs_route_stop[report_stop_label]))
+VAR B=CALCULATETABLE(gold_gtfs_route_stop,TREATAS(StopFilter,gold_gtfs_route_stop[stop_key]))
+VAR K=SUMMARIZE(B,gold_gtfs_route_stop[stop_key])
+VAR AllB=CALCULATETABLE(gold_gtfs_route_stop,REMOVEFILTERS(gold_gtfs_route_stop),TREATAS(ScopePairs,gold_gtfs_route_stop[source_feed_version],gold_gtfs_route_stop[source_sha256]))
+VAR Degrees=GROUPBY(AllB,gold_gtfs_route_stop[stop_key],"_degree",COUNTX(CURRENTGROUP(),1))
+VAR D=FILTER(Degrees,gold_gtfs_route_stop[stop_key] IN K)
+VAR StopsAll=CALCULATETABLE(silver_gtfs_stops,REMOVEFILTERS(silver_gtfs_stops),TREATAS(ScopePairs,silver_gtfs_stops[source_feed_version],silver_gtfs_stops[source_sha256]))
+VAR SelectedStops=FILTER(StopsAll,silver_gtfs_stops[stop_key] IN K)
+VAR BK=SUMMARIZE(BC,gold_gtfs_route_stop[stop_key])
+VAR Geo=FILTER(StopsAll,silver_gtfs_stops[stop_key] IN BK && NOT ISBLANK(silver_gtfs_stops[stop_lat])&&NOT ISBLANK(silver_gtfs_stops[stop_lon]))
+VAR GeoP=SELECTCOLUMNS(Geo,"_key",silver_gtfs_stops[stop_key]&"","_lat",silver_gtfs_stops[stop_lat],"_lon",silver_gtfs_stops[stop_lon])
+VAR DegreeP=SELECTCOLUMNS(Degrees,"_key",gold_gtfs_route_stop[stop_key]&"","_degree",[_degree])
+VAR Puntos=NATURALINNERJOIN(GeoP,DegreeP)
+VAR Elegida=COALESCE(SELECTEDVALUE(silver_gtfs_stops[stop_key]),IF(ISFILTERED(gold_gtfs_route_stop[report_stop_label]),SELECTEDVALUE(gold_gtfs_route_stop[stop_key])))
+VAR Ref=FILTER(StopsAll,silver_gtfs_stops[stop_key]=Elegida&&NOT ISBLANK(silver_gtfs_stops[stop_lat])&&NOT ISBLANK(silver_gtfs_stops[stop_lon]))
+VAR Caja=UNION(SELECTCOLUMNS(Puntos,"_la",[_lat],"_lo",[_lon]),SELECTCOLUMNS(Ref,"_la",silver_gtfs_stops[stop_lat],"_lo",silver_gtfs_stops[stop_lon]))
+VAR LatMin=MINX(Caja,[_la]) VAR LatMax=MAXX(Caja,[_la]) VAR LonMin=MINX(Caja,[_lo]) VAR LonMax=MAXX(Caja,[_lo])
+VAR Coseno=COS(DIVIDE(LatMin+LatMax,2)*PI()/180) VAR RX=MAX(.0001,(LonMax-LonMin)*Coseno) VAR RY=MAX(.0001,LatMax-LatMin) VAR Escala=MIN(590/RX,222/RY) VAR OX=350-RX*Escala/2 VAR OY=136-RY*Escala/2
+VAR Paths=CONCATENATEX({1,2,3},VAR Grupo=[Value] VAR Conjunto=FILTER(Puntos,SWITCH(TRUE(),[_degree]=1,1,[_degree]<=5,2,3)=Grupo) VAR Trazo=CONCATENATEX(Conjunto,"M" & FORMAT(OX+([_lon]-LonMin)*Coseno*Escala,"0.0","en-US") & "," & FORMAT(OY+(LatMax-[_lat])*Escala,"0.0","en-US") & "h.1","",[_key],ASC) RETURN "<path class='geo-points degree-" & FORMAT(Grupo,"0") & "' data-points='" & FORMAT(COALESCE(COUNTROWS(Conjunto),0),"0") & "' d='" & Trazo & "' fill='none' stroke='" & IF(Grupo=1,"#869178","#DD212C") & "' stroke-width='" & IF(Grupo=1,"1.7",IF(Grupo=2,"2.2","3.1")) & "' stroke-linecap='round' opacity='" & IF(Grupo=3,".8",".55") & "'/>","",[Value],ASC)
+VAR Referencia=CONCATENATEX(Ref,VAR X=OX+(silver_gtfs_stops[stop_lon]-LonMin)*Coseno*Escala VAR Y=OY+(LatMax-silver_gtfs_stops[stop_lat])*Escala RETURN "<g class='selected-location'><circle cx='" & FORMAT(X,"0.0","en-US") & "' cy='" & FORMAT(Y,"0.0","en-US") & "' r='10' fill='#FFC928' stroke='#252A23' stroke-width='1.5'/><circle cx='" & FORMAT(X,"0.0","en-US") & "' cy='" & FORMAT(Y,"0.0","en-US") & "' r='2' fill='#252A23'/></g>","")
+RETURN IF([Red · Fuente disponible],"<section class='network-map'><div class='panel-head'><h2>La red del catálogo</h2><span>" & FORMAT(COALESCE(COUNTROWS(Puntos),0),"#,0","es-CO") & " puntos de contexto</span></div><p class='subtitle'>Contexto de rutas · El color indica cuántas rutas comparten cada ID</p>" & IF(COUNTROWS(Caja)=0,"<p class='red-empty'>El contexto no tiene coordenadas disponibles.</p>","<svg viewBox='0 0 700 276' role='img' aria-label='Ubicaciones del catálogo por cantidad de rutas relacionadas'><path d='M45 32H650M45 90H650M45 148H650M45 206H650M45 256H650M100 24V256M200 24V256M300 24V256M400 24V256M500 24V256M600 24V256' stroke='#DCE2D6'/>" & Paths & Referencia & "<text x='660' y='30' class='geo-label'>N</text><path d='M665 40L660 57H670Z' fill='#252A23'/><text x='20' y='271' class='geo-label'>" & FORMAT(LatMin,"0.000","en-US") & "° — " & FORMAT(LatMax,"0.000","en-US") & "° N</text></svg>") & "<div class='network-legend'><span><i class='one'></i>1 ruta</span><span><i class='shared'></i>2–5 rutas</span><span><i class='many'></i>6 o más</span><span><i class='reference'></i>Ubicación consultada</span></div><p class='red-note'>Coordenadas sin mapa base. El mapa mantiene las rutas del contexto; la ficha describe la ubicación consultada.</p></section>","<section class='network-map'><p class='red-empty'>Selecciona una identidad con catálogo Gold publicado. La ausencia de fuente no representa cero relaciones.</p></section>")
+
+// Ficha por ID: nombre, tipo y padre de la misma fuente. Padre es referencia y las ubicaciones hijas se cuentan aparte.
+Red · Ficha HTML =
+VAR ScopePairs=SUMMARIZE(dim_gtfs_snapshot,dim_gtfs_snapshot[source_feed_version],dim_gtfs_snapshot[source_sha256])
+VAR StopFilter=VALUES(silver_gtfs_stops[stop_key])
+VAR BC=CALCULATETABLE(gold_gtfs_route_stop,REMOVEFILTERS(gold_gtfs_route_stop[report_stop_label]))
+VAR B=CALCULATETABLE(gold_gtfs_route_stop,TREATAS(StopFilter,gold_gtfs_route_stop[stop_key]))
+VAR K=SUMMARIZE(B,gold_gtfs_route_stop[stop_key])
+VAR AllB=CALCULATETABLE(gold_gtfs_route_stop,REMOVEFILTERS(gold_gtfs_route_stop),TREATAS(ScopePairs,gold_gtfs_route_stop[source_feed_version],gold_gtfs_route_stop[source_sha256]))
+VAR Degrees=GROUPBY(AllB,gold_gtfs_route_stop[stop_key],"_degree",COUNTX(CURRENTGROUP(),1))
+VAR D=FILTER(Degrees,gold_gtfs_route_stop[stop_key] IN K)
+VAR StopsAll=CALCULATETABLE(silver_gtfs_stops,REMOVEFILTERS(silver_gtfs_stops),TREATAS(ScopePairs,silver_gtfs_stops[source_feed_version],silver_gtfs_stops[source_sha256]))
+VAR SelectedStops=FILTER(StopsAll,silver_gtfs_stops[stop_key] IN K)
+VAR Clave=COALESCE(SELECTEDVALUE(silver_gtfs_stops[stop_key]),IF(ISFILTERED(gold_gtfs_route_stop[report_stop_label]),SELECTEDVALUE(gold_gtfs_route_stop[stop_key]))) VAR R=FILTER(StopsAll,silver_gtfs_stops[stop_key]=Clave) VAR Nombre=MAXX(R,silver_gtfs_stops[stop_name]) VAR Codigo=MAXX(R,silver_gtfs_stops[stop_id]) VAR Tipo=MAXX(R,silver_gtfs_stops[location_type]) VAR Padre=MAXX(R,silver_gtfs_stops[parent_station]) VAR PadreNombre=MAXX(FILTER(StopsAll,silver_gtfs_stops[stop_id]=Padre),silver_gtfs_stops[stop_name]) VAR NGlobal=COALESCE(COUNTROWS(FILTER(AllB,gold_gtfs_route_stop[stop_key]=Clave)),0) VAR NContexto=COALESCE(COUNTROWS(B),0) VAR Hijos=SELECTCOLUMNS(FILTER(StopsAll,silver_gtfs_stops[parent_station]=Codigo),"_kid",silver_gtfs_stops[stop_key]) VAR NChild=COALESCE(COUNTROWS(FILTER(SUMMARIZE(BC,gold_gtfs_route_stop[stop_key]),gold_gtfs_route_stop[stop_key] IN Hijos)),0)
+VAR Seguro=SUBSTITUTE(SUBSTITUTE(SUBSTITUTE(COALESCE(Nombre,"Sin nombre"),"&","&amp;"),"<","&lt;"),">","&gt;")
+VAR Padres=COUNTROWS(FILTER(StopsAll,silver_gtfs_stops[location_type]=1)) VAR Total=[Red · Ubicaciones] VAR Shared=[Red · Compartidas]
+RETURN IF([Red · Fuente disponible],"<section class='location-card'>" & IF(ISBLANK(Clave),"<p class='insight-kicker'>Cómo se comparte el catálogo</p><h2>Varias rutas, una ubicación.</h2><strong class='shared-percent'>" & IF(Total=0,"—",FORMAT(DIVIDE(Shared,Total),"0.0%","es-CO")) & "</strong><p class='location-description'>" & FORMAT(Shared,"#,0","es-CO") & " de " & FORMAT(Total,"#,0","es-CO") & " ubicaciones aparecen en al menos dos rutas del snapshot.</p><p class='parent-note'>El catálogo también tiene " & FORMAT(Padres,"0") & " estaciones padre. Se consultan como referencias y no se suman como visitas.</p><small>Elige una ubicación en el selector o en la tabla nativa para consultar su ficha.</small>","<p class='insight-kicker'>Ubicación consultada · ID " & Codigo & "</p><h2>" & Seguro & "</h2><p class='location-type'>" & IF(Tipo=1,"Estación padre",IF(Tipo=0,"Parada / plataforma","Tipo no especificado")) & "</p><div class='location-counts'><span><strong>" & FORMAT(NContexto,"0") & "</strong>rutas del contexto</span><span><strong>" & FORMAT(NGlobal,"0") & "</strong>rutas del catálogo</span></div><p class='parent-note'>" & IF(Tipo=1,FORMAT(NChild,"0") & " ubicaciones hijas relacionadas con las rutas del contexto. El ID padre no se añade como visita.",IF(ISBLANK(Padre)||Padre="","Sin estación padre publicada.","Padre: " & COALESCE(PadreNombre,Padre) & " · ID " & Padre)) & "</p><small>Compartir un ID no confirma un transbordo físico. Un nombre con la palabra estación no determina su tipo.</small>") & "</section>","<section class='location-card'><p class='red-empty'>Selecciona una identidad con catálogo Gold publicado. La ausencia de fuente no representa cero relaciones.</p></section>")
+
+// Con una ruta muestra otras rutas por IDs compartidos del mismo snapshot. Sin una ruta única muestra rutas del contexto; no confirma transbordos.
+Red · Conexiones HTML =
+VAR ScopePairs=SUMMARIZE(dim_gtfs_snapshot,dim_gtfs_snapshot[source_feed_version],dim_gtfs_snapshot[source_sha256])
+VAR StopFilter=VALUES(silver_gtfs_stops[stop_key])
+VAR BC=CALCULATETABLE(gold_gtfs_route_stop,REMOVEFILTERS(gold_gtfs_route_stop[report_stop_label]))
+VAR B=CALCULATETABLE(gold_gtfs_route_stop,TREATAS(StopFilter,gold_gtfs_route_stop[stop_key]))
+VAR K=SUMMARIZE(B,gold_gtfs_route_stop[stop_key])
+VAR AllB=CALCULATETABLE(gold_gtfs_route_stop,REMOVEFILTERS(gold_gtfs_route_stop),TREATAS(ScopePairs,gold_gtfs_route_stop[source_feed_version],gold_gtfs_route_stop[source_sha256]))
+VAR Degrees=GROUPBY(AllB,gold_gtfs_route_stop[stop_key],"_degree",COUNTX(CURRENTGROUP(),1))
+VAR D=FILTER(Degrees,gold_gtfs_route_stop[stop_key] IN K)
+VAR StopsAll=CALCULATETABLE(silver_gtfs_stops,REMOVEFILTERS(silver_gtfs_stops),TREATAS(ScopePairs,silver_gtfs_stops[source_feed_version],silver_gtfs_stops[source_sha256]))
+VAR SelectedStops=FILTER(StopsAll,silver_gtfs_stops[stop_key] IN K)
+VAR Unica=HASONEVALUE(silver_gtfs_routes[route_key]) VAR UnaUbicacion=HASONEVALUE(silver_gtfs_stops[stop_key])||(ISFILTERED(gold_gtfs_route_stop[report_stop_label])&&HASONEVALUE(gold_gtfs_route_stop[stop_key])) VAR Elegidas=SUMMARIZE(BC,gold_gtfs_route_stop[route_key]) VAR Universo=IF(Unica,1,0)
+VAR Otras=FILTER(AllB,gold_gtfs_route_stop[stop_key] IN K && (NOT(Unica)||NOT(gold_gtfs_route_stop[route_key] IN Elegidas)))
+VAR Base=IF(Unica,COUNTROWS(Otras),COUNTROWS(B))
+VAR Grupos=GROUPBY(FILTER(AllB,gold_gtfs_route_stop[stop_key] IN K && (IF(Unica,NOT(gold_gtfs_route_stop[route_key] IN Elegidas),gold_gtfs_route_stop[route_key] IN Elegidas))),gold_gtfs_route_stop[route_key],gold_gtfs_route_stop[route_id],gold_gtfs_route_stop[source_feed_version],gold_gtfs_route_stop[source_sha256],"_n",COUNTX(CURRENTGROUP(),1))
+VAR TopR=TOPN(5,Grupos,[_n],DESC,gold_gtfs_route_stop[route_key],ASC) VAR Maximo=MAX(1,MAXX(TopR,[_n]))
+VAR Filas=CONCATENATEX(TopR,VAR Label=LOOKUPVALUE(silver_gtfs_routes[report_route_label],silver_gtfs_routes[route_key],gold_gtfs_route_stop[route_key]) RETURN "<div class='connection-row'><strong>" & SUBSTITUTE(SUBSTITUTE(COALESCE(Label,gold_gtfs_route_stop[route_id]),"&","&amp;"),"<","&lt;") & "</strong><span class='connection-track'><i style='width:" & FORMAT(DIVIDE([_n],Maximo)*100,"0.0","en-US") & "%'></i></span><span>" & FORMAT([_n],"0") & " ubic.</span></div>","",[_n],DESC)
+RETURN IF([Red · Fuente disponible],"<section class='panel connections-panel'><div class='panel-head'><h2>" & IF(Unica,"Otras rutas que comparten ubicaciones",IF(UnaUbicacion,"Rutas relacionadas con esta ubicación","Rutas con más ubicaciones en la selección")) & "</h2><span>" & FORMAT(MIN(5,COALESCE(COUNTROWS(Grupos),0)),"0") & " de " & FORMAT(COALESCE(COUNTROWS(Grupos),0),"0") & "</span></div><p class='subtitle'>" & IF(Unica,"Referencia: todas las rutas del snapshot. Cantidad de IDs compartidos.","Cantidad de ubicaciones del contexto por ruta.") & "</p>" & IF(COUNTROWS(Grupos)=0,"<p class='red-empty'>No hay relaciones por esos IDs en este contexto. Eso no descarta una conexión física.</p>",Filas) & "</section>","<section class='panel connections-panel'><p class='red-empty'>Selecciona una identidad con catálogo Gold publicado. La ausencia de fuente no representa cero relaciones.</p></section>")
+
+// Catálogo del snapshot. Mantiene identidad por versión y hash; ubicación se aplica virtualmente al puente.
+Red · Tabla marco HTML =
+"<section class='location-table-frame'><h2>Ubicaciones del contexto</h2><p>Selecciona una fila para consultar su ubicación.</p></section>"
+
+// Fragmento exclusivo del prototipo. La página PBIR utiliza tabla nativa y una medida por ubicación.
+Red · Tabla previa HTML =
+VAR ScopePairs=SUMMARIZE(dim_gtfs_snapshot,dim_gtfs_snapshot[source_feed_version],dim_gtfs_snapshot[source_sha256])
+VAR StopFilter=VALUES(silver_gtfs_stops[stop_key])
+VAR BC=CALCULATETABLE(gold_gtfs_route_stop,REMOVEFILTERS(gold_gtfs_route_stop[report_stop_label]))
+VAR B=CALCULATETABLE(gold_gtfs_route_stop,TREATAS(StopFilter,gold_gtfs_route_stop[stop_key]))
+VAR K=SUMMARIZE(B,gold_gtfs_route_stop[stop_key])
+VAR AllB=CALCULATETABLE(gold_gtfs_route_stop,REMOVEFILTERS(gold_gtfs_route_stop),TREATAS(ScopePairs,gold_gtfs_route_stop[source_feed_version],gold_gtfs_route_stop[source_sha256]))
+VAR Degrees=GROUPBY(AllB,gold_gtfs_route_stop[stop_key],"_degree",COUNTX(CURRENTGROUP(),1))
+VAR D=FILTER(Degrees,gold_gtfs_route_stop[stop_key] IN K)
+VAR StopsAll=CALCULATETABLE(silver_gtfs_stops,REMOVEFILTERS(silver_gtfs_stops),TREATAS(ScopePairs,silver_gtfs_stops[source_feed_version],silver_gtfs_stops[source_sha256]))
+VAR SelectedStops=FILTER(StopsAll,silver_gtfs_stops[stop_key] IN K)
+VAR TopS=TOPN(8,D,[_degree],DESC,gold_gtfs_route_stop[stop_key],ASC) VAR Filas=CONCATENATEX(TopS,VAR Clave=gold_gtfs_route_stop[stop_key] VAR Nombre=MAXX(FILTER(StopsAll,silver_gtfs_stops[stop_key]=Clave),silver_gtfs_stops[stop_name]) VAR Codigo=MAXX(FILTER(StopsAll,silver_gtfs_stops[stop_key]=Clave),silver_gtfs_stops[stop_id]) RETURN "<tr><td>" & SUBSTITUTE(SUBSTITUTE(COALESCE(Nombre,"Sin nombre"),"&","&amp;"),"<","&lt;") & "<small>ID " & Codigo & "</small></td><td>" & FORMAT([_degree],"0") & "</td></tr>","",[_degree],DESC) RETURN IF([Red · Fuente disponible],"<div class='preview-table'><table><thead><tr><th>Ubicación · ID</th><th>Rutas del catálogo</th></tr></thead><tbody>" & Filas & "</tbody></table>" & IF(COUNTROWS(D)=0,"<p class='red-empty'>Sin ubicaciones relacionadas con esos filtros.</p>","") & "<small>Vista previa: hasta ocho filas. La tabla de Power BI permite recorrer el contexto completo.</small></div>","<section class='preview-table'><p class='red-empty'>Selecciona una identidad con catálogo Gold publicado. La ausencia de fuente no representa cero relaciones.</p></section>")
+
+// Catálogo del snapshot. Mantiene identidad por versión y hash; ubicación se aplica virtualmente al puente.
+Red · Navegación HTML =
+"<aside class='sidebar-inner'><div class='brand'><svg viewBox='0 0 34 38' aria-hidden='true'><rect x='4' y='3' width='26' height='29' rx='6' fill='#DD212C'/><rect x='8' y='8' width='18' height='10' rx='2' fill='#FFF'/><path d='M9 23H25' stroke='#FFC928' stroke-width='3'/><circle cx='10' cy='29' r='2' fill='#FFF'/><circle cx='24' cy='29' r='2' fill='#FFF'/><path d='M8 33V36M26 33V36' stroke='#252A23' stroke-width='3'/></svg><strong>Movilidad<br>Bogotá</strong></div><div class='sidebar-note'><span class='brand-rule'></span><strong>Lee el servicio previsto.</strong><p>GTFS estático<br>Oferta planificada</p></div></aside>"
+
+// Catálogo del snapshot. Mantiene identidad por versión y hash; ubicación se aplica virtualmente al puente.
+Red · Fuente HTML =
+"<footer class='source-strip'><strong>Fuente: GTFS de TransMilenio · Catálogo 2026</strong><span>Relaciones por ID. No demuestra visitas diarias, transbordos ni cobertura poblacional.</span></footer>"

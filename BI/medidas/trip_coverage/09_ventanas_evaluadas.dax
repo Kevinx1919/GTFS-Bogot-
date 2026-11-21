@@ -1,0 +1,3 @@
+-- Ventanas publicadas agregadas por viaje y snapshot. No representa salidas exactas ni operación observada.
+Ventanas evaluadas =
+SUM ( 'gold_gtfs_trip_coverage'[frequency_window_count] )

@@ -1,0 +1,8 @@
+-- Viajes evaluados con una visita publicada; no demuestra recorrido entre ubicaciones. Conserva filtros de snapshot, agencia, ruta y contexto de programación. BLANK si falta cobertura Gold.
+Viajes con una visita =
+VAR Universo =
+    CALCULATE ( [Viajes evaluados], REMOVEFILTERS ( 'gold_gtfs_trip_coverage'[coverage_status] ) )
+VAR Casos =
+    CALCULATE ( [Viajes evaluados], KEEPFILTERS ( 'gold_gtfs_trip_coverage'[coverage_status] = "una_visita" ) )
+RETURN
+    IF ( ISBLANK ( Universo ), BLANK (), COALESCE ( Casos, 0 ) )

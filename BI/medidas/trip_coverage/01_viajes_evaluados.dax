@@ -1,0 +1,3 @@
+-- Viajes declarados con evaluación Gold en el contexto. BLANK indica ausencia de filas Gold; no equivale a cero viajes declarados.
+Viajes evaluados =
+COUNTROWS ( 'gold_gtfs_trip_coverage' )

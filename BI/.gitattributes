@@ -1,0 +1,2 @@
+GFTS_BI.SemanticModel/**/*.tmdl whitespace=blank-at-eof,space-before-tab,cr-at-eol
+imagenes/**/*.html -text -whitespace

@@ -40,4 +40,4 @@ El notebook conserva la consulta verificada; todavía no documenté una ejecuci�
 No repetí perfiles completos de nulos, duplicados y formatos ya cubiertos por los contratos Silver.
 La siguiente implementación sigue la [ficha Gold propuesta](contracts/trip_coverage.md).
 
-[Explore in Databricks](https://dbc-caa55511-0fef.cloud.databricks.com/one/chat/threads/868b28b754034326a7489fd8e18ed009?o=7474646722477316&utm_source=genie_chat_mcp).
+Conservo las consultas en el historial local de Genie; omito el enlace privado del workspace.

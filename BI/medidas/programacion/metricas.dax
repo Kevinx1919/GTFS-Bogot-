@@ -1,0 +1,55 @@
+// Selección explícita de servicios activos; conserva identidad de snapshot, ruta y componente.
+Programación · Viajes activos =
+VAR Servicios=VALUES(silver_gtfs_service_dates[service_key])
+VAR K=CALCULATETABLE(VALUES(silver_gtfs_trips[trip_key]),TREATAS(Servicios,silver_gtfs_trips[service_key]))
+VAR T=CALCULATETABLE(gold_gtfs_trip_timing,TREATAS(K,gold_gtfs_trip_timing[trip_key]))
+VAR E=FILTER(T,gold_gtfs_trip_timing[timing_status]="eligible")
+RETURN IF(NOT ISBLANK([Panorama · Rutas]),COALESCE(COUNTROWS(T),0))
+
+// Selección explícita de servicios activos; conserva identidad de snapshot, ruta y componente.
+Programación · Elegibles =
+VAR Servicios=VALUES(silver_gtfs_service_dates[service_key])
+VAR K=CALCULATETABLE(VALUES(silver_gtfs_trips[trip_key]),TREATAS(Servicios,silver_gtfs_trips[service_key]))
+VAR T=CALCULATETABLE(gold_gtfs_trip_timing,TREATAS(K,gold_gtfs_trip_timing[trip_key]))
+VAR E=FILTER(T,gold_gtfs_trip_timing[timing_status]="eligible")
+RETURN IF(NOT ISBLANK([Panorama · Rutas]),COALESCE(COUNTROWS(E),0))
+
+// Selección explícita de servicios activos; conserva identidad de snapshot, ruta y componente.
+Programación · Primera salida segundos =
+VAR Servicios=VALUES(silver_gtfs_service_dates[service_key])
+VAR K=CALCULATETABLE(VALUES(silver_gtfs_trips[trip_key]),TREATAS(Servicios,silver_gtfs_trips[service_key]))
+VAR T=CALCULATETABLE(gold_gtfs_trip_timing,TREATAS(K,gold_gtfs_trip_timing[trip_key]))
+VAR E=FILTER(T,gold_gtfs_trip_timing[timing_status]="eligible")
+RETURN IF(NOT ISBLANK([Panorama · Rutas]),MINX(E,gold_gtfs_trip_timing[first_departure_time_seconds]))
+
+// Selección explícita de servicios activos; conserva identidad de snapshot, ruta y componente.
+Programación · Última llegada segundos =
+VAR Servicios=VALUES(silver_gtfs_service_dates[service_key])
+VAR K=CALCULATETABLE(VALUES(silver_gtfs_trips[trip_key]),TREATAS(Servicios,silver_gtfs_trips[service_key]))
+VAR T=CALCULATETABLE(gold_gtfs_trip_timing,TREATAS(K,gold_gtfs_trip_timing[trip_key]))
+VAR E=FILTER(T,gold_gtfs_trip_timing[timing_status]="eligible")
+RETURN IF(NOT ISBLANK([Panorama · Rutas]),MAXX(E,gold_gtfs_trip_timing[last_arrival_time_seconds]))
+
+// Selección explícita de servicios activos; conserva identidad de snapshot, ruta y componente.
+Programación · Ventanas activas =
+VAR Servicios=VALUES(silver_gtfs_service_dates[service_key])
+VAR K=CALCULATETABLE(VALUES(silver_gtfs_trips[trip_key]),TREATAS(Servicios,silver_gtfs_trips[service_key]))
+VAR T=CALCULATETABLE(gold_gtfs_trip_timing,TREATAS(K,gold_gtfs_trip_timing[trip_key]))
+VAR E=FILTER(T,gold_gtfs_trip_timing[timing_status]="eligible")
+RETURN IF(NOT ISBLANK([Panorama · Rutas]),COALESCE(CALCULATE(COUNTROWS(silver_gtfs_frequencies),TREATAS(K,silver_gtfs_frequencies[trip_key])),0))
+
+// Selección explícita de servicios activos; conserva identidad de snapshot, ruta y componente.
+Programación · Excluidos =
+IF(NOT ISBLANK([Panorama · Rutas]),[Programación · Viajes activos]-[Programación · Elegibles])
+
+// Selección explícita de servicios activos; conserva identidad de snapshot, ruta y componente.
+Programación · Elegibles B =
+VAR F=SELECTEDVALUE(dim_gtfs_fecha_comparacion[fecha]) RETURN IF(NOT ISBLANK(F),CALCULATE([Programación · Elegibles],REMOVEFILTERS(dim_gtfs_fecha),TREATAS({F},dim_gtfs_fecha[fecha])))
+
+// Selección explícita de servicios activos; conserva identidad de snapshot, ruta y componente.
+Programación · Primera salida B segundos =
+VAR F=SELECTEDVALUE(dim_gtfs_fecha_comparacion[fecha]) RETURN IF(NOT ISBLANK(F),CALCULATE([Programación · Primera salida segundos],REMOVEFILTERS(dim_gtfs_fecha),TREATAS({F},dim_gtfs_fecha[fecha])))
+
+// Selección explícita de servicios activos; conserva identidad de snapshot, ruta y componente.
+Programación · Última llegada B segundos =
+VAR F=SELECTEDVALUE(dim_gtfs_fecha_comparacion[fecha]) RETURN IF(NOT ISBLANK(F),CALCULATE([Programación · Última llegada segundos],REMOVEFILTERS(dim_gtfs_fecha),TREATAS({F},dim_gtfs_fecha[fecha])))

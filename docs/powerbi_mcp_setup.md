@@ -1,5 +1,11 @@
 # Mi conexión entre Codex y Power BI
 
+> **Estado vigente — 20 de noviembre de 2026:** las cuatro Gold de 2026 están publicadas e importadas y los cuatro paneles están implementados. La navegación nativa funciona; la revisión integral y la actualización completa siguen pendientes. [Estado actual](project_status.md).
+
+## Registro de diseño e implementación
+
+Conservo a continuación las decisiones y comprobaciones de cada etapa. Los pendientes de esas fechas describen su momento; el estado vigente anterior los sustituye.
+
 **Fecha de comprobación:** 17 de noviembre de 2026.
 **Estado:** licencia aceptada y conexión al modelo local probada en solo lectura.
 **Actualización documental:** 18 de noviembre de 2026.

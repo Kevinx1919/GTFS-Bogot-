@@ -1,0 +1,4 @@
+General · Contexto HTML =
+VAR VersionTexto = SELECTEDVALUE ( dim_gtfs_snapshot[source_feed_version], "Varios snapshots" )
+VAR HashTexto = SELECTEDVALUE ( dim_gtfs_snapshot[source_sha256], "" )
+RETURN "<footer class='context-strip'><div><strong>" & [Estado cobertura Gold] & "</strong><span>Snapshot " & VersionTexto & " / SHA-256 " & IF ( HashTexto = "", "Varios", LEFT ( HashTexto, 12 ) & "…" ) & "</span></div><p>Oferta publicada, no operación observada.<br>Los casos sin visitas describen el dato del feed.</p></footer>"

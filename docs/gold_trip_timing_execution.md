@@ -1,6 +1,19 @@
 # Mi ejecución de extremos horarios Gold
 
-**Estado:** implementación local; publicación en Workspace pendiente.
+**Actualización: 20 de noviembre de 2026.**
+
+## Publicación confirmada para 2026
+
+La ejecución d39bc6b9-9cf2-478c-9830-0f72cd905b2a terminó SUCCEEDED, persisted=true y reconciled=true.
+Conservé 181.060 viajes únicos: 180.246 elegibles, 739 sin visitas, 61 con una visita y 14 plantillas.
+El resumen registró cero extremos ausentes y cero extremos invertidos.
+La tabla ya está importada en Power BI; Programación y Revisión utilizan su clasificación.
+
+## Procedimiento y comprobaciones previas
+
+Los apartados siguientes conservan el procedimiento y las pruebas locales anteriores a esta publicación.
+
+**Estado:** publicado en Workspace para 2026 e importado en el modelo local Power BI.
 La [ficha](contracts/trip_timing.md) fija el significado de cada campo.
 
 ## Pasos

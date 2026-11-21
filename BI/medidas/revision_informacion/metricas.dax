@@ -1,0 +1,64 @@
+// Disponibilidad de ambas Gold importadas para una identidad única. No sustituye su auditoría de publicación.
+Revisión · Fuente disponible =
+VAR P=SUMMARIZE(dim_gtfs_snapshot,dim_gtfs_snapshot[source_feed_version],dim_gtfs_snapshot[source_sha256]) VAR T=CALCULATE(COUNTROWS(gold_gtfs_trip_timing),REMOVEFILTERS(gold_gtfs_trip_timing),TREATAS(P,gold_gtfs_trip_timing[source_feed_version],gold_gtfs_trip_timing[source_sha256])) VAR C=CALCULATE(COUNTROWS(gold_gtfs_trip_coverage),REMOVEFILTERS(gold_gtfs_trip_coverage),TREATAS(P,gold_gtfs_trip_coverage[source_feed_version],gold_gtfs_trip_coverage[source_sha256])) RETURN HASONEVALUE(dim_gtfs_snapshot[snapshot_key])&&T>0&&C>0
+
+// Catálogo 2026 del contexto de componente y ruta. Las fechas no convierten casos en viajes diarios.
+Revisión · Evaluados =
+VAR Base=CALCULATETABLE(gold_gtfs_trip_timing,REMOVEFILTERS(gold_gtfs_trip_timing[report_review_reason],gold_gtfs_trip_timing[timing_status],gold_gtfs_trip_timing[trip_id],gold_gtfs_trip_timing[trip_key],gold_gtfs_trip_timing[report_route_label]))
+VAR Motivos=CALCULATETABLE(VALUES(gold_gtfs_trip_timing[timing_status]),REMOVEFILTERS(gold_gtfs_trip_timing[trip_id],gold_gtfs_trip_timing[trip_key],gold_gtfs_trip_timing[report_route_label]))
+VAR Casos=FILTER(Base,gold_gtfs_trip_timing[timing_status]<>"eligible" && gold_gtfs_trip_timing[timing_status] IN Motivos)
+RETURN IF([Revisión · Fuente disponible],COALESCE(COUNTROWS(Base),0))
+
+// Catálogo 2026 del contexto de componente y ruta. Las fechas no convierten casos en viajes diarios.
+Revisión · Sin visitas =
+VAR Base=CALCULATETABLE(gold_gtfs_trip_timing,REMOVEFILTERS(gold_gtfs_trip_timing[report_review_reason],gold_gtfs_trip_timing[timing_status],gold_gtfs_trip_timing[trip_id],gold_gtfs_trip_timing[trip_key],gold_gtfs_trip_timing[report_route_label]))
+VAR Motivos=CALCULATETABLE(VALUES(gold_gtfs_trip_timing[timing_status]),REMOVEFILTERS(gold_gtfs_trip_timing[trip_id],gold_gtfs_trip_timing[trip_key],gold_gtfs_trip_timing[report_route_label]))
+VAR Casos=FILTER(Base,gold_gtfs_trip_timing[timing_status]<>"eligible" && gold_gtfs_trip_timing[timing_status] IN Motivos)
+RETURN IF([Revisión · Fuente disponible],COALESCE(COUNTROWS(FILTER(Base,gold_gtfs_trip_timing[timing_status]="no_visits")),0))
+
+// Catálogo 2026 del contexto de componente y ruta. Las fechas no convierten casos en viajes diarios.
+Revisión · Una visita =
+VAR Base=CALCULATETABLE(gold_gtfs_trip_timing,REMOVEFILTERS(gold_gtfs_trip_timing[report_review_reason],gold_gtfs_trip_timing[timing_status],gold_gtfs_trip_timing[trip_id],gold_gtfs_trip_timing[trip_key],gold_gtfs_trip_timing[report_route_label]))
+VAR Motivos=CALCULATETABLE(VALUES(gold_gtfs_trip_timing[timing_status]),REMOVEFILTERS(gold_gtfs_trip_timing[trip_id],gold_gtfs_trip_timing[trip_key],gold_gtfs_trip_timing[report_route_label]))
+VAR Casos=FILTER(Base,gold_gtfs_trip_timing[timing_status]<>"eligible" && gold_gtfs_trip_timing[timing_status] IN Motivos)
+RETURN IF([Revisión · Fuente disponible],COALESCE(COUNTROWS(FILTER(Base,gold_gtfs_trip_timing[timing_status]="one_visit")),0))
+
+// Catálogo 2026 del contexto de componente y ruta. Las fechas no convierten casos en viajes diarios.
+Revisión · Plantillas =
+VAR Base=CALCULATETABLE(gold_gtfs_trip_timing,REMOVEFILTERS(gold_gtfs_trip_timing[report_review_reason],gold_gtfs_trip_timing[timing_status],gold_gtfs_trip_timing[trip_id],gold_gtfs_trip_timing[trip_key],gold_gtfs_trip_timing[report_route_label]))
+VAR Motivos=CALCULATETABLE(VALUES(gold_gtfs_trip_timing[timing_status]),REMOVEFILTERS(gold_gtfs_trip_timing[trip_id],gold_gtfs_trip_timing[trip_key],gold_gtfs_trip_timing[report_route_label]))
+VAR Casos=FILTER(Base,gold_gtfs_trip_timing[timing_status]<>"eligible" && gold_gtfs_trip_timing[timing_status] IN Motivos)
+RETURN IF([Revisión · Fuente disponible],COALESCE(COUNTROWS(FILTER(Base,gold_gtfs_trip_timing[timing_status]="frequency_template")),0))
+
+// Catálogo 2026 del contexto de componente y ruta. Las fechas no convierten casos en viajes diarios.
+Revisión · Elegibles =
+VAR Base=CALCULATETABLE(gold_gtfs_trip_timing,REMOVEFILTERS(gold_gtfs_trip_timing[report_review_reason],gold_gtfs_trip_timing[timing_status],gold_gtfs_trip_timing[trip_id],gold_gtfs_trip_timing[trip_key],gold_gtfs_trip_timing[report_route_label]))
+VAR Motivos=CALCULATETABLE(VALUES(gold_gtfs_trip_timing[timing_status]),REMOVEFILTERS(gold_gtfs_trip_timing[trip_id],gold_gtfs_trip_timing[trip_key],gold_gtfs_trip_timing[report_route_label]))
+VAR Casos=FILTER(Base,gold_gtfs_trip_timing[timing_status]<>"eligible" && gold_gtfs_trip_timing[timing_status] IN Motivos)
+RETURN IF([Revisión · Fuente disponible],COALESCE(COUNTROWS(FILTER(Base,gold_gtfs_trip_timing[timing_status]="eligible")),0))
+
+// Catálogo 2026 del contexto de componente y ruta. Las fechas no convierten casos en viajes diarios.
+Revisión · Excluidos =
+VAR Base=CALCULATETABLE(gold_gtfs_trip_timing,REMOVEFILTERS(gold_gtfs_trip_timing[report_review_reason],gold_gtfs_trip_timing[timing_status],gold_gtfs_trip_timing[trip_id],gold_gtfs_trip_timing[trip_key],gold_gtfs_trip_timing[report_route_label]))
+VAR Motivos=CALCULATETABLE(VALUES(gold_gtfs_trip_timing[timing_status]),REMOVEFILTERS(gold_gtfs_trip_timing[trip_id],gold_gtfs_trip_timing[trip_key],gold_gtfs_trip_timing[report_route_label]))
+VAR Casos=FILTER(Base,gold_gtfs_trip_timing[timing_status]<>"eligible" && gold_gtfs_trip_timing[timing_status] IN Motivos)
+RETURN IF([Revisión · Fuente disponible],COALESCE(COUNTROWS(FILTER(Base,gold_gtfs_trip_timing[timing_status]<>"eligible")),0))
+
+// Catálogo 2026 del contexto de componente y ruta. Las fechas no convierten casos en viajes diarios.
+Revisión · Casos del motivo =
+VAR Base=CALCULATETABLE(gold_gtfs_trip_timing,REMOVEFILTERS(gold_gtfs_trip_timing[report_review_reason],gold_gtfs_trip_timing[timing_status],gold_gtfs_trip_timing[trip_id],gold_gtfs_trip_timing[trip_key],gold_gtfs_trip_timing[report_route_label]))
+VAR Motivos=CALCULATETABLE(VALUES(gold_gtfs_trip_timing[timing_status]),REMOVEFILTERS(gold_gtfs_trip_timing[trip_id],gold_gtfs_trip_timing[trip_key],gold_gtfs_trip_timing[report_route_label]))
+VAR Casos=FILTER(Base,gold_gtfs_trip_timing[timing_status]<>"eligible" && gold_gtfs_trip_timing[timing_status] IN Motivos)
+RETURN IF([Revisión · Fuente disponible],COALESCE(COUNTROWS(Casos),0))
+
+// Catálogo 2026 del contexto de componente y ruta. Las fechas no convierten casos en viajes diarios.
+Revisión · Porcentaje excluido =
+DIVIDE([Revisión · Excluidos],[Revisión · Evaluados])
+
+// Filtro de la tabla nativa: muestra solamente viajes excluidos del perfil horario. La selección del motivo se conserva.
+Revisión · Mostrar caso =
+IF(HASONEVALUE(gold_gtfs_trip_timing[trip_key])&&SELECTEDVALUE(gold_gtfs_trip_timing[timing_status])<>"eligible",1)
+
+// Catálogo 2026 del contexto de componente y ruta. Las fechas no convierten casos en viajes diarios.
+Revisión · Visitas del caso =
+IF(HASONEVALUE(gold_gtfs_trip_timing[trip_key]),SUM(gold_gtfs_trip_timing[visit_count]))

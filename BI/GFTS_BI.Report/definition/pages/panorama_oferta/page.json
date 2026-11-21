@@ -1,0 +1,226 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/page/2.1.0/schema.json",
+  "name": "panorama_oferta",
+  "displayName": "Inicio · Panorama",
+  "displayOption": "FitToPage",
+  "height": 1004,
+  "width": 1440,
+  "objects": {
+    "background": [
+      {
+        "properties": {
+          "color": {
+            "solid": {
+              "color": {
+                "expr": {
+                  "Literal": {
+                    "Value": "'#E8EBE2'"
+                  }
+                }
+              }
+            }
+          },
+          "transparency": {
+            "expr": {
+              "Literal": {
+                "Value": "0D"
+              }
+            }
+          }
+        }
+      }
+    ]
+  },
+  "filterConfig": {
+    "filters": [
+      {
+        "name": "scope_source_feed_version",
+        "field": {
+          "Column": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "dim_gtfs_snapshot"
+              }
+            },
+            "Property": "source_feed_version"
+          }
+        },
+        "type": "Categorical",
+        "filter": {
+          "Version": 2,
+          "From": [
+            {
+              "Name": "s",
+              "Entity": "dim_gtfs_snapshot",
+              "Type": 0
+            }
+          ],
+          "Where": [
+            {
+              "Condition": {
+                "In": {
+                  "Expressions": [
+                    {
+                      "Column": {
+                        "Expression": {
+                          "SourceRef": {
+                            "Source": "s"
+                          }
+                        },
+                        "Property": "source_feed_version"
+                      }
+                    }
+                  ],
+                  "Values": [
+                    [
+                      {
+                        "Literal": {
+                          "Value": "'2026-09-29'"
+                        }
+                      }
+                    ]
+                  ]
+                }
+              }
+            }
+          ]
+        }
+      },
+      {
+        "name": "scope_source_sha256",
+        "field": {
+          "Column": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "dim_gtfs_snapshot"
+              }
+            },
+            "Property": "source_sha256"
+          }
+        },
+        "type": "Categorical",
+        "filter": {
+          "Version": 2,
+          "From": [
+            {
+              "Name": "s",
+              "Entity": "dim_gtfs_snapshot",
+              "Type": 0
+            }
+          ],
+          "Where": [
+            {
+              "Condition": {
+                "In": {
+                  "Expressions": [
+                    {
+                      "Column": {
+                        "Expression": {
+                          "SourceRef": {
+                            "Source": "s"
+                          }
+                        },
+                        "Property": "source_sha256"
+                      }
+                    }
+                  ],
+                  "Values": [
+                    [
+                      {
+                        "Literal": {
+                          "Value": "'08d14e0b3a5b9caa5451b722659871fd554e3273b94bdd770fdf81a26bf02097'"
+                        }
+                      }
+                    ]
+                  ]
+                }
+              }
+            }
+          ]
+        }
+      }
+    ]
+  },
+  "visualInteractions": [
+    {
+      "source": "245312b773b747e18a43",
+      "target": "118b6cdd1a474013ab04",
+      "type": "DataFilter"
+    },
+    {
+      "source": "245312b773b747e18a43",
+      "target": "24243c0ce01d4ce8b104",
+      "type": "DataFilter"
+    },
+    {
+      "source": "245312b773b747e18a43",
+      "target": "2b55dde4d730484c9dcc",
+      "type": "DataFilter"
+    },
+    {
+      "source": "245312b773b747e18a43",
+      "target": "61e7f3157acf4c4db556",
+      "type": "NoFilter"
+    },
+    {
+      "source": "245312b773b747e18a43",
+      "target": "6c017af9457b4cefb79e",
+      "type": "DataFilter"
+    },
+    {
+      "source": "245312b773b747e18a43",
+      "target": "6dfff806dc2c4b1aa8ee",
+      "type": "NoFilter"
+    },
+    {
+      "source": "245312b773b747e18a43",
+      "target": "72a04368ce204c91bcd3",
+      "type": "NoFilter"
+    },
+    {
+      "source": "245312b773b747e18a43",
+      "target": "a29208c679eb4084a60f",
+      "type": "NoFilter"
+    },
+    {
+      "source": "245312b773b747e18a43",
+      "target": "a75db183b86d4a068b88",
+      "type": "DataFilter"
+    },
+    {
+      "source": "245312b773b747e18a43",
+      "target": "b117621c07374c569f3a",
+      "type": "DataFilter"
+    },
+    {
+      "source": "245312b773b747e18a43",
+      "target": "b7e0ba43c70f4a8ea8d5",
+      "type": "DataFilter"
+    },
+    {
+      "source": "245312b773b747e18a43",
+      "target": "e668f56f2cb543d291a0",
+      "type": "NoFilter"
+    },
+    {
+      "source": "245312b773b747e18a43",
+      "target": "eac93b0c5cfd47ce94eb",
+      "type": "NoFilter"
+    },
+    {
+      "source": "245312b773b747e18a43",
+      "target": "f67e7e618a474bf0bc20",
+      "type": "DataFilter"
+    },
+    {
+      "source": "245312b773b747e18a43",
+      "target": "fff9f463004c45ba9341",
+      "type": "DataFilter"
+    },
+    {
+      "source": "245312b773b747e18a43",
+      "target": "ecba17306e0d480db8cd",
+      "type": "NoFilter"
+    }
+  ]
+}

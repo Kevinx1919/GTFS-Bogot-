@@ -1,7 +1,7 @@
 # Mi contrato Gold: trip_coverage_v1
 
 **Fecha:** 17 de noviembre de 2026.
-**Estado:** prototipo local comprobado; utilidad en el modelo de negocio y publicación en Workspace pendientes.
+**Estado:** validado y publicado en Workspace para 2026-09-29; importado y comprobado en Power BI el 19 de noviembre de 2026.
 La salida implementada se llama gold_gtfs_trip_coverage.
 No añado esta entidad Gold al registro de procesadores Silver.
 
@@ -124,3 +124,12 @@ La deriva de un run_id fuente y un fallo Silver posterior bloquean Gold.
 Validate no crea la tabla Gold ni su auditoría.
 Un fallo de preparación durante publish conserva STARTED y CLOSED / FAILED sin tabla analítica nueva.
 No ejecuté una publicación real en Workspace durante esta revisión.
+
+## Primera publicación comprobada — 19 de noviembre de 2026
+
+Validé notebook 20 con persisted=false y reconciled=true.
+Publiqué con gold_run_id 8d48f208-89a1-4c7b-9369-136be92d7a51 y comprobé CLOSED/SUCCEEDED.
+Gold conserva 181060 viajes únicos, 9408893 visitas, catorce ventanas y cero filas inválidas.
+Las categorías concilian 739 sin_visitas, 61 una_visita y 180260 varias_visitas.
+La importación Power BI utiliza once columnas de negocio; la evidencia completa permanece en Databricks.
+El Job principal todavía no llama automáticamente a este publicador.

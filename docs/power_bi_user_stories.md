@@ -1,5 +1,11 @@
 # Mis historias de negocio para Power BI
 
+> **Estado vigente — 20 de noviembre de 2026:** las cuatro Gold de 2026 están publicadas e importadas y los cuatro paneles están implementados. La navegación nativa funciona; la revisión integral y la actualización completa siguen pendientes. [Estado actual](project_status.md).
+
+## Registro de diseño e implementación
+
+Conservo a continuación las decisiones y comprobaciones de cada etapa. Los pendientes de esas fechas describen su momento; el estado vigente anterior los sustituye.
+
 **Fecha:** 17 de noviembre de 2026.
 **Estado:** preguntas y diseño candidatos documentados; prototipo HTML revisado.
 Las fórmulas finales y el modelo de consumo requieren completar sus contratos.
@@ -276,7 +282,7 @@ No necesito una tabla Gold distinta por historia ni por página.
 | Contexto y trazabilidad | Un snapshot o ejecución, según el contrato de cada tabla. | HU-12 y contexto de todas las páginas. |
 
 No fijé nombres físicos ni publiqué estas piezas como tablas Gold.
-La cobertura dispone de un prototipo local; las demás piezas requieren sus contratos de negocio.
+La cobertura ya está publicada para 2026 y tiene medidas comprobadas en Power BI; las demás piezas requieren sus contratos de negocio.
 Las horas y ventanas pueden necesitar piezas adicionales cuando cierre HU-05 y HU-06.
 
 ## Reglas del modelo y criterios comunes
@@ -326,3 +332,13 @@ Solo entonces elegiré las tablas Gold necesarias y publicaré el primer increme
 - [Contrato de fechas activas](contracts/service_dates.md).
 - [Perfil de frecuencias](frequencies_profile_2025_2026.md).
 - [Plan de cierre](gold_plan.md).
+
+## Replanteamiento narrativo y prioridad de Gold — 19 de noviembre de 2026
+
+Revisé el reporte y encontré que el diseño mostraba catálogo y cobertura del dato, sin desarrollar la historia de programación y red.
+El [nuevo plan de storytelling](power_bi_storytelling_plan.md) pasa a ser la referencia para el siguiente incremento.
+Mantengo cuatro páginas: Panorama de oferta, Programación, Red publicada y Revisión de información.
+La versión y el hash se conservan como procedencia secundaria; las preguntas de negocio dirigen la página.
+Priorizaré el contrato y el hecho Gold de programación por ruta y fecha antes de seguir puliendo tarjetas HTML.
+Después completaré el puente ruta–ubicación y la definición de extremos horarios.
+Las piezas nuevas todavía no están publicadas y las páginas actuales permanecen como prototipo visual.

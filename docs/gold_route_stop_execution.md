@@ -1,6 +1,19 @@
 # Mi ejecución de Gold ruta–ubicación
 
-**Estado:** implementación local; todavía no publiqué esta entidad en Databricks.
+**Actualización: 20 de noviembre de 2026.**
+
+## Publicación confirmada para 2026
+
+La ejecución 41900e02-7a3a-4fd3-8f24-63d0002ab2b9 terminó SUCCEEDED, persisted=true y reconciled=true.
+Conservé 62.715 parejas únicas, 1.045 rutas, 8.159 ubicaciones y 9.408.893 visitas publicadas.
+El resumen registró cero filas inválidas y cero ubicaciones relacionadas sin coordenadas.
+La tabla ya está importada en Power BI; Red publicada y el mapa de Panorama la utilizan.
+
+## Procedimiento y comprobaciones previas
+
+Los apartados siguientes conservan el procedimiento y las pruebas locales anteriores a esta publicación.
+
+**Estado:** publicado en Databricks para 2026 e importado en el modelo local Power BI.
 El [contrato](contracts/route_stop.md) conserva grano, campos y límites.
 
 ## Validar y publicar
@@ -29,14 +42,17 @@ La publicación en Workspace y la integración Delta nativa nueva siguen pendien
 Importaré las seis columnas de negocio por la conexión existente.
 Excluiré gold_run_id, gold_rule_version y gold_loaded_at_utc del consumo normal.
 Crearé route_key y stop_key con las expresiones de identidad que ya utiliza el modelo.
-Relacionaré routes→puente y stops→puente, con dirección única.
+Configuré routes→puente con dirección única.
+Para stops utilizo una relación virtual por stop_key dentro de la medida, evitando dos caminos activos desde snapshot.
 
 El mapa usará stop_lat y stop_lon de stops, sin resumir, y conservará stop_key como identidad del punto.
 Para que la selección de ruta reduzca los puntos, añadiré esta medida y aplicaré valor 1 como filtro visual:
 
 ```dax
 Ubicación relacionada =
-IF ( COUNTROWS ( gold_gtfs_route_stop ) > 0, 1, 0 )
+VAR Ubicaciones = VALUES ( silver_gtfs_stops[stop_key] )
+VAR Parejas = CALCULATE ( COUNTROWS ( gold_gtfs_route_stop ), TREATAS ( Ubicaciones, gold_gtfs_route_stop[stop_key] ) )
+RETURN IF ( Parejas > 0, 1, 0 )
 ```
 
 La medida se evalúa por ubicación con los filtros de ruta y componente activos.

@@ -1,6 +1,6 @@
 # Mi contrato Gold: route_stop_v1
 
-**Estado:** implementado localmente; validación y publicación en Workspace pendientes.
+**Estado:** publicado en Workspace para 2026 e importado y comprobado en Power BI.
 **Destino:** gold_gtfs_route_stop.
 
 | Definición | Decisión |
@@ -90,3 +90,10 @@ La publicación con doble comprobó su ámbito y las parejas guardadas.
 La fixture huérfana inicial fabricaba secuencias duplicadas; la corregí para aislar la referencia faltante y la selección final pasó completa.
 Comprobé sintaxis Python, los dos bloques del notebook sin resultados guardados, enlaces y manifiesto BI.
 La ejecución y publicación en Workspace siguen pendientes.
+
+
+## Cierre de publicación y consumo
+
+La ejecución Gold 41900e02-7a3a-4fd3-8f24-63d0002ab2b9 terminó SUCCEEDED y reconciled=true, según su resumen de publicación.
+Importé la tabla mediante la conexión existente del modelo local y comprobé sus filtros y conteos con DAX.
+La [evidencia del modelo](../power_bi_gold_import.md) conserva los resultados y decisiones de relación.

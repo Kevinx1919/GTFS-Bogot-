@@ -72,7 +72,7 @@ La [preparación BI](../BI/consumo/README.md) conserva campos del mapa y depende
 El puente ruta–ubicación será el siguiente incremento para filtrar el mapa por componente o ruta.
 Los puntos de shapes no se convertirán en paradas.
 
-[Explore in Databricks](https://dbc-caa55511-0fef.cloud.databricks.com/one/chat/threads/716373306e1942e4a06cb1591f56a911?o=7474646722477316&utm_source=genie_chat_mcp)
+Conservo las consultas en el historial local de Genie; omito el enlace privado del workspace
 
 ## Después de la publicación
 
@@ -129,4 +129,4 @@ La auditoría confirmó CLOSED/SUCCEEDED con gold_committed=true.
 Las fechas 19, 21 y 22 de noviembre reprodujeron los tres agregados de la muestra previa.
 La tabla está lista para el siguiente paso de consumo; todavía no marqué su importación a Power BI como realizada.
 
-[Explore in Databricks](https://dbc-caa55511-0fef.cloud.databricks.com/one/chat/threads/55707fa7957042be9afe1ad39a144a7c?o=7474646722477316&utm_source=genie_chat_mcp)
+Conservo las consultas en el historial local de Genie; omito el enlace privado del workspace

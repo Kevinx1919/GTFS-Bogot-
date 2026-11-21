@@ -148,3 +148,16 @@ Los endpoints oficiales de posiciones, alertas y actualizaciones de viaje devolv
 - [Grupo de datos GTFS de TransMilenio](https://datosabiertos-transmilenio.hub.arcgis.com/search?groupIds=ca6e3d0acf57461d91228659c1b0d2dd)
 - [Datos Abiertos Bogotá: TransMilenio](https://datosabiertos.bogota.gov.co/organization/transmilenio?groups=transporte)
 - [Endpoints GTFS-Realtime](https://gis.transmilenio.gov.co/gtfs/)
+
+## Comprobación actual de acceso — 19 de noviembre de 2026
+
+Probé nuevamente demanda y GTFS-Realtime antes de ampliar el modelo BI.
+Las páginas de validaciones y un ZIP pequeño de Cable devolvieron HTTP 429 desde este entorno.
+La API alternativa del catálogo de Bogotá respondió, pero su recurso de almacenamiento devolvió HTTP 403.
+No conseguí descargar un archivo de datos válido ni comprobé su esquema.
+
+El [portal actual GTFS](https://gtfs.transmilenio.gov.co/) respondió HTTP 200 con aviso de mantenimiento.
+El portal antiguo mantuvo HTTP 500.
+No equiparo una página accesible con un feed operativo disponible.
+La [evidencia de acceso](source_access_check_2026_11_19.md) conserva URLs, resultados, límites y el siguiente paso.
+La descarga manual desde el navegador habitual sigue sin comprobarse.

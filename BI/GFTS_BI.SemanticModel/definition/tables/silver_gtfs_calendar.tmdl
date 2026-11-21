@@ -1,0 +1,151 @@
+table silver_gtfs_calendar
+	lineageTag: 45e57e4e-a980-4146-b25b-7cd7954dcc35
+
+	column service_id
+		dataType: string
+		lineageTag: cf5fb219-b65f-4a9c-b534-bb9ddd269f72
+		summarizeBy: none
+		sourceColumn: service_id
+
+		annotation SummarizationSetBy = Automatic
+
+	column monday
+		dataType: int64
+		formatString: 0
+		lineageTag: 1cbccddf-db21-4565-b65e-e34b06e2aa46
+		summarizeBy: none
+		sourceColumn: monday
+
+		annotation SummarizationSetBy = Automatic
+
+	column tuesday
+		dataType: int64
+		formatString: 0
+		lineageTag: 7db8189b-21b5-441f-a6f0-f870f462c2c7
+		summarizeBy: none
+		sourceColumn: tuesday
+
+		annotation SummarizationSetBy = Automatic
+
+	column wednesday
+		dataType: int64
+		formatString: 0
+		lineageTag: 1336290a-6492-44d1-ad26-db2d35fc845c
+		summarizeBy: none
+		sourceColumn: wednesday
+
+		annotation SummarizationSetBy = Automatic
+
+	column thursday
+		dataType: int64
+		formatString: 0
+		lineageTag: 532b0519-7342-41bf-8211-784484bbf0c9
+		summarizeBy: none
+		sourceColumn: thursday
+
+		annotation SummarizationSetBy = Automatic
+
+	column friday
+		dataType: int64
+		formatString: 0
+		lineageTag: 976f27e1-9a1f-4316-90bd-868bbbaff471
+		summarizeBy: none
+		sourceColumn: friday
+
+		annotation SummarizationSetBy = Automatic
+
+	column saturday
+		dataType: int64
+		formatString: 0
+		lineageTag: 972214c2-5b0d-4489-b8a3-c99ec7920575
+		summarizeBy: none
+		sourceColumn: saturday
+
+		annotation SummarizationSetBy = Automatic
+
+	column sunday
+		dataType: int64
+		formatString: 0
+		lineageTag: a85d1659-975d-47a1-a0fc-b2fd1c534268
+		summarizeBy: none
+		sourceColumn: sunday
+
+		annotation SummarizationSetBy = Automatic
+
+	column start_date
+		dataType: dateTime
+		formatString: Long Date
+		lineageTag: 9d427762-66c6-472e-86db-c21245498f7c
+		summarizeBy: none
+		sourceColumn: start_date
+
+		variation Variation
+			isDefault
+			relationship: 4c6e7313-94b6-4cb7-bb6c-5f4132d47595
+			defaultHierarchy: LocalDateTable_24bfaed8-257e-45ca-8cde-0b4c372e871f.'Jerarquía de fechas'
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation UnderlyingDateTimeDataType = Date
+
+	column end_date
+		dataType: dateTime
+		formatString: Long Date
+		lineageTag: 10c772be-6f65-4de6-92cb-1dbe4c064e6e
+		summarizeBy: none
+		sourceColumn: end_date
+
+		variation Variation
+			isDefault
+			relationship: 83ec8c92-795b-49ac-9f08-60d1924b70ad
+			defaultHierarchy: LocalDateTable_1cd177a4-710a-463a-9d3e-d2fac8f5c4e3.'Jerarquía de fechas'
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation UnderlyingDateTimeDataType = Date
+
+	column source_feed_version
+		dataType: string
+		isHidden
+		lineageTag: 1f716dc8-45de-4d81-b8f2-0330d3637d63
+		summarizeBy: none
+		sourceColumn: source_feed_version
+
+		annotation SummarizationSetBy = Automatic
+
+	column source_sha256
+		dataType: string
+		isHidden
+		lineageTag: a15681f4-0741-4e4e-afcb-be04d00e5c82
+		summarizeBy: none
+		sourceColumn: source_sha256
+
+		annotation SummarizationSetBy = Automatic
+
+	/// Clave de consumo v1: longitud y versión fuente, más SHA-256. No modifica la identidad Silver.
+	column snapshot_key = FORMAT ( LEN ( [source_feed_version] ), "0" ) & ":" & [source_feed_version] & ":" & [source_sha256]
+		dataType: string
+		isHidden
+		lineageTag: bb64f02a-fa17-48ee-862c-c65d01e6d4af
+		summarizeBy: none
+
+	/// Clave de consumo v1 por snapshot e ID fuente sin conversiones ni eliminación de ceros.
+	column service_key = FORMAT ( LEN ( [source_feed_version] ), "0" ) & ":" & [source_feed_version] & ":" & [source_sha256] & ":" & [service_id]
+		dataType: string
+		isHidden
+		lineageTag: ea64762b-1cff-4bf5-8701-3d2940ee1401
+		summarizeBy: none
+
+	partition silver_gtfs_calendar = m
+		mode: import
+		source =
+				let
+				  Origen = DatabricksMultiCloud.Catalogs(DatabricksServerHostname, DatabricksHttpPath, null),
+				  #"Navegación 1" = Origen{[Name = "workspace", Kind = "Database"]}[Data],
+				  #"Navegación 2" = #"Navegación 1"{[Name = "gtfs_bogota", Kind = "Schema"]}[Data],
+				  #"Navegación 3" = #"Navegación 2"{[Name = "silver_gtfs_calendar", Kind = "Table"]}[Data],
+				  #"Columnas quitadas" = Table.RemoveColumns(#"Navegación 3", {"silver_loaded_at_utc", "silver_run_id", "silver_rule_version", "source_columns", "bronze_loaded_at_utc", "source_file_path"})
+				in
+				  #"Columnas quitadas"
+
+	annotation PBI_ResultType = Table
